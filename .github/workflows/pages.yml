@@ -2,7 +2,7 @@ name: Pubblica su GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/villa-tramonto-3d-46nulb]
   workflow_dispatch:
 
 permissions:
