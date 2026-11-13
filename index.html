@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0503" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>La Villa al Tramonto</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div id="vignette"></div>
+  <div id="fade"></div>
+
+  <div id="hud" hidden>
+    <div id="scene-title"></div>
+    <div id="hint"></div>
+    <div id="buttons">
+      <button id="btn-torch" aria-label="Torcia" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M8 2h8v3l-2 3v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8L8 5z"/><path d="M11 11h2v3h-2z" class="cut"/></svg>
+        <span>Torcia</span>
+      </button>
+      <button id="btn-center" aria-label="Ricentra la vista" hidden>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke-width="2"/></svg>
+        <span>Ricentra</span>
+      </button>
+      <button id="btn-sound" aria-label="Audio" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8a5 5 0 0 1 0 8" fill="none" stroke-width="2" class="wave"/></svg>
+        <span>Audio</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="panel" hidden>
+    <p id="panel-text"></p>
+    <div id="meter" hidden><i></i></div>
+    <div id="panel-actions">
+      <button id="btn-listen" hidden>Tieni premuto per ascoltare</button>
+      <button id="btn-back">Indietro</button>
+    </div>
+  </div>
+
+  <div id="write" hidden>
+    <p>Scrivi con il dito sul foglio</p>
+    <canvas id="paper"></canvas>
+    <div class="row">
+      <button id="btn-clear">Cancella</button>
+      <button id="btn-leave" class="primary">Lascia il messaggio</button>
+      <button id="btn-close">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="start">
+    <div class="card">
+      <p class="over">Un'esplorazione al calare della sera</p>
+      <h1>La Villa<br />al Tramonto</h1>
+      <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
+      <ul>
+        <li><b>Inclina il telefono</b> per guardarti intorno</li>
+        <li><b>Soffia sul microfono</b> per spegnere le candele</li>
+        <li><b>Accendi la torcia</b> nelle stanze buie</li>
+        <li><b>Ascolta</b> il carillon avvicinando il telefono all'orecchio</li>
+        <li><b>Scrivi</b> con il dito e lascia un messaggio</li>
+      </ul>
+      <button id="btn-start" class="primary">Entra nella sera</button>
+      <p class="note">Ti verrà chiesto il permesso per il movimento del telefono e, più avanti, per il microfono. Nulla viene registrato né inviato. Alza il volume.</p>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
