@@ -1,5 +1,13 @@
 // Audio interamente sintetizzato (Web Audio): vento, stanza, carillon, effetti. Più il microfono per il soffio.
 
+const BOX_FAR = 0.035; // volume del carillon a telefono lontano dall'orecchio
+
+function softClip(k) {
+  const n = 1024, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); }
+  return c;
+}
+
 const MELODY = [
   81, 88, 84, 88, 93, 88,
   77, 84, 81, 84, 89, 84,
@@ -49,15 +57,35 @@ export class AudioEngine {
     const rf = ctx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 140;
     this._noise().connect(rf); rf.connect(this.roomGain); this.roomGain.connect(this.master);
 
-    // carillon: voce + piccola eco
-    this.boxGain = ctx.createGain(); this.boxGain.gain.value = 0.12;
+    // carillon, due percorsi:
+    //  - "lontano": suono pulito con un filo di eco, quasi impercettibile
+    //  - "all'orecchio": come una telefonata o un walkie-talkie (banda stretta,
+    //    saturazione, compressione, fruscio)
+    this.boxIn = ctx.createGain();
+    this.boxGain = ctx.createGain(); this.boxGain.gain.value = BOX_FAR;
     const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
     const delay = ctx.createDelay(1); delay.delayTime.value = 0.23;
     const fb = ctx.createGain(); fb.gain.value = 0.28;
-    this.boxIn = ctx.createGain();
     this.boxIn.connect(hp); hp.connect(this.boxGain);
     hp.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(this.boxGain);
     this.boxGain.connect(this.master);
+
+    const lo = ctx.createBiquadFilter(); lo.type = 'highpass'; lo.frequency.value = 450; lo.Q.value = 0.9;
+    const hi = ctx.createBiquadFilter(); hi.type = 'lowpass'; hi.frequency.value = 2800; hi.Q.value = 0.9;
+    const nasal = ctx.createBiquadFilter(); nasal.type = 'peaking'; nasal.frequency.value = 1500; nasal.Q.value = 1.2; nasal.gain.value = 9;
+    const drive = ctx.createGain(); drive.gain.value = 5;
+    const clip = ctx.createWaveShaper(); clip.curve = softClip(2.5); clip.oversample = '2x';
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -30; comp.ratio.value = 8; comp.attack.value = 0.003; comp.release.value = 0.15;
+    this.radioGain = ctx.createGain(); this.radioGain.gain.value = 0;
+    this.boxIn.connect(lo); lo.connect(hi); hi.connect(nasal); nasal.connect(drive); drive.connect(clip);
+    clip.connect(comp); comp.connect(this.radioGain); this.radioGain.connect(this.master);
+
+    // fruscio della linea, con piccole oscillazioni di intensità
+    const hiss = ctx.createBiquadFilter(); hiss.type = 'bandpass'; hiss.frequency.value = 2200; hiss.Q.value = 0.6;
+    this.staticGain = ctx.createGain(); this.staticGain.gain.value = 0;
+    this._noise().connect(hiss); hiss.connect(this.staticGain); this.staticGain.connect(this.master);
+    this.listenK = 0;
   }
 
   _noise() {
@@ -111,11 +139,38 @@ export class AudioEngine {
     clearInterval(this._timer);
   }
 
-  /** 0 = lontano, 1 = orecchio sul carillon */
+  /** 0 = telefono lontano (carillon appena udibile), 1 = telefono all'orecchio (effetto radio) */
   setListen(k) {
     if (!this.ctx) return;
-    this.boxGain.gain.setTargetAtTime(0.1 + 0.9 * k, this.ctx.currentTime, 0.18);
-    this.roomGain.gain.setTargetAtTime(0.5 * (1 - 0.7 * k), this.ctx.currentTime, 0.3);
+    const t = this.ctx.currentTime;
+    if (k !== this.listenK) this._squelch(k > this.listenK);
+    this.listenK = k;
+    this.boxGain.gain.setTargetAtTime(BOX_FAR * (1 - k), t, 0.12);
+    this.radioGain.gain.setTargetAtTime(1.1 * k, t + (k ? 0.12 : 0), 0.08);
+    this.staticGain.gain.setTargetAtTime(0.05 * k, t + (k ? 0.12 : 0), 0.08);
+    this.roomGain.gain.setTargetAtTime(0.5 * (1 - 0.85 * k), t, 0.2);
+    this.windGain.gain.setTargetAtTime(0.05 * (1 - k), t, 0.2);
+  }
+
+  /** scatto di apertura/chiusura del canale, come un walkie-talkie */
+  _squelch(open) {
+    const ctx = this.ctx, t = ctx.currentTime;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 8;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.8;
+    const g = ctx.createGain();
+    const len = open ? 0.16 : 0.09;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(open ? 0.5 : 0.35, t + 0.01);
+    g.gain.setValueAtTime(open ? 0.5 : 0.35, t + len - 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(t, Math.random() * 2); s.stop(t + len + 0.02);
+  }
+
+  /** sfarfallio del fruscio mentre si ascolta: va chiamato a ogni frame */
+  tickRadio() {
+    if (!this.ctx || !this.listenK) return;
+    if (Math.random() < 0.06) this.staticGain.gain.setTargetAtTime(0.03 + Math.random() * 0.05, this.ctx.currentTime, 0.04);
   }
 
   /** piccolo rumore percussivo: tasto della macchina da scrivere / candela che si spegne */
@@ -124,7 +179,11 @@ export class AudioEngine {
     const ctx = this.ctx, t = ctx.currentTime;
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); const g = ctx.createGain();
-    if (kind === 'key') {
+    if (kind === 'step') {
+      f.type = 'lowpass'; f.frequency.value = 260 + Math.random() * 80;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1.4, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+      s.playbackRate.value = 1.5;
+    } else if (kind === 'key') {
       f.type = 'bandpass'; f.frequency.value = 2200 + Math.random() * 800; f.Q.value = 2;
       g.gain.setValueAtTime(1.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
       s.playbackRate.value = 6;
@@ -155,6 +214,16 @@ export class AudioEngine {
     this._above = 0;
     this._cool = 0;
     return true;
+  }
+
+  /** Chiede il permesso del microfono e lo richiude subito (resta concesso per la sessione). */
+  async askMicPermission() {
+    if (!navigator.mediaDevices?.getUserMedia) return false;
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+      st.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch { return false; }
   }
 
   stopMic() {
@@ -198,6 +267,17 @@ export class PhysicalTorch {
       await track.applyConstraints({ advanced: [{ torch: true }] });
       this.track = track;
       return true;
+    } catch { return false; }
+  }
+  /** Chiede la fotocamera una volta all'inizio e verifica se il LED è comandabile. */
+  async probe() {
+    if (!this.supportedGuess) return false;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
+      const track = stream.getVideoTracks()[0];
+      const ok = !!(track.getCapabilities && track.getCapabilities().torch);
+      track.stop();
+      return ok;
     } catch { return false; }
   }
   off() {

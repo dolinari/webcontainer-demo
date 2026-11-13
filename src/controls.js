@@ -99,6 +99,9 @@ export class LookControls {
 
   recenter(target) { this.face(target); }
 
+  /** Rotazione morbida dello sguardo (comandi "destra" / "sinistra"). */
+  turn(delta) { this.turnLeft = (this.turnLeft || 0) + delta; this.aim = null; }
+
   /** true se il telefono è tenuto come all'orecchio: verticale e inclinato di lato. */
   earPose() {
     if (!this.gyro) return false;
@@ -126,6 +129,12 @@ export class LookControls {
       }
       this.aim.t -= dt;
       if (this.aim.t <= 0) this.aim = null;
+    }
+    if (this.turnLeft) {
+      const step = Math.sign(this.turnLeft) * Math.min(Math.abs(this.turnLeft), dt * 2.4);
+      this.yaw += step;
+      this.turnLeft -= step;
+      if (Math.abs(this.turnLeft) < 1e-4) this.turnLeft = 0;
     }
     if (this.gyro && this.device) {
       this.camera.quaternion.setFromAxisAngle(Y, this.yaw).multiply(this.deviceQ);

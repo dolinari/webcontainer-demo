@@ -16,10 +16,15 @@
   <div id="hud" hidden>
     <div id="scene-title"></div>
     <div id="hint"></div>
+    <div id="voice-chip" hidden><i></i><span>Ti ascolto</span></div>
     <div id="buttons">
       <button id="btn-torch" aria-label="Torcia" aria-pressed="false">
         <svg viewBox="0 0 24 24"><path d="M8 2h8v3l-2 3v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8L8 5z"/><path d="M11 11h2v3h-2z" class="cut"/></svg>
         <span>Torcia</span>
+      </button>
+      <button id="btn-voice" aria-label="Comandi vocali" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg>
+        <span>Voce</span>
       </button>
       <button id="btn-center" aria-label="Ricentra la vista" hidden>
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke-width="2"/></svg>
@@ -57,16 +62,29 @@
     <div class="card">
       <p class="over">Un'esplorazione al calare della sera</p>
       <h1>La Villa<br />al Tramonto</h1>
-      <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
-      <ul>
-        <li><b>Inclina il telefono</b> per guardarti intorno</li>
-        <li><b>Soffia sul microfono</b> per spegnere le candele</li>
-        <li><b>Accendi la torcia</b> nelle stanze buie</li>
-        <li><b>Ascolta</b> il carillon avvicinando il telefono all'orecchio</li>
-        <li><b>Scrivi</b> con il dito e lascia un messaggio</li>
-      </ul>
-      <button id="btn-start" class="primary">Entra nella sera</button>
-      <p class="note">Ti verrà chiesto il permesso per il movimento del telefono e, più avanti, per il microfono. Nulla viene registrato né inviato. Alza il volume.</p>
+      <div id="intro">
+        <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
+        <ul>
+          <li><b>Muovi il telefono</b> per guardarti intorno</li>
+          <li><b>Di’ «cammina»</b> per fare due passi avanti</li>
+          <li><b>Soffia sul microfono</b> per spegnere le candele</li>
+          <li><b>Accendi la torcia</b> nelle stanze buie</li>
+          <li><b>Porta il telefono all’orecchio</b> per ascoltare il carillon</li>
+          <li><b>Scrivi</b> con il dito e lascia un messaggio</li>
+        </ul>
+      </div>
+      <div id="perm-box" hidden>
+        <p class="lead">Prima di entrare, attiviamo i sensori del telefono. Tocca il pulsante e consenti ogni richiesta.</p>
+        <ol id="perms">
+          <li data-k="motion"><b>Movimento</b> <span>per guardarti intorno</span><em>…</em></li>
+          <li data-k="mic"><b>Microfono</b> <span>per il soffio e la voce</span><em>…</em></li>
+          <li data-k="voice"><b>Comandi vocali</b> <span>«cammina», «indietro», «destra»</span><em>…</em></li>
+          <li data-k="led"><b>Torcia</b> <span>il LED del telefono (Android)</span><em>…</em></li>
+        </ol>
+      </div>
+      <button id="btn-start" class="primary">Inizia</button>
+      <button id="btn-skip" class="link" hidden>Salta questo passo</button>
+      <p class="note">Il microfono serve solo a sentire il soffio e i comandi: nulla viene registrato né salvato. Alza il volume e togli la modalità silenziosa.</p>
     </div>
   </div>
 

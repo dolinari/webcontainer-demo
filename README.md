@@ -22,13 +22,18 @@ npm run build    # build statica in dist/
 
 ## Interazioni e sensori
 
+All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno, come richiede iOS): movimento, microfono, comandi vocali e, su Android, la torcia LED. Ogni passo si può saltare.
+
 | Interazione | Come funziona | Ripiego |
 | --- | --- | --- |
-| Guardarsi intorno | `deviceorientation`; su iOS il permesso viene chiesto al tap su «Entra nella sera» | trascinamento touch/mouse |
-| Spegnere le candele | microfono (`getUserMedia`), rileva un soffio o un rumore forte; chiesto solo quando ti avvicini alle candele e spento quando ti allontani | tocco sulle fiamme |
-| Torcia | faretto virtuale che segue il telefono + esposizione più alta; su Android Chrome prova anche il LED fisico (chiede la fotocamera) | solo virtuale (iPhone) |
-| Carillon | telefono portato all'orecchio (verticale e inclinato di lato) alza il volume | pulsante «Tieni premuto per ascoltare» |
-| Messaggio | disegno con il dito su canvas; resta sul foglio 3D e in `localStorage` | – |
+| Guardarsi intorno | `deviceorientation` | trascinamento touch/mouse |
+| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «accendi/spegni la torcia» | cerchi luminosi da toccare |
+| Spegnere le candele | microfono, rileva un soffio; la voce va in pausa mentre sei alle candele | tocco sulle fiamme |
+| Torcia | faretto virtuale che segue il telefono; su Android Chrome anche il LED | solo virtuale (iPhone) |
+| Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |
+| Messaggio | disegno con il dito; la macchina da scrivere risponde con una frase scelta a caso tra 5, mai la stessa due volte di fila | – |
+
+Il riconoscimento vocale di Chrome e Safari usa i server di Google/Apple: serve la connessione.
 
 Nessun audio viene registrato o inviato: il microfono serve solo a misurare il volume in locale.
 
@@ -39,6 +44,7 @@ Nessun audio viene registrato o inviato: il microfono serve solo a misurare il v
 - `src/props.js` – candele, candelabri, mobili
 - `src/textures.js` – texture procedurali su canvas (nessun asset esterno)
 - `src/controls.js` – giroscopio / trascinamento, posa «all'orecchio»
+- `src/voice.js` – comandi vocali
 - `src/audio.js` – audio sintetizzato, microfono, torcia LED
 
 Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rate cala), nessuna ombra dinamica, poche luci puntiformi per scena.
