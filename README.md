@@ -10,6 +10,8 @@ npm run dev      # sviluppo
 npm run build    # build statica in dist/
 ```
 
+**Online:** https://dolinari.github.io/webcontainer-demo/ (si aggiorna da solo a ogni push).
+
 **Serve HTTPS sul telefono.** Giroscopio, microfono e torcia funzionano solo in un contesto sicuro: apri il sito da un indirizzo `https://` (hosting statico della cartella `dist/`, un tunnel, o l'anteprima di StackBlitz/WebContainer). Su `http://192.168…` i sensori restano bloccati e l'esperienza ripiega sul trascinamento con il dito.
 
 ## Le tre scene
