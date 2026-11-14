@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0503" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>La Villa al Tramonto</title>
+  <script type="module" crossorigin src="./assets/index-BrHswTt-.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-B-Eb1mTC.css">
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div id="vignette"></div>
+  <div id="fade"></div>
+
+  <div id="hud" hidden>
+    <div id="scene-title"></div>
+    <div id="hint"></div>
+    <div id="observe" hidden role="status"><b></b><p></p></div>
+    <div id="voice-chip" hidden><i></i><span>Ti ascolto</span></div>
+    <div id="buttons">
+      <button id="btn-torch" aria-label="Torcia" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24"><path d="M8 2h8v3l-2 3v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8L8 5z"/><path d="M11 11h2v3h-2z" class="cut"/></svg>
+        <span>Torcia</span>
+      </button>
+      <button id="btn-voice" aria-label="Comandi vocali" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg>
+        <span>Voce</span>
+      </button>
+      <button id="btn-center" aria-label="Ricentra la vista" hidden>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke-width="2"/></svg>
+        <span>Ricentra</span>
+      </button>
+      <button id="btn-sound" aria-label="Audio" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8a5 5 0 0 1 0 8" fill="none" stroke-width="2" class="wave"/></svg>
+        <span>Audio</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="panel" hidden>
+    <p id="panel-text"></p>
+    <div id="meter" hidden><i></i></div>
+    <div id="panel-actions">
+      <button id="btn-listen" hidden>Tieni premuto per ascoltare</button>
+      <button id="btn-back">Indietro</button>
+    </div>
+  </div>
+
+  <div id="write" hidden>
+    <p>Scrivi con il dito sul foglio</p>
+    <canvas id="paper"></canvas>
+    <div class="row">
+      <button id="btn-clear">Cancella</button>
+      <button id="btn-leave" class="primary">Lascia il messaggio</button>
+      <button id="btn-close">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="lens" hidden>
+    <canvas id="lens-canvas"></canvas>
+    <p id="lens-msg"></p>
+    <div class="row">
+      <button id="lens-center">Righe in fondo</button>
+      <button id="lens-close" class="primary">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="scope" hidden>
+    <video id="scope-video" playsinline muted autoplay></video>
+    <canvas id="scope-canvas"></canvas>
+    <p id="scope-msg"></p>
+    <div id="scope-end" hidden>
+      <b>Fine del primo capitolo</b>
+      <span>Grazie di essere entrato nella villa.</span>
+    </div>
+    <div class="row"><button id="scope-close" class="primary">Chiudi</button></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="start">
+    <div class="card">
+      <p class="over">Un’esplorazione sensoriale</p>
+      <h1>La Villa<br />al Tramonto</h1>
+      <div id="intro">
+        <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
+        <p class="how">Si esplora con la voce. Parla al telefono:</p>
+        <dl class="cmds">
+          <dt>«cammina» · «corri»</dt><dd>due passi o tre falcate in avanti</dd>
+          <dt>«indietro» · «fermati»</dt><dd>torna indietro, fermati</dd>
+          <dt>«destra» · «sinistra»</dt><dd>girati</dd>
+          <dt>«osserva»</dt><dd>descrive l’oggetto che hai davanti</dd>
+          <dt>«torcia» · «spegni torcia»</dt><dd>accende e spegne la luce</dd>
+          <dt>«entra»</dt><dd>attraversa la porta vicina</dd>
+        </dl>
+        <p class="how">E con il telefono: <b>muovilo</b> per guardarti intorno, <b>soffia</b> sulle candele, <b>portalo all’orecchio</b> per ascoltare il carillon, <b>scrivi</b> con il dito sul foglio, <b>guarda</b> nel cannocchiale con la fotocamera.</p>
+      </div>
+      <div id="perm-box" hidden>
+        <p class="lead">Prima di entrare, attiviamo i sensori del telefono. Tocca il pulsante e consenti ogni richiesta.</p>
+        <ol id="perms">
+          <li data-k="motion"><b>Movimento</b> <span>per guardarti intorno</span><em>…</em></li>
+          <li data-k="mic"><b>Microfono</b> <span>per il soffio e la voce</span><em>…</em></li>
+          <li data-k="voice"><b>Comandi vocali</b> <span>«cammina», «corri», «destra»</span><em>…</em></li>
+          <li data-k="camera"><b>Fotocamera</b> <span>per guardare nel cannocchiale</span><em>…</em></li>
+        </ol>
+      </div>
+      <button id="btn-start" class="primary">Inizia</button>
+      <button id="btn-skip" class="link" hidden>Salta questo passo</button>
+      <p class="note">Il microfono serve solo a sentire il soffio e i comandi: nulla viene registrato né salvato. Alza il volume e togli la modalità silenziosa.</p>
+    </div>
+  </div>
+
+</body>
+</html>
