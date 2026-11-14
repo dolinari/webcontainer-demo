@@ -425,3 +425,95 @@ export function textTex(lines, { w = 512, h = 256, font = 'italic 34px Georgia, 
   lines.forEach((l, i) => g.fillText(l, w / 2, y0 + i * lineH));
   return toTex(c);
 }
+
+// ---- sala da pranzo e studiolo ----
+
+/** Carta da parati vittoriana: damasco verde scuro */
+export function wallpaperTex(repeat) {
+  const S = 256, [c, g] = mk(S, S), r = rng(140);
+  g.fillStyle = '#1c2a20'; g.fillRect(0, 0, S, S);
+  const motif = (x, y, s) => {
+    g.save(); g.translate(x, y); g.scale(s, s);
+    g.fillStyle = 'rgba(120,140,90,0.22)';
+    g.beginPath(); g.moveTo(0, -46); g.bezierCurveTo(26, -30, 22, -6, 0, 0); g.bezierCurveTo(-22, -6, -26, -30, 0, -46); g.fill();
+    g.beginPath(); g.moveTo(0, 46); g.bezierCurveTo(26, 30, 22, 6, 0, 0); g.bezierCurveTo(-22, 6, -26, 30, 0, 46); g.fill();
+    g.beginPath(); g.ellipse(-24, 0, 16, 7, 0, 0, 7); g.ellipse(24, 0, 16, 7, 0, 0, 7); g.fill();
+    g.fillStyle = 'rgba(200,170,100,0.18)';
+    g.beginPath(); g.arc(0, 0, 6, 0, 7); g.fill();
+    g.restore();
+  };
+  motif(64, 64, 1);
+  motif(192, 192, 1);
+  blotches(g, S, S, r, 18, ['8,12,8', '50,60,40'], 20, 80, 0.18);
+  grain(g, S, S, r, 2500, 0.08);
+  return toTex(c, repeat);
+}
+
+/** Parquet a listoni */
+export function parquetTex(repeat) {
+  const S = 512, [c, g] = mk(S, S), r = rng(141);
+  const rows = 8, h = S / rows;
+  for (let i = 0; i < rows; i++) {
+    let x = -r() * 200;
+    while (x < S) {
+      const w = 160 + r() * 140;
+      g.fillStyle = `hsl(${22 + r() * 8},${35 + r() * 15}%,${14 + r() * 9}%)`;
+      g.fillRect(x, i * h, w, h);
+      for (let k = 0; k < 14; k++) { g.fillStyle = `rgba(0,0,0,${r() * 0.15})`; g.fillRect(x, i * h + r() * h, w, 1); }
+      g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x, i * h, 2, h);
+      x += w;
+    }
+    g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(0, i * h, S, 2);
+  }
+  grain(g, S, S, r, 3000, 0.08);
+  return toTex(c, repeat);
+}
+
+/** Mappamondo antico: continenti a macchie su fondo pergamena */
+export function globeTex() {
+  const W = 512, H = 256, [c, g] = mk(W, H), r = rng(142);
+  g.fillStyle = '#c8b07a'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#8a6a38';
+  const land = [[90, 80, 50, 35], [120, 150, 30, 50], [250, 70, 40, 30], [270, 140, 35, 55], [360, 80, 80, 40], [420, 170, 30, 20], [200, 40, 20, 10]];
+  for (const [x, y, rx, ry] of land) {
+    for (let i = 0; i < 26; i++) { g.beginPath(); g.ellipse(x + (r() - 0.5) * rx * 1.4, y + (r() - 0.5) * ry * 1.4, rx * (0.3 + r() * 0.4), ry * (0.3 + r() * 0.4), r() * 3, 0, 7); g.fill(); }
+  }
+  g.strokeStyle = 'rgba(70,40,15,0.4)'; g.lineWidth = 1;
+  for (let x = 0; x <= W; x += W / 12) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y <= H; y += H / 6) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  blotches(g, W, H, r, 20, ['90,60,20'], 20, 70, 0.2);
+  return toTex(c);
+}
+
+/** Mappa antica da appendere al muro */
+export function mapTex() {
+  const W = 384, H = 256, [c, g] = mk(W, H), r = rng(143);
+  g.fillStyle = '#cdb88a'; g.fillRect(0, 0, W, H);
+  blotches(g, W, H, r, 20, ['150,110,60', '230,210,170'], 30, 100, 0.25);
+  g.strokeStyle = 'rgba(80,50,20,0.7)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(40, 200);
+  for (let i = 0; i < 18; i++) g.lineTo(40 + i * 17 + r() * 8, 120 + Math.sin(i * 0.8) * 60 + r() * 14);
+  g.stroke();
+  g.fillStyle = 'rgba(80,50,20,0.55)';
+  for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(r() * W, r() * H, 1.5, 0, 7); g.fill(); }
+  g.strokeStyle = 'rgba(120,30,20,0.8)'; g.setLineDash([5, 5]);
+  g.beginPath(); g.moveTo(60, 60); g.bezierCurveTo(150, 30, 220, 160, 320, 90); g.stroke(); g.setLineDash([]);
+  g.font = 'italic 20px Georgia, serif'; g.fillStyle = 'rgba(70,40,15,0.85)'; g.fillText('Terra incognita', 210, 225);
+  g.beginPath(); g.arc(320, 90, 7, 0, 7); g.strokeStyle = 'rgba(120,30,20,0.9)'; g.stroke();
+  const v = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, W * 0.6);
+  v.addColorStop(0, 'rgba(60,30,10,0)'); v.addColorStop(1, 'rgba(60,30,10,0.55)');
+  g.fillStyle = v; g.fillRect(0, 0, W, H);
+  return toTex(c);
+}
+
+/** Scorcio dell'ala laterale aperta: luce di camino */
+export function fireGlimpseTex() {
+  const W = 128, H = 256, [c, g] = mk(W, H);
+  g.fillStyle = '#120604'; g.fillRect(0, 0, W, H);
+  const gr = g.createRadialGradient(40, 200, 4, 40, 200, 150);
+  gr.addColorStop(0, 'rgba(255,150,50,0.95)'); gr.addColorStop(0.35, 'rgba(190,70,20,0.55)'); gr.addColorStop(1, 'rgba(40,12,4,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#2a0e08'; g.fillRect(70, 150, 50, 50);
+  g.fillStyle = '#3a1410'; g.beginPath(); g.moveTo(20, 256); g.lineTo(108, 256); g.lineTo(84, 210); g.lineTo(44, 210); g.fill();
+  return toTex(c);
+}

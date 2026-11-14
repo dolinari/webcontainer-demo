@@ -14,11 +14,15 @@ npm run build    # build statica in dist/
 
 **Serve HTTPS sul telefono.** Giroscopio, microfono e torcia funzionano solo in un contesto sicuro: apri il sito da un indirizzo `https://` (hosting statico della cartella `dist/`, un tunnel, o l'anteprima di StackBlitz/WebContainer). Su `http://192.168…` i sensori restano bloccati e l'esperienza ripiega sul trascinamento con il dito.
 
-## Le tre scene
+## Le scene e la storia
 
-1. **Esterno** – tocca il cerchio sul portone per avvicinarti, poi per entrare.
-2. **Corridoio** – candelabro (soffio), carillon (ascolto), biblioteca, porta in fondo.
-3. **Studio** – candele, foglio su cui scrivere, una scritta sul muro che si legge solo con la torcia.
+1. **Esterno** – tocca il cerchio sul portone (o di' «cammina») per avvicinarti ed entrare.
+2. **Corridoio** – candelabro (soffio), carillon (ascolto), biblioteca chiusa, porta in fondo.
+3. **Studio** – candele, una scritta sul muro visibile solo con la torcia, e il foglio: quando ci scrivi un messaggio, la macchina da scrivere risponde da sola «Non è qui quello che cerchi. Prova l'altro ingresso.» e si apre la porta dell'ala laterale, fuori a destra.
+4. **Sala da pranzo** (dall'altro ingresso) – camino acceso, tavola apparecchiata, un grammofono che suona un valzer per violino, ritratti, busto, pendola. In fondo, lo **studiolo**: mappamondo, mappa, lampada a olio e un manoscritto con righe minuscole in fondo.
+5. **La lente** – il manoscritto si apre a schermo intero; si muove la lente inclinando il telefono (o col dito). Lette le righe nascoste, chiudendo la lente il grammofono si ferma e dall'altra ala suona il carillon.
+
+I progressi (porta aperta, manoscritto letto, messaggio) restano salvati nel browser.
 
 ## Interazioni e sensori
 
@@ -32,7 +36,8 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Torcia | comando vocale «torcia» / «spegni torcia»: faretto virtuale che segue il telefono; su Android Chrome anche il LED | tasto Torcia, visibile solo se la voce non è attiva |
 | Osservare | comando vocale «osserva»: descrizione breve dell'oggetto che stai guardando (testi in `src/observe.js`) | – |
 | Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |
-| Messaggio | disegno con il dito; la macchina da scrivere risponde con una frase scelta a caso tra 5, mai la stessa due volte di fila | – |
+| Messaggio | disegno con il dito; la macchina da scrivere risponde e apre l'altro ingresso | – |
+| Lente | giroscopio: inclinare il telefono sposta la lente sul manoscritto; il testo ingrandito è ridisegnato in scala, quindi resta nitido | trascinamento col dito |
 
 Il riconoscimento vocale di Chrome e Safari usa i server di Google/Apple: serve la connessione.
 
@@ -46,6 +51,9 @@ Nessun audio viene registrato o inviato: il microfono serve solo a misurare il v
 - `src/textures.js` – texture procedurali su canvas (nessun asset esterno)
 - `src/controls.js` – giroscopio / trascinamento, posa «all'orecchio»
 - `src/voice.js` – comandi vocali
+- `src/observe.js` – descrizioni del comando «osserva»
+- `src/dining.js` – sala da pranzo e studiolo
+- `src/magnifier.js` – manoscritto e lente d'ingrandimento
 - `src/audio.js` – audio sintetizzato, microfono, torcia LED
 
 Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rate cala), nessuna ombra dinamica, poche luci puntiformi per scena.

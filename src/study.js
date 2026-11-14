@@ -59,7 +59,9 @@ export function buildStudy() {
   const drawTyped = (text) => {
     tg.fillStyle = '#d8ccae'; tg.fillRect(0, 0, 256, 320);
     tg.fillStyle = '#1a1410'; tg.font = 'bold 25px "Courier New", monospace'; tg.textBaseline = 'top';
-    text.split('\n').forEach((l, i) => tg.fillText(l, 22, 180 + i * 34));
+    const lines = text.split('\n');
+    const y0 = Math.min(180, 300 - lines.length * 32);
+    lines.forEach((l, i) => tg.fillText(l, 22, y0 + i * 32));
     typedTex.needsUpdate = true;
   };
   drawTyped('');
@@ -122,7 +124,7 @@ export function buildStudy() {
         drawTyped(typing.text.slice(0, n));
         const ch = typing.text[n - 1];
         if (ch && ch !== ' ' && ch !== '\n') typing.onKey?.();
-        if (n >= typing.text.length) typing = null;
+        if (n >= typing.text.length) { const done = typing.onDone; typing = null; done?.(); }
       }
     }
   };
@@ -144,6 +146,6 @@ export function buildStudy() {
       if (inkCanvas) g.drawImage(inkCanvas, 0, 0, paperCanvas.width, paperCanvas.height);
       paperTex.needsUpdate = true;
     },
-    typeReply(text, onKey) { typing = { text, t: -1.4, n: 0, onKey }; },
+    typeReply(text, onKey, onDone) { typing = { text, t: -1.4, n: 0, onKey, onDone }; },
   };
 }

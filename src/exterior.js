@@ -58,9 +58,27 @@ export function buildExterior() {
   const wing = box(6, 4.6, 6, new THREE.MeshStandardMaterial({ map: T.stoneTex([2, 1.5]), roughness: 0.95 }), 10, 2.3, -4.2);
   scene.add(wing);
   scene.add(box(6.3, 0.2, 6.3, stoneTrim, 10, 4.7, -4.2));
-  const wingDoor = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2.4), new THREE.MeshBasicMaterial({ color: 0x0c0806 }));
+  // porta dell'ala laterale: chiusa finché la macchina da scrivere non indica "l'altro ingresso"
+  const wingDoorClosed = new THREE.MeshBasicMaterial({ color: 0x0c0806 });
+  const wingDoorOpen = new THREE.MeshBasicMaterial({ map: T.fireGlimpseTex() });
+  const wingDoor = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2.4), wingDoorClosed);
   wingDoor.position.set(10.2, 1.2, -1.18);
   scene.add(wingDoor);
+  const wingLeaf = box(0.62, 2.35, 0.06, assets().woodPanel, 10.2 - 0.3, 1.2, -1.15);
+  scene.add(wingLeaf);
+  const wingGlow = glowSprite(0xff7a28, 4, 0);
+  wingGlow.position.set(10.2, 1.3, -0.6);
+  scene.add(wingGlow);
+  const wingLight = new THREE.PointLight(0xff8a3a, 0, 9, 2);
+  wingLight.position.set(10.2, 1.4, 0.2);
+  scene.add(wingLight);
+  let sideOpen = false;
+  const setSideDoor = (open) => {
+    sideOpen = open;
+    wingDoor.material = open ? wingDoorOpen : wingDoorClosed;
+    wingLeaf.rotation.y = open ? -1.2 : 0;
+    wingLeaf.position.set(open ? 9.62 : 9.9, 1.2, open ? -0.88 : -1.15);
+  };
 
   const roofMat = new THREE.MeshStandardMaterial({ color: 0x7a4a30, roughness: 0.9, flatShading: true });
   const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 1.7, 4, 1), roofMat);
@@ -266,6 +284,9 @@ export function buildExterior() {
     lanternLight.intensity = 30 * f;
     lg.material.opacity = 0.9 * f;
     sunHalo.material.opacity = 0.5 + 0.05 * Math.sin(t * 0.4);
+    const fire = sideOpen ? 0.85 + 0.1 * Math.sin(t * 7.3) + 0.06 * Math.sin(t * 13.1) : 0;
+    wingGlow.material.opacity = 0.45 * fire;
+    wingLight.intensity = 14 * fire;
   };
 
   return {
@@ -274,6 +295,9 @@ export function buildExterior() {
     far: { pos: new THREE.Vector3(-4, 1.65, 19), look: new THREE.Vector3(-2.5, 4.2, 0) },
     near: { pos: new THREE.Vector3(-1.6, 1.65, 6.8), look: new THREE.Vector3(0, 2.6, 0) },
     exposure: 1.0,
+    setSideDoor,
+    sideDoorPos: new THREE.Vector3(10.2, 1.3, -0.9),
+    sideNear: { pos: new THREE.Vector3(9.4, 1.65, 4.2), look: new THREE.Vector3(10.2, 1.3, -1) },
   };
 }
 

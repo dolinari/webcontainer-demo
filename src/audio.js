@@ -8,6 +8,29 @@ function softClip(k) {
   return c;
 }
 
+// valzer in re minore: [nota MIDI, durata in battiti] per battuta da 3/4
+const WALTZ_MELODY = [
+  [[69, 2], [74, 1]], [[74, 2], [70, 1]], [[72, 1.5], [70, 0.5], [69, 1]], [[69, 3]],
+  [[70, 2], [74, 1]], [[79, 2], [77, 1]], [[76, 1], [73, 1], [76, 1]], [[74, 3]],
+  [[77, 2], [76, 1]], [[74, 2], [70, 1]], [[72, 1], [76, 1], [79, 1]], [[77, 3]],
+  [[74, 1.5], [72, 0.5], [70, 1]], [[70, 1], [69, 1], [67, 1]], [[69, 1], [73, 1], [76, 1]], [[74, 3]],
+];
+const CH = { Dm: [38, [62, 65, 69]], Gm: [43, [62, 67, 70]], C: [36, [60, 64, 67]], F: [41, [60, 65, 69]], Bb: [34, [62, 65, 70]], A7: [33, [61, 64, 67]] };
+const WALTZ_CHORDS = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A7', 'Dm', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A7', 'Dm'];
+function waltzEvents() {
+  const ev = [];
+  WALTZ_MELODY.forEach((bar, i) => {
+    let t = i * 3;
+    for (const [m, d] of bar) { ev.push({ t, kind: 'v', m, d }); t += d; }
+    const [bass, chord] = CH[WALTZ_CHORDS[i]];
+    ev.push({ t: i * 3, kind: 'b', m: bass });
+    for (const beat of [1, 2]) for (const m of chord) ev.push({ t: i * 3 + beat, kind: 'p', m: m - 12 });
+  });
+  ev.sort((a, b) => a.t - b.t);
+  ev.loopBeats = WALTZ_MELODY.length * 3 + 3; // una battuta di pausa prima di ricominciare
+  return ev;
+}
+
 const MELODY = [
   81, 88, 84, 88, 93, 88,
   77, 84, 81, 84, 89, 84,
@@ -86,6 +109,29 @@ export class AudioEngine {
     this.staticGain = ctx.createGain(); this.staticGain.gain.value = 0;
     this._noise().connect(hiss); hiss.connect(this.staticGain); this.staticGain.connect(this.master);
     this.listenK = 0;
+
+    // grammofono: tutto passa da un filtro "a tromba" con un po' di saturazione
+    this.gramoIn = ctx.createGain();
+    const ghp = ctx.createBiquadFilter(); ghp.type = 'highpass'; ghp.frequency.value = 150;
+    const glp = ctx.createBiquadFilter(); glp.type = 'lowpass'; glp.frequency.value = 4200;
+    const gpk = ctx.createBiquadFilter(); gpk.type = 'peaking'; gpk.frequency.value = 1100; gpk.Q.value = 0.8; gpk.gain.value = 4;
+    const gsat = ctx.createWaveShaper(); gsat.curve = softClip(1.6);
+    const gdel = ctx.createDelay(1); gdel.delayTime.value = 0.09;
+    const gfb = ctx.createGain(); gfb.gain.value = 0.18;
+    this.gramoGain = ctx.createGain(); this.gramoGain.gain.value = 0;
+    this.gramoIn.connect(ghp); ghp.connect(glp); glp.connect(gpk); gpk.connect(gsat); gsat.connect(this.gramoGain);
+    gsat.connect(gdel); gdel.connect(gfb); gfb.connect(gdel); gdel.connect(this.gramoGain);
+    this.gramoGain.connect(this.master);
+    // fruscio del disco
+    const crf = ctx.createBiquadFilter(); crf.type = 'bandpass'; crf.frequency.value = 3500; crf.Q.value = 0.5;
+    this.hissGain = ctx.createGain(); this.hissGain.gain.value = 0;
+    this._noise().connect(crf); crf.connect(this.hissGain); this.hissGain.connect(this.gramoGain);
+
+    // camino: crepitio
+    this.fireGain = ctx.createGain(); this.fireGain.gain.value = 0;
+    const fr = ctx.createBiquadFilter(); fr.type = 'lowpass'; fr.frequency.value = 500;
+    this._noise().connect(fr); fr.connect(this.fireGain); this.fireGain.connect(this.master);
+    this.fireLevel = 0;
   }
 
   _noise() {
@@ -103,7 +149,8 @@ export class AudioEngine {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     this.windGain.gain.setTargetAtTime(kind === 'ext' ? 0.5 : 0.05, t, 0.8);
-    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : 0.5, t, 0.8);
+    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.22 : 0.5, t, 0.8);
+    if (kind !== 'dining') { this.setGramophoneLevel(0); this.tickFire(0); }
   }
 
   _note(midi, when, vel = 1) {
@@ -132,6 +179,120 @@ export class AudioEngine {
         this._step++;
       }
     }, 100);
+  }
+
+  // ---- grammofono: un valzer lento per violino ----
+  startGramophone() {
+    if (!this.ctx || this.gramoOn) return;
+    this.gramoOn = true;
+    this.hissGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.3);
+    this._gEvents = waltzEvents();
+    this._gLoop = 0;
+    this._gIdx = 0;
+    this._gT0 = this.ctx.currentTime + 0.3;
+    this._gTimer = setInterval(() => this._scheduleWaltz(), 100);
+  }
+
+  stopGramophone() {
+    if (!this.gramoOn) return;
+    this.gramoOn = false;
+    clearInterval(this._gTimer);
+    if (this.ctx) this.hissGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.4);
+  }
+
+  /** volume del grammofono in base alla distanza (0..1) */
+  setGramophoneLevel(l) {
+    if (!this.ctx) return;
+    this.gramoGain.gain.setTargetAtTime(0.9 * l, this.ctx.currentTime, 0.25);
+  }
+
+  _scheduleWaltz() {
+    const ev = this._gEvents, beat = 0.52, loopLen = ev.length ? ev.loopBeats * beat : 1;
+    const horizon = this.ctx.currentTime + 0.5;
+    for (;;) {
+      const e = ev[this._gIdx];
+      const when = this._gT0 + this._gLoop * loopLen + e.t * beat;
+      if (when > horizon) break;
+      if (e.kind === 'v') this._violin(e.m, when, e.d * beat);
+      else if (e.kind === 'b') this._bass(e.m, when);
+      else this._pluck(e.m, when);
+      if (++this._gIdx >= ev.length) { this._gIdx = 0; this._gLoop++; }
+    }
+    // scricchiolii casuali del disco
+    if (Math.random() < 0.25) this._pop(this.ctx.currentTime + Math.random() * 0.1, 0.06 + Math.random() * 0.08, this.gramoIn);
+  }
+
+  _violin(midi, when, dur) {
+    const ctx = this.ctx, f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(0.11, when + 0.09);
+    g.gain.linearRampToValueAtTime(0.085, when + Math.min(0.3, dur * 0.5));
+    g.gain.setValueAtTime(0.085, when + dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur + 0.25);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.8;
+    const body = ctx.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 2900; body.Q.value = 2; body.gain.value = 5;
+    const vib = ctx.createOscillator(); vib.frequency.value = 5.6;
+    const vibG = ctx.createGain();
+    vibG.gain.setValueAtTime(0, when); vibG.gain.linearRampToValueAtTime(f * 0.007, when + 0.25);
+    vib.connect(vibG);
+    for (const det of [-5, 5]) {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det;
+      vibG.connect(o.frequency);
+      o.connect(lp); o.start(when); o.stop(when + dur + 0.3);
+    }
+    lp.connect(body); body.connect(g); g.connect(this.gramoIn);
+    vib.start(when); vib.stop(when + dur + 0.3);
+  }
+
+  _pluck(midi, when) {
+    const ctx = this.ctx, f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.045, when + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.7);
+    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+    o.connect(g); g.connect(this.gramoIn); o.start(when); o.stop(when + 0.75);
+  }
+
+  _bass(midi, when) {
+    const ctx = this.ctx, f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.16, when + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.95);
+    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f * 2;
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2;
+    o.connect(g); o2.connect(g); g.connect(this.gramoIn);
+    o.start(when); o2.start(when); o.stop(when + 1); o2.stop(when + 1);
+  }
+
+  _pop(when, vol, dest) {
+    const ctx = this.ctx;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.playbackRate.value = 10;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, when); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.015);
+    s.connect(f); f.connect(g); g.connect(dest);
+    s.start(when, Math.random() * 2); s.stop(when + 0.03);
+  }
+
+  /** crepitio del camino: livello 0..1 in base alla distanza, da chiamare a ogni frame */
+  tickFire(level) {
+    if (!this.ctx) return;
+    if (Math.abs(level - this.fireLevel) > 0.02) {
+      this.fireLevel = level;
+      this.fireGain.gain.setTargetAtTime(0.12 * level, this.ctx.currentTime, 0.3);
+    }
+    if (level > 0.02 && Math.random() < 0.09 * level + 0.01) this._pop(this.ctx.currentTime, (0.2 + Math.random() * 0.5) * level, this.master);
+  }
+
+  /** il carillon che suona lontano, per un po', poi tace */
+  distantMusicBox(seconds = 22) {
+    if (!this.ctx) return;
+    this.startMusicBox();
+    this.boxGain.gain.setTargetAtTime(0.1, this.ctx.currentTime, 1.5);
+    clearTimeout(this._distT);
+    this._distT = setTimeout(() => {
+      this.boxGain.gain.setTargetAtTime(0, this.ctx.currentTime, 1.5);
+      setTimeout(() => { this.stopMusicBox(); this.boxGain.gain.value = BOX_FAR; }, 5000);
+    }, seconds * 1000);
   }
 
   stopMusicBox() {

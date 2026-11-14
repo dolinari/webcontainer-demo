@@ -27,8 +27,10 @@ export const OBSERVABLES = {
       text: 'Un acero dalle foglie rosso scuro. Il vento ne stacca qualcuna e la porta verso la casa.' },
     { name: 'Il muretto', pos: V(-10, 0.7, 10), range: 9, size: 2.5,
       text: 'Un muretto di pietra a secco, coperto di muschio. Da qui si vede tutta la valle.' },
-    { name: 'La dependance', pos: V(10, 2.3, -1.2), range: 18, size: 2.5,
-      text: 'Un’ala più bassa della villa, con una piccola porta buia. È chiusa a chiave.' },
+    { name: 'L’ala laterale', pos: V(10, 2.3, -1.2), range: 18, size: 2.5,
+      text: (c) => (c.unlocked
+        ? 'L’ala più bassa della villa. La piccola porta adesso è aperta: dentro brilla la luce di un camino, e si sente della musica. È l’altro ingresso.'
+        : 'Un’ala più bassa della villa, con una piccola porta buia. È chiusa a chiave.') },
   ],
   corridor: [
     { name: 'Il candelabro', pos: V(-1.44, 1.3, -0.75), range: 4.5, size: 0.3,
@@ -61,6 +63,48 @@ export const OBSERVABLES = {
       text: 'Il portone da cui sei entrato. Fuori il cielo è ancora rosso.' },
     { name: 'Il tappeto', pos: V(0, 0, -6), range: 3, size: 0.8,
       text: 'Un lungo tappeto persiano, rosso e blu. Al centro è consumato: qualcuno ci è passato migliaia di volte.' },
+  ],
+  dining: [
+    { name: 'Il camino', pos: V(-3.6, 0.8, -3), range: 8, size: 1.1,
+      text: 'Un grande camino di marmo scuro. Il fuoco è stato acceso da poco: la legna non è ancora consumata. Qualcuno sapeva che saresti arrivato.' },
+    { name: 'Il dipinto sopra il camino', pos: V(-3.96, 2.45, -3), range: 7, size: 0.8,
+      text: 'Un paesaggio al tramonto: una villa di pietra tra i cipressi. È questa villa, dipinta molti anni fa, quando l’edera arrivava solo alle finestre.' },
+    { name: 'Il grammofono', pos: V(3.68, 1.1, -2.3), range: 5, size: 0.4,
+      text: (c) => (c.gramophone
+        ? 'Un grammofono con la tromba d’ottone. Il disco gira: un valzer per violino, un po’ graffiato. Nessuno ha sollevato la puntina, eppure ricomincia ogni volta da capo.'
+        : 'Un grammofono con la tromba d’ottone. Il disco è fermo, la puntina sollevata.') },
+    { name: 'La tavola', pos: V(0.4, 0.8, -3.2), range: 5, size: 1.2,
+      text: 'Una lunga tavola apparecchiata per sei, con piatti di porcellana e bicchieri vuoti. Una sedia, a capotavola, è scostata: come se qualcuno si fosse appena alzato.' },
+    { name: 'Il candelabro', pos: V(0.4, 1.15, -3.2), range: 4.5, size: 0.3,
+      text: 'Cinque candele accese al centro della tavola. La cera è colata sul runner rosso.' },
+    { name: 'Il ritratto con la barba', pos: V(-3.96, 2.2, 0.8), range: 6, size: 0.6,
+      text: 'Un uomo con la barba bianca, una mano appoggiata su un mappamondo. Sulla cornice, una targhetta d’ottone con una sola lettera: «E.»' },
+    { name: 'Il ritratto con il violino', pos: V(3.96, 2.25, -2.3), range: 6, size: 0.6,
+      text: 'Una donna con un violino appoggiato alla spalla. È la stessa donna dei ritratti nel corridoio e nello studio.' },
+    { name: 'Il busto di marmo', pos: V(-3.58, 1.5, -7.9), range: 5, size: 0.4,
+      text: 'Un busto di marmo chiaro su una colonna. Il viso è girato verso la porta in fondo, come per indicarla.' },
+    { name: 'La pendola', pos: V(3.73, 1.4, -7.8), range: 6, size: 0.6,
+      text: 'Un orologio a pendolo alto quasi due metri. Il pendolo oscilla, ma le lancette sono ferme alle sette meno cinque.' },
+    { name: 'La finestra', pos: V(3.98, 1.75, 0.7), range: 6, size: 0.7,
+      text: 'Fuori ormai è sera. Nel vetro si riflette il fuoco del camino.' },
+    { name: 'La finestra', pos: V(3.98, 1.75, -5.6), range: 6, size: 0.7,
+      text: 'Fuori ormai è sera. Nel vetro si riflette il fuoco del camino.' },
+    { name: 'La porta in fondo', pos: V(0, 1.3, -9), range: 10, size: 0.8,
+      text: 'Un passaggio più stretto, aperto su un piccolo studio. Una lampada a olio è accesa sulla scrivania.' },
+    { name: 'Il mappamondo', pos: V(-0.5, 1.11, -12.42), range: 3.5, size: 0.2,
+      text: 'Un mappamondo antico, con i continenti color seppia. Su un’isola senza nome qualcuno ha fatto un piccolo segno a inchiostro.' },
+    { name: 'La lente d’ingrandimento', pos: V(0.27, 0.8, -12.1), range: 3, size: 0.12,
+      text: 'Una lente d’ingrandimento con il manico d’osso, lasciata proprio accanto al manoscritto. Come un invito.' },
+    { name: 'Il manoscritto', pos: V(0, 0.79, -12.18), range: 3.2, size: 0.2,
+      text: (c) => (c.read
+        ? 'Il manoscritto di E. Ora sai cosa c’è scritto in fondo, nelle righe minuscole.'
+        : 'Un foglio scritto a mano, con una calligrafia elegante. In fondo le righe diventano minuscole: a occhio nudo non si leggono. Serve la lente.') },
+    { name: 'La lampada a olio', pos: V(0.55, 1.05, -12.45), range: 3.5, size: 0.15,
+      text: 'Una lampada a olio con il vetro affumicato. Fa una luce bassa e calda, giusta per leggere.' },
+    { name: 'La mappa', pos: V(1.97, 1.75, -11), range: 4, size: 0.6,
+      text: 'Una mappa antica. Una linea rossa tratteggiata attraversa le montagne e finisce in un cerchio, accanto alla scritta «Terra incognita».' },
+    { name: 'La libreria', pos: V(-1.97, 1.3, -11), range: 4, size: 1.2,
+      text: 'Atlanti, diari di viaggio, carte arrotolate. Sul dorso di un quaderno rosso c’è scritto soltanto «1887».' },
   ],
   study: [
     { name: 'La macchina da scrivere', pos: V(0.42, 0.95, -3.75), range: 4, size: 0.25,
@@ -100,7 +144,7 @@ const f = new THREE.Vector3(), d = new THREE.Vector3();
 export function findObserved(scene, camera) {
   const list = OBSERVABLES[scene] || [];
   f.set(0, 0, -1).applyQuaternion(camera.quaternion);
-  let best = null, bestScore = Infinity, farBest = null, farScore = Infinity;
+  let best = null, bestScore = Infinity;
   for (const it of list) {
     d.copy(it.pos).sub(camera.position);
     const dist = d.length();
@@ -108,13 +152,12 @@ export function findObserved(scene, camera) {
     // tolleranza: l'ampiezza apparente dell'oggetto più un margine
     const tol = Math.atan2(it.size, dist) + 0.22;
     if (angle > tol) continue;
+    // vince l'oggetto più al centro dello sguardo; a parità, il più vicino
     const score = angle / tol + dist * 0.02;
-    if (dist <= it.range) { if (score < bestScore) { best = it; bestScore = score; } }
-    else if (score < farScore) { farBest = it; farScore = score; }
+    if (score < bestScore) { best = it; bestScore = score; }
   }
-  if (best) return { item: best, far: false };
-  if (farBest) return { item: farBest, far: true };
-  return null;
+  if (!best) return null;
+  return { item: best, far: camera.position.distanceTo(best.pos) > best.range };
 }
 
 export function describe(item, ctx) {

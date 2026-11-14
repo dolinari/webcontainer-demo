@@ -7,6 +7,8 @@ import { LookControls } from './controls.js';
 import { AudioEngine, PhysicalTorch } from './audio.js';
 import { VoiceCommands } from './voice.js';
 import { findObserved, describe } from './observe.js';
+import { buildDining } from './dining.js';
+import { Magnifier } from './magnifier.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
@@ -29,8 +31,13 @@ torch.position.set(0.12, -0.12, 0);
 torch.target.position.set(0, -0.02, -1);
 camera.add(torch, torch.target);
 
-const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy() };
-const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', study: 'Lo studio' };
+const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining() };
+const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', study: 'Lo studio', dining: 'La sala da pranzo' };
+const magnifier = new Magnifier();
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
+};
 
 const state = {
   scene: 'exterior',
@@ -44,7 +51,11 @@ const state = {
   started: false,
   listen: 0,
   typed: false,       // la macchina da scrivere ha già risposto
+  unlocked: store.get('villa-porta') === '1', // l'altro ingresso è aperto
+  read: store.get('villa-letto') === '1',     // le righe nascoste sono state lette
+  gramophone: true,
 };
+if (state.unlocked) S.exterior.setSideDoor(true);
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
 let cur = S.exterior;
@@ -96,7 +107,9 @@ function swapScene(name, pos, look) {
   for (const m of markers) cur.scene.add(m);
   camera.position.copy(pos);
   controls.face(look);
-  audio.setAmbience(name === 'exterior' ? 'ext' : 'int');
+  audio.setAmbience(name === 'exterior' ? 'ext' : name === 'dining' ? 'dining' : 'int');
+  if (name === 'dining' && state.gramophone) { audio.startGramophone(); S.dining.setPlaying(true); }
+  if (name !== 'dining') { audio.stopGramophone(); S.dining.setPlaying(false); }
   applyTorch();
   showTitle(name);
 }
@@ -131,13 +144,25 @@ function backToCorridor() {
 function goOutside() {
   goScene('exterior', S.exterior.near.pos, V(-4, 3, 30), () => setHint('L’aria della sera. La porta è alle tue spalle.'));
 }
+function enterDining() {
+  if (!state.unlocked) { toast('La porta è chiusa a chiave.', 2000); return; }
+  moveTo(V(10.2, 1.65, 1.0), S.exterior.sideDoorPos, null, 1.4);
+  goScene('dining', S.dining.entry, S.dining.entryLook, () => setHint('Il calore del camino, un valzer al grammofono. ' + (voice.enabled ? 'Di’ «osserva» davanti alle cose.' : 'Tocca i cerchi per muoverti.')));
+}
+function diningToOutside() {
+  goScene('exterior', V(10.2, 1.65, 3.6), V(8, 2.5, 20), () => setHint('Sei di nuovo fuori. Il portone principale è più a sinistra.'));
+}
 
 // ---------- camminata libera (voce) ----------
 // area calpestabile e porte di ogni scena
 const WORLD = {
   exterior: {
-    clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -9, 9); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.3 ? 2.6 : 3.4, 21); },
-    door(p) { return Math.abs(p.x) < 1.3 && p.z < 3.6 ? enterCorridorFromOutside : null; },
+    clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -9, 11); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.3 || (p.x > 9.5 && p.x < 10.9) ? 2.6 : 3.4, 21); },
+    door(p) {
+      if (Math.abs(p.x) < 1.3 && p.z < 3.6) return enterCorridorFromOutside;
+      if (p.x > 9.5 && p.x < 10.9 && p.z < 3.0) return enterDining;
+      return null;
+    },
   },
   corridor: {
     clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -1.1, 1.1); p.z = THREE.MathUtils.clamp(p.z, -14.3, 2.6); },
@@ -146,6 +171,11 @@ const WORLD = {
       if (p.z > 2.4 && Math.abs(p.x) < 0.8) return goOutside;
       return null;
     },
+  },
+  dining: {
+    // area irregolare (sala + passaggio + studiolo, senza la tavola): niente clamp, si controlla se il punto è calpestabile
+    valid: (p) => S.dining.walkable(p),
+    door(p) { return p.z > 2.5 && Math.abs(p.x) < 0.8 ? diningToOutside : null; },
   },
   study: {
     clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -2.5, 2.5); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.4 ? -2.85 : -6.3, 0.85); },
@@ -182,7 +212,15 @@ function updateWalk(dt) {
   const w = WORLD[state.scene];
   const door = w.door(nextPos);
   if (door) { walk = null; door(); return; }
-  w.clamp(nextPos);
+  if (w.valid) {
+    // scivola lungo gli ostacoli: prova il passo intero, poi solo x, poi solo z
+    if (!w.valid(nextPos)) {
+      const zOnly = V(camera.position.x, 0, nextPos.z), xOnly = V(nextPos.x, 0, camera.position.z);
+      if (w.valid(xOnly)) nextPos.z = camera.position.z;
+      else if (w.valid(zOnly)) nextPos.x = camera.position.x;
+      else nextPos.copy(camera.position);
+    }
+  } else w.clamp(nextPos);
   const moved = nextPos.distanceTo(camera.position);
   camera.position.x = nextPos.x; camera.position.z = nextPos.z;
   walk.left -= d;
@@ -219,6 +257,7 @@ $('btn-sound').addEventListener('click', () => {
   $('btn-sound').setAttribute('aria-pressed', String(!audio.muted));
 });
 function defaultLook() {
+  if (state.scene === 'dining') return V(camera.position.x, 1.4, camera.position.z - 6);
   if (state.focus === 'candle') return cur.candlePos;
   if (state.focus === 'music') return cur.musicPos;
   if (state.scene === 'exterior') return V(0, 3, 0);
@@ -288,7 +327,7 @@ function observe() {
   let title, text;
   if (!hit) { title = 'Niente di particolare'; text = 'Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».'; }
   else if (hit.far) { title = hit.item.name; text = 'È troppo lontano per vederlo bene. Avvicinati.'; }
-  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed }); }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
   obsEl.hidden = false;
@@ -319,6 +358,10 @@ function hotspots() {
       list.push({ pos: E.doorPos, door: true, label: 'Entra nella villa', act: enterCorridorFromOutside });
       list.push({ pos: floorOf(E.far.pos), label: 'Torna sul viale', act: () => moveTo(E.far.pos, null, null, 3.2) });
     }
+    if (state.unlocked) {
+      const far = here.distanceTo(E.sideDoorPos) > 7;
+      list.push({ pos: E.sideDoorPos, door: true, label: far ? 'L’altro ingresso — avvicinati' : 'Entra dall’altro ingresso', act: far ? () => moveTo(E.sideNear.pos, E.sideNear.look, null, 3) : enterDining });
+    }
   } else if (state.scene === 'corridor') {
     if (state.focus === 'candle') candleTapSpot(list, C);
     else if (!state.focus) {
@@ -327,6 +370,14 @@ function hotspots() {
       list.push({ pos: C.musicPos, label: 'Un carillon — avvicinati', act: focusMusic });
       list.push({ pos: C.endDoor, door: true, label: 'La stanza in fondo', act: enterStudy });
       list.push({ pos: C.exitDoor, door: true, label: 'Esci nel giardino', act: goOutside });
+    }
+  } else if (state.scene === 'dining') {
+    const G = S.dining;
+    if (!state.focus) {
+      G.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: 'Cammina fin qui', act: () => moveTo(w, null, null, 1.2 + w.distanceTo(here) * 0.18) }); });
+      list.push({ pos: G.gramophonePos, label: state.gramophone ? 'Il grammofono — tocca per fermarlo' : 'Il grammofono — tocca per farlo suonare', act: toggleGramophone });
+      if (here.z < -8.4) list.push({ pos: G.manuscriptPos, label: 'Il manoscritto — guarda con la lente', act: focusLens });
+      list.push({ pos: G.exitDoor, door: true, label: 'Esci in giardino', act: diningToOutside });
     }
   } else {
     if (state.focus === 'candle') candleTapSpot(list, D);
@@ -413,22 +464,7 @@ function updateListening(dt) {
   }
 }
 
-// ---------- foglio e risposte della macchina da scrivere ----------
-const REPLIES = [
-  'Ho letto.\nTorna quando\nvuoi.',
-  'Le tue parole\nrestano qui,\ncon le mie.',
-  'Qualcuno\nti aspettava\nda tempo.',
-  'Grazie.\nLa casa\nricorda.',
-  'Non sei\nil primo\na scrivermi.',
-];
-function pickReply() {
-  let last = -1;
-  try { last = +(localStorage.getItem('villa-risposta') ?? -1); } catch { /* archiviazione bloccata */ }
-  let i = Math.floor(Math.random() * REPLIES.length);
-  if (i === last) i = (i + 1 + Math.floor(Math.random() * (REPLIES.length - 1))) % REPLIES.length;
-  try { localStorage.setItem('villa-risposta', String(i)); } catch { /* archiviazione bloccata */ }
-  return REPLIES[i];
-}
+// ---------- foglio ----------
 
 const paperEl = $('paper'), pg = paperEl.getContext('2d');
 const inkCanvas = document.createElement('canvas');
@@ -473,7 +509,7 @@ $('btn-leave').addEventListener('click', () => {
   try { localStorage.setItem('villa-messaggio', inkCanvas.toDataURL('image/png')); } catch { /* il messaggio resta solo per questa visita */ }
   leaveFocus();
   toast('Hai lasciato il tuo messaggio sulla scrivania.');
-  D.typeReply(pickReply(), () => audio.click('key'));
+  D.typeReply('Non è qui\nquello che\ncerchi.\nProva l’altro\ningresso.', () => audio.click('key'), unlockSideDoor);
   state.typed = true;
   setTimeout(() => setHint('La macchina da scrivere… ha battuto da sola?'), 2600);
 });
@@ -486,6 +522,45 @@ try {
   }
 } catch { /* archiviazione bloccata */ }
 
+function unlockSideDoor() {
+  if (!state.unlocked) {
+    state.unlocked = true;
+    store.set('villa-porta', '1');
+    S.exterior.setSideDoor(true);
+  }
+  setHint('«Prova l’altro ingresso»… Fuori, sul lato destro della villa, una porta si è aperta.');
+  toast('Da qualche parte, fuori, una porta si è aperta.', 4000);
+}
+
+// ---------- grammofono, lente, finale ----------
+function toggleGramophone() {
+  state.gramophone = !state.gramophone;
+  if (state.gramophone) audio.startGramophone(); else audio.stopGramophone();
+  S.dining.setPlaying(state.gramophone);
+}
+function focusLens() {
+  const G = S.dining;
+  enterFocus('lens');
+  moveTo(G.manuscriptView, G.manuscriptPos, () => { if (state.focus === 'lens') magnifier.open(); }, 1.4);
+}
+magnifier.read = state.read;
+magnifier.onRead = () => {
+  state.read = true;
+  store.set('villa-letto', '1');
+  state.ending = true;
+};
+$('lens-close').addEventListener('click', () => leaveFocus());
+function playEnding() {
+  state.ending = false;
+  state.gramophone = false;
+  audio.stopGramophone();
+  S.dining.setPlaying(false);
+  setTimeout(() => {
+    toast('Il grammofono si è fermato. Nel silenzio, dall’altra ala della casa, suona il carillon.', 7000);
+    audio.distantMusicBox(24);
+  }, 1500);
+}
+
 // ---------- uscita dal primo piano ----------
 function leaveFocus(instant = false) {
   const was = state.focus;
@@ -494,6 +569,7 @@ function leaveFocus(instant = false) {
   hidePanel();
   $('write').hidden = true;
   if (was === 'candle') audio.stopMic();
+  if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
   if (was === 'music') {
     audio.stopMusicBox(); audio.setListen(0); S.corridor.setPlaying(false);
     state.listen = 0; listenHold = false; document.body.classList.remove('listening');
@@ -655,8 +731,13 @@ renderer.setAnimationLoop(() => {
   }
   updateListening(dt);
   cur.update(dt, t, wind);
+  if (state.scene === 'dining') {
+    const G = S.dining;
+    audio.setGramophoneLevel(THREE.MathUtils.clamp(1.15 - camera.position.distanceTo(G.gramophonePos) / 9, 0.15, 1));
+    audio.tickFire(THREE.MathUtils.clamp(1 - camera.position.distanceTo(G.firePos) / 8, 0, 1));
+  }
   updateMarkers(t);
-  renderer.render(cur.scene, camera);
+  if (state.focus !== 'lens' || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
   if (state.started && ++frames > 30) {
