@@ -179,10 +179,11 @@ export class AudioEngine {
     const ctx = this.ctx, t = ctx.currentTime;
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); const g = ctx.createGain();
-    if (kind === 'step') {
-      f.type = 'lowpass'; f.frequency.value = 260 + Math.random() * 80;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1.4, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-      s.playbackRate.value = 1.5;
+    if (kind === 'step' || kind === 'run') {
+      const run = kind === 'run';
+      f.type = 'lowpass'; f.frequency.value = (run ? 380 : 260) + Math.random() * 80;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(run ? 1.9 : 1.4, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + (run ? 0.11 : 0.16));
+      s.playbackRate.value = run ? 2 : 1.5;
     } else if (kind === 'key') {
       f.type = 'bandpass'; f.frequency.value = 2200 + Math.random() * 800; f.Q.value = 2;
       g.gain.setValueAtTime(1.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);

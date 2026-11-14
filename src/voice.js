@@ -6,6 +6,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 // parola detta → comando
 const WORDS = [
   [/\b(cammina(?:re)?(?: avanti)?|avanti)\b/g, 'walk'],
+  [/\b(corri|correre|di corsa)\b/g, 'run'],
   [/\b(torna indietro|indietro|arretra)\b/g, 'back'],
   [/\b(fermati|fermo|ferma|stop|basta)\b/g, 'stop'],
   [/\b(destra)\b/g, 'right'],

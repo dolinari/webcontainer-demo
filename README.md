@@ -27,7 +27,7 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Interazione | Come funziona | Ripiego |
 | --- | --- | --- |
 | Guardarsi intorno | `deviceorientation` | trascinamento touch/mouse |
-| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «accendi/spegni la torcia» | cerchi luminosi da toccare |
+| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «corri» = tre falcate più lunghe e veloci, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «accendi/spegni la torcia» | cerchi luminosi da toccare |
 | Spegnere le candele | microfono, rileva un soffio; la voce va in pausa mentre sei alle candele | tocco sulle fiamme |
 | Torcia | faretto virtuale che segue il telefono; su Android Chrome anche il LED | solo virtuale (iPhone) |
 | Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |

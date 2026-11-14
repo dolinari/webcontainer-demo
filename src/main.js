@@ -74,7 +74,7 @@ function showTitle(name) {
   setTimeout(() => el.classList.remove('on'), 4200);
 }
 const lookWord = () => (controls.gyro ? 'Muovi il telefono' : 'Trascina con il dito');
-const walkWord = () => (voice.enabled ? 'Di’ «cammina» per fare due passi, «destra» o «sinistra» per girarti.' : 'Tocca i cerchi luminosi per muoverti.');
+const walkWord = () => (voice.enabled ? 'Di’ «cammina» per due passi, «corri» per tre falcate, «destra» o «sinistra» per girarti.' : 'Tocca i cerchi luminosi per muoverti.');
 
 // ---------- spostamenti animati ----------
 function moveTo(pos, look, done, dur = 1.5) {
@@ -149,12 +149,20 @@ const WORLD = {
     door(p) { return p.z > 0.75 && Math.abs(p.x) < 0.7 ? backToCorridor : null; },
   },
 };
-const STEP = 0.72; // un passo, in metri
-function startWalk(dir) {
+// «cammina» = due passi lenti; «corri» = tre falcate più lunghe e veloci
+const GAIT = {
+  walk: { stride: 0.72, steps: 2, speed: 1.25, bob: 0.035 },
+  run: { stride: 0.95, steps: 3, speed: 3.1, bob: 0.07 },
+};
+function startWalk(dir, gait = 'walk') {
   if (!canMoveFreely()) return;
   if (state.focus) leaveFocus(true);
-  if (walk && walk.dir === dir) walk.left = Math.min(walk.left + STEP * 2, STEP * 6);
-  else walk = { dir, left: STEP * 2, since: 0 };
+  const g = GAIT[gait];
+  const add = g.stride * g.steps;
+  if (walk && walk.dir === dir) {
+    walk.left = Math.min(walk.left + add, add * 3);
+    walk.g = g;
+  } else walk = { dir, left: add, since: 0, g };
 }
 function canMoveFreely() { return state.started && !state.busy && $('write').hidden; }
 const fwd = new THREE.Vector3(), nextPos = new THREE.Vector3();
@@ -165,7 +173,8 @@ function updateWalk(dt) {
   fwd.y = 0;
   if (fwd.lengthSq() < 1e-4) return;
   fwd.normalize().multiplyScalar(walk.dir);
-  const d = Math.min(walk.left, dt * 1.25);
+  const g = walk.g;
+  const d = Math.min(walk.left, dt * g.speed);
   nextPos.copy(camera.position).addScaledVector(fwd, d);
   const w = WORLD[state.scene];
   const door = w.door(nextPos);
@@ -175,8 +184,8 @@ function updateWalk(dt) {
   camera.position.x = nextPos.x; camera.position.z = nextPos.z;
   walk.left -= d;
   walk.since += moved;
-  if (walk.since > STEP * 0.5) { walk.since -= STEP; audio.click('step'); }
-  camera.position.y = 1.6 + Math.abs(Math.sin((walk.left / STEP) * Math.PI)) * 0.035;
+  if (walk.since > g.stride * 0.5) { walk.since -= g.stride; audio.click(g === GAIT.run ? 'run' : 'step'); }
+  camera.position.y = 1.6 + Math.abs(Math.sin((walk.left / g.stride) * Math.PI)) * g.bob;
   if (walk.left <= 0 || moved < d * 0.25) {
     if (moved < d * 0.25) toast('Non si passa da qui.', 1600);
     walk = null;
@@ -238,6 +247,7 @@ voice.onCommand = (cmd, word) => {
   chipTimer = setTimeout(() => { chip.classList.remove('heard'); showVoiceState(); }, 1200);
   switch (cmd) {
     case 'walk': startWalk(1); break;
+    case 'run': startWalk(1, 'run'); break;
     case 'back': startWalk(-1); break;
     case 'stop': walk = null; camera.position.y = 1.6; break;
     case 'right': controls.turn(-Math.PI / 4); break;
@@ -562,7 +572,7 @@ async function begin() {
   controls.face(S.exterior.far.look);
   showTitle('exterior');
   showVoiceState();
-  setHint(lookWord() + ' per guardarti intorno. ' + (voice.enabled ? 'Di’ «cammina» per avvicinarti alla villa.' : 'Tocca il cerchio luminoso sul portone.'));
+  setHint(lookWord() + ' per guardarti intorno. ' + (voice.enabled ? 'Di’ «cammina» o «corri» per avvicinarti alla villa.' : 'Tocca il cerchio luminoso sul portone.'));
   if (!state.gyro && 'ontouchstart' in window) toast('Movimento non attivo: trascina con il dito per guardarti intorno.', 4500);
   try { await navigator.wakeLock?.request('screen'); } catch { /* non essenziale */ }
 }
