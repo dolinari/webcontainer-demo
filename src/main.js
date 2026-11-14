@@ -59,6 +59,8 @@ const state = {
   scope: store.get('villa-cannocchiale') === '1', // il cannocchiale è stato scoperto
 };
 if (state.unlocked) S.exterior.setSideDoor(true);
+// chi aveva già letto il manoscritto con una versione precedente trova il cannocchiale pronto
+if (state.read && !state.scope) { state.scope = true; store.set('villa-cannocchiale', '1'); }
 if (state.scope) S.exterior.setObservatory(true);
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
