@@ -262,6 +262,55 @@ export function buildExterior() {
   tree(17, -8, 9, 0, [0x3a2414, 0x5a2a12, 0x2a1a10], 10, 6);
   tree(-24, 14, 8, 0, [0x7a4a14, 0x5a2a10, 0x9a5a18], 10, 6);
 
+  // --- belvedere con il cannocchiale, alle spalle di chi arriva ---
+  const BX = -2.5, BZ = 24.2;
+  const terrace = cyl(1.9, 2.0, 0.28, wallMat, BX, 0.14, BZ, 20);
+  scene.add(terrace);
+  scene.add(cyl(1.95, 1.95, 0.05, stoneTrim, BX, 0.3, BZ, 20));
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    if (Math.abs(Math.atan2(Math.sin(a - Math.PI * 1.5), Math.cos(a - Math.PI * 1.5))) < 0.45) continue; // varco verso la villa
+    scene.add(cyl(0.06, 0.08, 0.75, stoneTrim, BX + Math.cos(a) * 1.75, 0.68, BZ + Math.sin(a) * 1.75, 6));
+  }
+  const rail = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.06, 4, 28, Math.PI * 2 - 0.9), stoneTrim);
+  rail.rotation.set(Math.PI / 2, 0, Math.PI * 1.5 + 0.45);
+  rail.position.set(BX, 1.08, BZ);
+  scene.add(rail);
+  const brass = assets().gold;
+  const scopeG = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + 0.3;
+    const leg = cyl(0.018, 0.025, 1.25, assets().wood, Math.cos(a) * 0.22, 0.6, Math.sin(a) * 0.22, 5);
+    leg.rotation.set(Math.sin(a) * 0.32, 0, -Math.cos(a) * 0.32);
+    scopeG.add(leg);
+  }
+  scopeG.add(cyl(0.05, 0.05, 0.08, brass, 0, 1.22, 0, 8));
+  const tube = new THREE.Group();
+  const barrel = cyl(0.05, 0.075, 0.9, brass, 0, 0, 0, 14); barrel.rotation.x = Math.PI / 2; tube.add(barrel);
+  const eye = cyl(0.03, 0.035, 0.18, brass, 0, 0, -0.52, 10); eye.rotation.x = Math.PI / 2; tube.add(eye);
+  for (const z of [-0.2, 0.15, 0.4]) { const r = cyl(0.08, 0.08, 0.025, assets().bronze, 0, 0, z, 14); r.rotation.x = Math.PI / 2; tube.add(r); }
+  const cap = cyl(0.082, 0.082, 0.03, assets().wood, 0, 0, 0.47, 14); cap.rotation.x = Math.PI / 2; tube.add(cap);
+  tube.position.y = 1.32; tube.rotation.x = -0.12;
+  scopeG.add(tube);
+  scopeG.position.set(BX, 0.3, BZ + 0.2);
+  scene.add(scopeG);
+  const obsLights = [];
+  for (const s of [-1, 1]) {
+    const x = BX + s * 1.75, z = BZ - 0.2;
+    scene.add(cyl(0.07, 0.09, 1.3, stoneTrim, x, 0.95, z, 6));
+    const lan = sideLantern(iron); lan.position.set(x, 1.75, z); scene.add(lan);
+    const gl = glowSprite(0xffa040, 1.4, 0); gl.position.set(x, 1.75, z); scene.add(gl);
+    obsLights.push(gl);
+  }
+  const obsLight = new THREE.PointLight(0xffa850, 0, 9, 2);
+  obsLight.position.set(BX, 2.2, BZ - 0.5);
+  scene.add(obsLight);
+  let obsOn = false;
+  const setObservatory = (on) => {
+    obsOn = on;
+    cap.visible = !on;
+  };
+
   // foglie che cadono
   const N = 110, lp = new Float32Array(N * 3), seeds = [];
   for (let i = 0; i < N; i++) {
@@ -287,6 +336,9 @@ export function buildExterior() {
     const fire = sideOpen ? 0.85 + 0.1 * Math.sin(t * 7.3) + 0.06 * Math.sin(t * 13.1) : 0;
     wingGlow.material.opacity = 0.45 * fire;
     wingLight.intensity = 14 * fire;
+    const lf = obsOn ? 0.9 + 0.08 * Math.sin(t * 8.3) : 0;
+    for (const gl of obsLights) gl.material.opacity = 0.85 * lf;
+    obsLight.intensity = 12 * lf;
   };
 
   return {
@@ -296,6 +348,10 @@ export function buildExterior() {
     near: { pos: new THREE.Vector3(-1.6, 1.65, 6.8), look: new THREE.Vector3(0, 2.6, 0) },
     exposure: 1.0,
     setSideDoor,
+    setObservatory,
+    scopePos: new THREE.Vector3(BX, 1.55, BZ - 0.3),
+    scopeView: new THREE.Vector3(BX, 1.62, BZ - 0.95),
+    scopeLook: new THREE.Vector3(BX, 1.5, BZ + 8),
     sideDoorPos: new THREE.Vector3(10.2, 1.3, -0.9),
     sideNear: { pos: new THREE.Vector3(9.4, 1.65, 4.2), look: new THREE.Vector3(10.2, 1.3, -1) },
   };

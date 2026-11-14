@@ -25,6 +25,14 @@ export const OBSERVABLES = {
       text: 'Il sole scende dietro le colline. Il cielo passa dall’arancio al rosso scuro. Tra poco sarà buio.' },
     { name: 'L’acero rosso', pos: V(3.5, 7, 14), range: 14, size: 4,
       text: 'Un acero dalle foglie rosso scuro. Il vento ne stacca qualcuna e la porta verso la casa.' },
+    { name: 'Il belvedere', pos: V(-2.5, 0.8, 24.2), range: 14, size: 2,
+      text: (c) => (c.scope
+        ? 'Una terrazza rotonda di pietra, affacciata sulla valle. Le due lanterne adesso sono accese.'
+        : 'Una piccola terrazza rotonda di pietra, affacciata sulla valle. Le lanterne sono spente.') },
+    { name: 'Il cannocchiale', pos: V(-2.5, 1.62, 24.4), range: 5, size: 0.3,
+      text: (c) => (c.scope
+        ? 'Un cannocchiale d’ottone sul treppiede, puntato verso la valle. Il coperchio è stato tolto. Avvicina l’occhio.'
+        : 'Un cannocchiale d’ottone sul treppiede, puntato verso la valle. La lente è chiusa da un coperchio di legno.') },
     { name: 'Il muretto', pos: V(-10, 0.7, 10), range: 9, size: 2.5,
       text: 'Un muretto di pietra a secco, coperto di muschio. Da qui si vede tutta la valle.' },
     { name: 'L’ala laterale', pos: V(10, 2.3, -1.2), range: 18, size: 2.5,

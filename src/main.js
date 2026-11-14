@@ -9,6 +9,7 @@ import { VoiceCommands } from './voice.js';
 import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
+import { Scope } from './scope.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
@@ -34,6 +35,7 @@ camera.add(torch, torch.target);
 const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining() };
 const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', study: 'Lo studio', dining: 'La sala da pranzo' };
 const magnifier = new Magnifier();
+const scope = new Scope(controls, camera);
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
@@ -54,8 +56,10 @@ const state = {
   unlocked: store.get('villa-porta') === '1', // l'altro ingresso è aperto
   read: store.get('villa-letto') === '1',     // le righe nascoste sono state lette
   gramophone: true,
+  scope: store.get('villa-cannocchiale') === '1', // il cannocchiale è stato scoperto
 };
 if (state.unlocked) S.exterior.setSideDoor(true);
+if (state.scope) S.exterior.setObservatory(true);
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
 let cur = S.exterior;
@@ -157,7 +161,7 @@ function diningToOutside() {
 // area calpestabile e porte di ogni scena
 const WORLD = {
   exterior: {
-    clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -9, 11); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.3 || (p.x > 9.5 && p.x < 10.9) ? 2.6 : 3.4, 21); },
+    clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -9, 11); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.3 || (p.x > 9.5 && p.x < 10.9) ? 2.6 : 3.4, 23.8); },
     door(p) {
       if (Math.abs(p.x) < 1.3 && p.z < 3.6) return enterCorridorFromOutside;
       if (p.x > 9.5 && p.x < 10.9 && p.z < 3.0) return enterDining;
@@ -327,7 +331,7 @@ function observe() {
   let title, text;
   if (!hit) { title = 'Niente di particolare'; text = 'Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».'; }
   else if (hit.far) { title = hit.item.name; text = 'È troppo lontano per vederlo bene. Avvicinati.'; }
-  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone }); }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
   obsEl.hidden = false;
@@ -357,6 +361,11 @@ function hotspots() {
     else {
       list.push({ pos: E.doorPos, door: true, label: 'Entra nella villa', act: enterCorridorFromOutside });
       list.push({ pos: floorOf(E.far.pos), label: 'Torna sul viale', act: () => moveTo(E.far.pos, null, null, 3.2) });
+    }
+    {
+      const d = here.distanceTo(E.scopePos);
+      if (state.scope) list.push({ pos: E.scopePos, label: d > 4 ? 'Il cannocchiale — avvicinati' : 'Guarda nel cannocchiale', act: d > 4 ? () => moveTo(E.scopeView, E.scopeLook, null, 1 + d * 0.25) : focusScope });
+      else if (d < 7) list.push({ pos: E.scopePos, label: 'Il cannocchiale', act: () => toast('La lente è chiusa da un coperchio di legno. Forse non è ancora il momento.', 3000) });
     }
     if (state.unlocked) {
       const far = here.distanceTo(E.sideDoorPos) > 7;
@@ -555,11 +564,28 @@ function playEnding() {
   state.gramophone = false;
   audio.stopGramophone();
   S.dining.setPlaying(false);
+  state.scope = true;
+  store.set('villa-cannocchiale', '1');
+  S.exterior.setObservatory(true);
   setTimeout(() => {
-    toast('Il grammofono si è fermato. Nel silenzio, dall’altra ala della casa, suona il carillon.', 7000);
-    audio.distantMusicBox(24);
+    toast('Il grammofono si è fermato. Fuori, sul belvedere, si sono accese due lanterne.', 7000);
+    setHint('«Guarda oltre te stesso»: esci, torna dove sei arrivato e voltati. Cerca il cannocchiale.');
   }, 1500);
 }
+
+// ---------- cannocchiale ----------
+function focusScope() {
+  const E = S.exterior;
+  enterFocus('scope');
+  if (state.torch) setTorch(false); // il LED usa la stessa fotocamera
+  moveTo(E.scopeView, E.scopeLook, () => { if (state.focus === 'scope') scope.open(); }, 1.3);
+}
+scope.onReveal = () => {
+  store.set('villa-fine', '1');
+  audio.distantMusicBox(40);
+  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = 'Torna alla villa'; $('scope-end').hidden = false; } }, 9000);
+};
+$('scope-close').addEventListener('click', () => leaveFocus());
 
 // ---------- uscita dal primo piano ----------
 function leaveFocus(instant = false) {
@@ -570,6 +596,7 @@ function leaveFocus(instant = false) {
   $('write').hidden = true;
   if (was === 'candle') audio.stopMic();
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
+  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-close').textContent = 'Chiudi'; }
   if (was === 'music') {
     audio.stopMusicBox(); audio.setListen(0); S.corridor.setPlaying(false);
     state.listen = 0; listenHold = false; document.body.classList.remove('listening');
@@ -629,8 +656,19 @@ const STEPS = [
   { k: 'motion', btn: 'Consenti il movimento', run: async () => { const p = controls.enableGyro(); audio.init(); state.gyro = await p; return state.gyro ? 'ok' : 'no'; } },
   { k: 'mic', btn: 'Consenti il microfono', run: async () => { audio.init(); state.micOk = await audio.askMicPermission(); return state.micOk ? 'ok' : 'no'; } },
   { k: 'voice', btn: 'Attiva i comandi vocali', skip: () => !voice.supported || !state.micOk, run: async () => (await voice.enable()) ? 'ok' : 'no' },
-  { k: 'led', btn: 'Consenti la torcia del telefono', skip: () => !isAndroid || !ledTorch.supportedGuess, run: async () => { state.ledOk = await ledTorch.probe(); return state.ledOk ? 'ok' : 'virtual'; } },
+  { k: 'camera', btn: 'Consenti la fotocamera', skip: () => !navigator.mediaDevices?.getUserMedia, run: async () => {
+    const ok = await askCamera();
+    if (ok && isAndroid && ledTorch.supportedGuess) state.ledOk = await ledTorch.probe(); // su Android la torcia vera usa la fotocamera
+    return ok ? 'ok' : 'no';
+  } },
 ];
+async function askCamera() {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+    st.getTracks().forEach((t) => t.stop());
+    return true;
+  } catch { return false; }
+}
 const LABELS = { ok: 'attivo', no: 'non attivo', skip: 'saltato', na: 'non disponibile', virtual: 'solo virtuale', wait: '…' };
 let stepIdx = -1;
 function setRow(k, status) {
@@ -642,7 +680,7 @@ function nextStep() {
   stepIdx++;
   while (stepIdx < STEPS.length && STEPS[stepIdx].skip?.()) {
     const k = STEPS[stepIdx].k;
-    setRow(k, k === 'led' ? 'virtual' : 'na');
+    setRow(k, 'na');
     stepIdx++;
   }
   const btn = $('btn-start'), skip = $('btn-skip');
@@ -663,7 +701,7 @@ $('btn-start').addEventListener('click', async () => {
 });
 $('btn-skip').addEventListener('click', () => {
   if (stepIdx < 0 || stepIdx >= STEPS.length) return;
-  setRow(STEPS[stepIdx].k, STEPS[stepIdx].k === 'led' ? 'virtual' : 'skip');
+  setRow(STEPS[stepIdx].k, 'skip');
   nextStep();
 });
 
@@ -737,7 +775,7 @@ renderer.setAnimationLoop(() => {
     audio.tickFire(THREE.MathUtils.clamp(1 - camera.position.distanceTo(G.firePos) / 8, 0, 1));
   }
   updateMarkers(t);
-  if (state.focus !== 'lens' || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
+  if ((state.focus !== 'lens' && state.focus !== 'scope') || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
   if (state.started && ++frames > 30) {

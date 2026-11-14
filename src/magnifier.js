@@ -18,10 +18,10 @@ const BODY = [
 export const TINY = [
   'Se sei arrivato fin qui, hai ascoltato il carillon',
   'e hai lasciato le tue parole sulla mia scrivania.',
-  'Questa casa non è vuota: è in attesa.',
-  'Ogni sera, al tramonto, qualcuno torna a casa.',
-  'Ora lo sai anche tu. Resta finché le candele',
-  'non si spengono da sole.',
+  'Ma quello che cerchi non è tra queste mura.',
+  'Per vederlo devi guardare oltre te stesso:',
+  'torna dove sei arrivato e voltati. Sul belvedere',
+  'il cannocchiale guarda la valle. Guarda con lui.',
 ];
 const TINY_Y0 = 838, TINY_DY = 16, TINY_X0 = 70, TINY_FONT = 'italic 11px Georgia, "Times New Roman", serif';
 // larghezza reale della riga più lunga: serve per capire quando la lente l'ha percorsa tutta

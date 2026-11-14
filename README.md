@@ -20,13 +20,14 @@ npm run build    # build statica in dist/
 2. **Corridoio** – candelabro (soffio), carillon (ascolto), biblioteca chiusa, porta in fondo.
 3. **Studio** – candele, una scritta sul muro visibile solo con la torcia, e il foglio: quando ci scrivi un messaggio, la macchina da scrivere risponde da sola «Non è qui quello che cerchi. Prova l'altro ingresso.» e si apre la porta dell'ala laterale, fuori a destra.
 4. **Sala da pranzo** (dall'altro ingresso) – camino acceso, tavola apparecchiata, un grammofono che suona un valzer per violino, ritratti, busto, pendola. In fondo, lo **studiolo**: mappamondo, mappa, lampada a olio e un manoscritto con righe minuscole in fondo.
-5. **La lente** – il manoscritto si apre a schermo intero; si muove la lente inclinando il telefono (o col dito). Lette le righe nascoste, chiudendo la lente il grammofono si ferma e dall'altra ala suona il carillon.
+5. **La lente** – il manoscritto si apre a schermo intero; si muove la lente inclinando il telefono (o col dito). Le righe nascoste dicono di «guardare oltre te stesso»: chiudendo la lente il grammofono si ferma e fuori si accendono le lanterne del belvedere.
+6. **Il cannocchiale** – il belvedere è alle spalle del punto di arrivo in giardino. Guardando nel cannocchiale si accende la fotocamera posteriore dentro un oculare d'epoca; nel mondo reale c'è una luce agganciata a una direzione: va trovata muovendo il telefono e tenuta al centro del reticolo finché va a fuoco. È una lanterna: qualcuno sta tornando a casa. Fine del primo capitolo.
 
-I progressi (porta aperta, manoscritto letto, messaggio) restano salvati nel browser.
+I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, messaggio) restano salvati nel browser.
 
 ## Interazioni e sensori
 
-All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno, come richiede iOS): movimento, microfono, comandi vocali e, su Android, la torcia LED. Ogni passo si può saltare.
+All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno, come richiede iOS): movimento, microfono, comandi vocali e fotocamera (che su Android serve anche alla torcia LED). Ogni passo si può saltare.
 
 | Interazione | Come funziona | Ripiego |
 | --- | --- | --- |
@@ -37,6 +38,7 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Osservare | comando vocale «osserva»: descrizione breve dell'oggetto che stai guardando (testi in `src/observe.js`) | – |
 | Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |
 | Messaggio | disegno con il dito; la macchina da scrivere risponde e apre l'altro ingresso | – |
+| Cannocchiale | fotocamera posteriore nell'oculare + giroscopio per cercare la luce; senza fotocamera una valle dipinta | trascinamento col dito |
 | Lente | giroscopio: inclinare il telefono sposta la lente sul manoscritto; il testo ingrandito è ridisegnato in scala, quindi resta nitido | trascinamento col dito |
 
 Il riconoscimento vocale di Chrome e Safari usa i server di Google/Apple: serve la connessione.
@@ -54,6 +56,7 @@ Nessun audio viene registrato o inviato: il microfono serve solo a misurare il v
 - `src/observe.js` – descrizioni del comando «osserva»
 - `src/dining.js` – sala da pranzo e studiolo
 - `src/magnifier.js` – manoscritto e lente d'ingrandimento
+- `src/scope.js` – cannocchiale con la fotocamera
 - `src/audio.js` – audio sintetizzato, microfono, torcia LED
 
 Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rate cala), nessuna ombra dinamica, poche luci puntiformi per scena.
