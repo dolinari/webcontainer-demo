@@ -14,6 +14,8 @@ const WORDS = [
   [/\b(spegni)\b/g, 'torchOff'],
   [/\b(accendi|torcia|luce)\b/g, 'torchOn'],
   [/\b(entra|apri)\b/g, 'enter'],
+  [/\b(osserva|osservo|descrivi|guarda)\b/g, 'observe'],
+  [/\b(aiuto|comandi)\b/g, 'help'],
 ];
 
 export class VoiceCommands {

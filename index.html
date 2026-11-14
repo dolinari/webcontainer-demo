@@ -16,9 +16,10 @@
   <div id="hud" hidden>
     <div id="scene-title"></div>
     <div id="hint"></div>
+    <div id="observe" hidden role="status"><b></b><p></p></div>
     <div id="voice-chip" hidden><i></i><span>Ti ascolto</span></div>
     <div id="buttons">
-      <button id="btn-torch" aria-label="Torcia" aria-pressed="false">
+      <button id="btn-torch" aria-label="Torcia" aria-pressed="false" hidden>
         <svg viewBox="0 0 24 24"><path d="M8 2h8v3l-2 3v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8L8 5z"/><path d="M11 11h2v3h-2z" class="cut"/></svg>
         <span>Torcia</span>
       </button>
@@ -64,14 +65,16 @@
       <h1>La Villa<br />al Tramonto</h1>
       <div id="intro">
         <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
-        <ul>
-          <li><b>Muovi il telefono</b> per guardarti intorno</li>
-          <li><b>Di’ «cammina» o «corri»</b> per muoverti</li>
-          <li><b>Soffia sul microfono</b> per spegnere le candele</li>
-          <li><b>Accendi la torcia</b> nelle stanze buie</li>
-          <li><b>Porta il telefono all’orecchio</b> per ascoltare il carillon</li>
-          <li><b>Scrivi</b> con il dito e lascia un messaggio</li>
-        </ul>
+        <p class="how">Si esplora con la voce. Parla al telefono:</p>
+        <dl class="cmds">
+          <dt>«cammina» · «corri»</dt><dd>due passi o tre falcate in avanti</dd>
+          <dt>«indietro» · «fermati»</dt><dd>torna indietro, fermati</dd>
+          <dt>«destra» · «sinistra»</dt><dd>girati</dd>
+          <dt>«osserva»</dt><dd>descrive l’oggetto che hai davanti</dd>
+          <dt>«torcia» · «spegni torcia»</dt><dd>accende e spegne la luce</dd>
+          <dt>«entra»</dt><dd>attraversa la porta vicina</dd>
+        </dl>
+        <p class="how">E con il telefono: <b>muovilo</b> per guardarti intorno, <b>soffia</b> sulle candele, <b>portalo all’orecchio</b> per ascoltare il carillon, <b>scrivi</b> con il dito sul foglio.</p>
       </div>
       <div id="perm-box" hidden>
         <p class="lead">Prima di entrare, attiviamo i sensori del telefono. Tocca il pulsante e consenti ogni richiesta.</p>

@@ -27,9 +27,10 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Interazione | Come funziona | Ripiego |
 | --- | --- | --- |
 | Guardarsi intorno | `deviceorientation` | trascinamento touch/mouse |
-| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «corri» = tre falcate più lunghe e veloci, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «accendi/spegni la torcia» | cerchi luminosi da toccare |
+| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «corri» = tre falcate più lunghe e veloci, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «aiuto» (elenco dei comandi) | cerchi luminosi da toccare |
 | Spegnere le candele | microfono, rileva un soffio; la voce va in pausa mentre sei alle candele | tocco sulle fiamme |
-| Torcia | faretto virtuale che segue il telefono; su Android Chrome anche il LED | solo virtuale (iPhone) |
+| Torcia | comando vocale «torcia» / «spegni torcia»: faretto virtuale che segue il telefono; su Android Chrome anche il LED | tasto Torcia, visibile solo se la voce non è attiva |
+| Osservare | comando vocale «osserva»: descrizione breve dell'oggetto che stai guardando (testi in `src/observe.js`) | – |
 | Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |
 | Messaggio | disegno con il dito; la macchina da scrivere risponde con una frase scelta a caso tra 5, mai la stessa due volte di fila | – |
 

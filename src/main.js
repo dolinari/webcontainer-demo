@@ -6,6 +6,7 @@ import { buildStudy } from './study.js';
 import { LookControls } from './controls.js';
 import { AudioEngine, PhysicalTorch } from './audio.js';
 import { VoiceCommands } from './voice.js';
+import { findObserved, describe } from './observe.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +43,7 @@ const state = {
   busy: false,
   started: false,
   listen: 0,
+  typed: false,       // la macchina da scrivere ha già risposto
 };
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
@@ -74,7 +76,7 @@ function showTitle(name) {
   setTimeout(() => el.classList.remove('on'), 4200);
 }
 const lookWord = () => (controls.gyro ? 'Muovi il telefono' : 'Trascina con il dito');
-const walkWord = () => (voice.enabled ? 'Di’ «cammina» per due passi, «corri» per tre falcate, «destra» o «sinistra» per girarti.' : 'Tocca i cerchi luminosi per muoverti.');
+const walkWord = () => (voice.enabled ? 'Di’ «cammina» o «corri» per muoverti, «osserva» davanti a un oggetto.' : 'Tocca i cerchi luminosi per muoverti.');
 
 // ---------- spostamenti animati ----------
 function moveTo(pos, look, done, dur = 1.5) {
@@ -85,6 +87,7 @@ function moveTo(pos, look, done, dur = 1.5) {
 const ease = (x) => x * x * (3 - 2 * x);
 
 function swapScene(name, pos, look) {
+  hideObserve();
   cur.scene.remove(camera);
   for (const m of markers) cur.scene.remove(m);
   state.scene = name;
@@ -120,7 +123,7 @@ function enterCorridorFromOutside() {
 }
 function enterStudy() {
   moveTo(V(0, 1.6, -13.6), S.corridor.endDoor, null, 1.2);
-  goScene('study', S.study.home, S.study.homeLook, () => setHint('È più buio, qui. La torcia può aiutare.'));
+  goScene('study', S.study.home, S.study.homeLook, () => setHint(voice.enabled ? 'È più buio, qui. Di’ «torcia» per accendere la luce.' : 'È più buio, qui. La torcia può aiutare.'));
 }
 function backToCorridor() {
   goScene('corridor', V(0, 1.6, -12.6), V(0, 1.5, 0), () => setHint('Il corridoio. La porta d’ingresso è in fondo.'));
@@ -229,6 +232,8 @@ let chipTimer;
 function showVoiceState() {
   const on = voice.enabled;
   $('btn-voice').hidden = !voice.supported || !state.micOk;
+  // la torcia si comanda con la voce; il tasto resta solo se la voce non è disponibile
+  $('btn-torch').hidden = on;
   $('btn-voice').setAttribute('aria-pressed', String(on));
   chip.hidden = !state.started || !on;
   chip.classList.toggle('paused', voice.paused || voice.state !== 'listening');
@@ -254,6 +259,8 @@ voice.onCommand = (cmd, word) => {
     case 'left': controls.turn(Math.PI / 4); break;
     case 'torchOn': setTorch(true); break;
     case 'torchOff': setTorch(false); break;
+    case 'observe': observe(); break;
+    case 'help': toast('Comandi: «cammina», «corri», «indietro», «fermati», «destra», «sinistra», «osserva», «torcia», «spegni torcia», «entra».', 7000); break;
     case 'enter': {
       const d = activeSpots.filter((h) => h.door).sort((a, b) => camera.position.distanceTo(a.pos) - camera.position.distanceTo(b.pos))[0];
       if (d && camera.position.distanceTo(d.pos) < (state.scene === 'exterior' ? 9 : 4)) d.act();
@@ -271,6 +278,26 @@ $('btn-voice').addEventListener('click', async () => {
   }
   showVoiceState();
 });
+
+// ---------- osserva ----------
+const obsEl = $('observe');
+let obsTimer;
+function observe() {
+  if (state.focus || state.busy) return;
+  const hit = findObserved(state.scene, camera);
+  let title, text;
+  if (!hit) { title = 'Niente di particolare'; text = 'Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».'; }
+  else if (hit.far) { title = hit.item.name; text = 'È troppo lontano per vederlo bene. Avvicinati.'; }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed }); }
+  obsEl.querySelector('b').textContent = title;
+  obsEl.querySelector('p').textContent = text;
+  obsEl.hidden = false;
+  document.body.classList.add('observing');
+  clearTimeout(obsTimer);
+  obsTimer = setTimeout(hideObserve, Math.max(5000, text.split(' ').length * 380));
+}
+function hideObserve() { obsEl.hidden = true; document.body.classList.remove('observing'); }
+obsEl.addEventListener('click', hideObserve);
 
 // ---------- punti d'interesse ----------
 const markerTex = ringTex();
@@ -321,6 +348,7 @@ function candleTapSpot(list, sc) {
 // entrata/uscita dai primi piani: la voce si mette in pausa, perché il microfono
 // serve al soffio e il riconoscimento vocale abbasserebbe l'audio del carillon
 function enterFocus(kind) {
+  hideObserve();
   state.home = camera.position.clone();
   state.focus = kind;
   walk = null;
@@ -446,6 +474,7 @@ $('btn-leave').addEventListener('click', () => {
   leaveFocus();
   toast('Hai lasciato il tuo messaggio sulla scrivania.');
   D.typeReply(pickReply(), () => audio.click('key'));
+  state.typed = true;
   setTimeout(() => setHint('La macchina da scrivere… ha battuto da sola?'), 2600);
 });
 try {
@@ -638,4 +667,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // accesso per test manuali da console
-window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus };
+window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus, observe };
