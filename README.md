@@ -90,4 +90,4 @@ Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rat
 
 ---
 
-*La Villa al Tramonto* è un’esperienza creata da Dario Molinari con Claude. © 2026 · Tutti i diritti riservati.
+*La Villa al Tramonto* è un’experience interattiva creata da Dario Molinari. © 2026 · Tutti i diritti riservati.
