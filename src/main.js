@@ -10,7 +10,7 @@ import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
 import { Scope } from './scope.js';
-import { Landscape, CODE } from './landscape.js';
+import { Landscape, CODE, setCode, randomCode } from './landscape.js';
 import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
@@ -65,7 +65,7 @@ const state = {
   read: store.get('villa-letto') === '1',     // le righe nascoste sono state lette
   gramophone: true,
   scope: store.get('villa-cannocchiale') === '1', // il cannocchiale è stato scoperto
-  coords: JSON.parse(store.get('villa-coordinate') || '[]'), // cifre trovate nel paesaggio
+  coords: JSON.parse(store.get('villa-coordinate') || '[]'), // coordinate trovate nel paesaggio (0 = N, 1 = E, 2 = O)
   wardrobe: store.get('villa-armadio') === '1',   // l'armadio è aperto
   bino: store.get('villa-binocolo') === '1',       // il binocolo è stato scoperto
 };
@@ -75,7 +75,14 @@ if (state.read && !state.scope) { state.scope = true; store.set('villa-cannocchi
 if (state.scope) S.exterior.setObservatory(true);
 if (state.wardrobe) S.corridor.setWardrobe(true, true);
 if (state.bino) S.exterior.setBinocular(true);
-const codeDone = () => CODE.every((d) => state.coords.includes(d));
+// il codice del lucchetto cambia a ogni partita; resta uguale se si ricarica la stessa scheda
+{
+  let code = null;
+  try { code = JSON.parse(store.get('villa-codice')); } catch { /* nessun codice salvato */ }
+  if (!Array.isArray(code) || code.length !== 3) { code = randomCode(); store.set('villa-codice', JSON.stringify(code)); }
+  setCode(code);
+}
+const codeDone = () => [0, 1, 2].every((i) => state.coords.includes(i));
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
 let cur = S.exterior;
@@ -1089,4 +1096,4 @@ if (new URLSearchParams(location.search).has('diag')) {
 }
 
 // accesso per test manuali da console
-window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus, observe };
+window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus, observe, land, setCode };

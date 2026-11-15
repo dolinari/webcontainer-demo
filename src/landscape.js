@@ -1,6 +1,7 @@
 // Il cannocchiale del belvedere: una valle di montagna dipinta a 360°, con la
-// bussola. Tre "coordinate" sono nascoste come illusioni ottiche: l'altare di
-// pietra a Nord sembra un 7, il ruscello a Est un 2, il rudere a Ovest un 4.
+// bussola. Tre "coordinate" sono nascoste come illusioni ottiche: a Nord le
+// pietre di un altare, a Est il corso di un ruscello, a Ovest un rudere
+// controluce disegnano ciascuno una cifra. Le cifre cambiano a ogni partita.
 // Si registrano tenendo il reticolo fermo su ciascuna.
 import * as THREE from 'three';
 
@@ -17,6 +18,37 @@ const TARGETS = [
   { digit: 2, dir: 'E', bearing: 90, y: HORIZON + 92 },
   { digit: 4, dir: 'O', bearing: 270, y: HORIZON - 52 },
 ];
+/** Imposta il codice della partita (tre cifre) e ridisegna il paesaggio. */
+export function setCode(code) {
+  code.forEach((d, i) => { CODE[i] = d; TARGETS[i].digit = d; });
+  panoCache = null;
+}
+export function randomCode() { return [0, 1, 2].map(() => Math.floor(Math.random() * 10)); }
+let panoCache = null;
+
+// scheletro di ogni cifra: tratti spezzati in un riquadro 0..1 (y verso il basso)
+const DIGITS = {
+  0: [[[0.18, 0.02], [0.82, 0.02], [0.86, 0.98], [0.16, 0.98], [0.18, 0.02]]],
+  1: [[[0.3, 0.2], [0.6, 0.0], [0.6, 1.0]]],
+  2: [[[0.1, 0.14], [0.5, 0.0], [0.9, 0.16], [0.88, 0.45], [0.1, 1.0], [0.95, 1.0]]],
+  3: [[[0.1, 0.02], [0.88, 0.02], [0.86, 0.5], [0.3, 0.5]], [[0.86, 0.5], [0.9, 0.98], [0.1, 0.98]]],
+  4: [[[0.72, 1.0], [0.72, 0.0], [0.05, 0.66], [0.95, 0.66]]],
+  5: [[[0.9, 0.02], [0.16, 0.02], [0.12, 0.46], [0.84, 0.5], [0.88, 0.98], [0.1, 0.98]]],
+  6: [[[0.86, 0.02], [0.16, 0.08], [0.12, 0.98], [0.88, 0.98], [0.88, 0.52], [0.12, 0.52]]],
+  7: [[[0.05, 0.02], [0.95, 0.02], [0.4, 1.0]]],
+  8: [[[0.16, 0.02], [0.84, 0.02], [0.88, 0.98], [0.12, 0.98], [0.16, 0.02]], [[0.14, 0.5], [0.86, 0.5]]],
+  9: [[[0.88, 0.5], [0.12, 0.5], [0.14, 0.02], [0.86, 0.02], [0.88, 0.98], [0.14, 0.98]]],
+};
+// per il ruscello l'8 sono due anse una sopra l'altra (con i tratti dritti sembrerebbe una θ)
+const loop = (cx, cy, rx, ry) => Array.from({ length: 19 }, (_, i) => { const a = (i / 18) * Math.PI * 2 - Math.PI / 2; return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]; });
+const STREAM_DIGITS = { 8: [loop(0.5, 0.26, 0.3, 0.24), loop(0.5, 0.74, 0.36, 0.26)] };
+const DW = 96, DH = 128; // dimensione di una cifra nel panorama
+const strokesAt = (digit, cx, cy, set = DIGITS) => (set[digit] || DIGITS[digit]).map((st) => st.map(([x, y]) => [cx + (x - 0.5) * DW, cy + (y - 0.5) * DH]));
+// un segmento spesso, come rettangolo orientato (con un po' di sovrapposizione ai giunti)
+function slab([ax, ay], [bx2, by], t) {
+  const dx = bx2 - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len, px = -uy * t / 2, py = ux * t / 2, e = t * 0.35;
+  return [[ax - ux * e + px, ay - uy * e + py], [bx2 + ux * e + px, by + uy * e + py], [bx2 + ux * e - px, by + uy * e - py], [ax - ux * e - px, ay - uy * e - py]];
+}
 
 function rng(seed) {
   let a = seed >>> 0;
@@ -141,58 +173,83 @@ function paintPanorama() {
   g.fillStyle = '#3a2420'; g.beginPath(); g.moveTo(vx + 6, vy - 78); g.lineTo(vx + 19, vy - 104); g.lineTo(vx + 32, vy - 78); g.fill();
   g.fillStyle = 'rgba(255,200,110,0.9)'; g.fillRect(vx + 16, vy - 66, 6, 8);
 
-  // --- il ruscello a Est: visto dall'alto, il suo corso disegna un 2 ---
-  const sx = bx(90), sy = TARGETS[1].y, k2 = 0.78;
-  g.lineCap = 'round'; g.lineJoin = 'round';
-  const two = () => {
-    g.beginPath();
-    g.moveTo(sx - 46 * k2, sy - 34 * k2);
-    g.bezierCurveTo(sx - 40 * k2, sy - 78 * k2, sx + 46 * k2, sy - 80 * k2, sx + 42 * k2, sy - 30 * k2);
-    g.bezierCurveTo(sx + 38 * k2, sy + 2 * k2, sx - 20 * k2, sy + 30 * k2, sx - 50 * k2, sy + 66 * k2);
-    g.bezierCurveTo(sx - 10 * k2, sy + 60 * k2, sx + 20 * k2, sy + 70 * k2, sx + 56 * k2, sy + 63 * k2);
-  };
-  g.strokeStyle = '#1a2216'; g.lineWidth = 24; two(); g.stroke();   // argini d'erba
-  g.strokeStyle = '#3a5060'; g.lineWidth = 13; two(); g.stroke();   // acqua
-  g.setLineDash([9, 7, 3, 9]);
-  g.strokeStyle = 'rgba(200,215,225,0.6)'; g.lineWidth = 3; two(); g.stroke(); // riflessi spezzati
-  g.setLineDash([]);
-  // ciuffi d'erba e sassi che rompono il contorno
-  for (let i = 0; i < 90; i++) {
-    const px = sx + (r() - 0.5) * 120 * k2, py = sy + (r() - 0.5) * 150 * k2;
-    g.fillStyle = r() < 0.7 ? `rgba(${20 + r() * 20},${34 + r() * 20},${20},0.9)` : 'rgba(90,86,80,0.8)';
-    g.beginPath(); g.ellipse(px, py, 2 + r() * 3, 1.5 + r() * 2, r() * 3, 0, TAU); g.fill();
+  // --- il ruscello a Est: visto dall'alto, il suo corso disegna la cifra ---
+  {
+    const st = strokesAt(TARGETS[1].digit, bx(90), TARGETS[1].y, STREAM_DIGITS);
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const course = () => {
+      g.beginPath();
+      for (const pts of st) {
+        g.moveTo(pts[0][0], pts[0][1]);
+        // curve morbide tra i punti, come un corso d'acqua
+        for (let k = 1; k < pts.length - 1; k++) g.quadraticCurveTo(pts[k][0], pts[k][1], (pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2);
+        const last = pts[pts.length - 1];
+        g.lineTo(last[0], last[1]);
+      }
+    };
+    g.strokeStyle = '#1a2216'; g.lineWidth = 24; course(); g.stroke();   // argini d'erba
+    g.strokeStyle = '#3a5060'; g.lineWidth = 13; course(); g.stroke();   // acqua
+    g.setLineDash([9, 7, 3, 9]);
+    g.strokeStyle = 'rgba(200,215,225,0.6)'; g.lineWidth = 3; course(); g.stroke(); // riflessi spezzati
+    g.setLineDash([]);
+    for (let i = 0; i < 90; i++) {
+      const px = bx(90) + (r() - 0.5) * 140, py = TARGETS[1].y + (r() - 0.5) * 170;
+      g.fillStyle = r() < 0.7 ? `rgba(${20 + r() * 20},${34 + r() * 20},${20},0.9)` : 'rgba(90,86,80,0.8)';
+      g.beginPath(); g.ellipse(px, py, 2 + r() * 3, 1.5 + r() * 2, r() * 3, 0, TAU); g.fill();
+    }
+    // la sorgente che scende dal monte e lo stagno dove finisce
+    const [s0x, s0y] = st[0][0];
+    g.strokeStyle = 'rgba(140,165,180,0.45)'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(s0x, s0y); g.bezierCurveTo(s0x - 18, s0y - 30, s0x - 8, s0y - 70, s0x - 32, s0y - 120); g.stroke();
+    const lastSt = st[st.length - 1], [ex, ey] = lastSt[lastSt.length - 1];
+    g.fillStyle = '#3a5060'; g.beginPath(); g.ellipse(ex + 12, ey + 6, 20, 7, 0, 0, TAU); g.fill();
   }
-  // la sorgente che scende dal monte e lo stagno dove finisce
-  g.strokeStyle = 'rgba(140,165,180,0.45)'; g.lineWidth = 2.5;
-  g.beginPath(); g.moveTo(sx - 46 * k2, sy - 34 * k2); g.bezierCurveTo(sx - 66 * k2, sy - 70 * k2, sx - 56 * k2, sy - 120 * k2, sx - 86 * k2, sy - 170 * k2); g.stroke();
-  g.fillStyle = '#3a5060'; g.beginPath(); g.ellipse(sx + 70 * k2, sy + 64 * k2, 22, 7, 0, 0, TAU); g.fill();
-  g.strokeStyle = '#3a2618'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx - 2, sy + 4); g.lineTo(sx + 18, sy + 15); g.stroke(); // ponticello
 
-  // --- il rudere a Ovest, controluce: torre, muro e muro crollato formano un 4 ---
-  const rx = bx(270), ry = TARGETS[2].y, k4 = 0.8;
-  const R4 = (pts) => pts.map(([x, y]) => [rx + x * k4, ry + y * k4]);
-  g.fillStyle = '#140c10';
-  g.beginPath(); g.ellipse(rx, ry + 110 * k4, 170, 42, 0, Math.PI, 0); g.fill(); // la collina
-  rough(g, R4([[14, -70], [40, -70], [42, 90], [12, 90]]), 4, r); g.fill(); // la torre: l'asta
-  for (let i = 0; i < 3; i++) { rough(g, R4([[12 + i * 10, -82], [19 + i * 10, -82], [19 + i * 10, -68], [12 + i * 10, -68]]), 2, r); g.fill(); }
-  rough(g, R4([[-62, 22], [56, 18], [58, 38], [-60, 40]]), 5, r); g.fill(); // il muro: la sbarra
-  rough(g, R4([[16, -64], [30, -56], [-48, 28], [-66, 26]]), 6, r); g.fill(); // il muro crollato: la diagonale
-  for (let i = 0; i < 4; i++) { rough(g, R4([[-40 + i * 18, 22], [-32 + i * 18, 22], [-32 + i * 18, 12 + r() * 6], [-40 + i * 18, 14]]), 3, r); g.fill(); } // merli spezzati
-  g.fillStyle = 'rgba(255,170,80,0.85)'; g.fillRect(rx + 23 * k4, ry - 40 * k4, 5, 9); // una feritoia controluce
-  for (let i = 0; i < 14; i++) { g.fillStyle = '#140c10'; g.beginPath(); g.ellipse(rx + (-80 + r() * 160) * k4, ry + (44 + r() * 30) * k4, 4 + r() * 7, 3 + r() * 4, 0, 0, TAU); g.fill(); }
-  // l'edera sulla torre
-  for (let i = 0; i < 20; i++) { g.fillStyle = 'rgba(30,40,20,0.9)'; g.beginPath(); g.arc(rx + (12 + r() * 30) * k4, ry + (40 + r() * 50) * k4, 2 + r() * 3, 0, TAU); g.fill(); }
+  // --- il rudere a Ovest, controluce: torre e muri disegnano la cifra ---
+  {
+    const rx = bx(270), ry = TARGETS[2].y;
+    const st = strokesAt(TARGETS[2].digit, rx, ry);
+    g.fillStyle = '#140c10';
+    g.beginPath(); g.ellipse(rx, ry + DH / 2 + 26, 170, 40, 0, Math.PI, 0); g.fill(); // la collina
+    let tower = null, best = 0;
+    for (const pts of st) {
+      for (let k = 0; k < pts.length - 1; k++) {
+        const a = pts[k], b = pts[k + 1];
+        g.fillStyle = '#140c10'; rough(g, slab(a, b, 20), 4, r); g.fill();
+        const vertical = Math.abs(b[1] - a[1]) > Math.abs(b[0] - a[0]);
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (vertical && len > best) { best = len; tower = a[1] < b[1] ? a : b; }
+        if (!vertical) { // merli spezzati sui muri orizzontali
+          const n = Math.floor(len / 16);
+          for (let m = 1; m < n; m += 2) {
+            const t = m / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
+            if (r() < 0.75) { rough(g, [[x - 4, y - 10], [x + 4, y - 10], [x + 4, y - 4], [x - 4, y - 4]], 2, r); g.fill(); }
+          }
+        }
+      }
+    }
+    if (tower) { // la torre più alta: merli in cima e una feritoia accesa
+      for (let m = -1; m <= 1; m++) { g.fillStyle = '#140c10'; rough(g, [[tower[0] + m * 9 - 4, tower[1] - 22], [tower[0] + m * 9 + 4, tower[1] - 22], [tower[0] + m * 9 + 4, tower[1] - 6], [tower[0] + m * 9 - 4, tower[1] - 6]], 2, r); g.fill(); }
+      g.fillStyle = 'rgba(255,170,80,0.85)'; g.fillRect(tower[0] - 2, tower[1] + 22, 5, 9);
+    }
+    for (let i = 0; i < 14; i++) { g.fillStyle = '#140c10'; g.beginPath(); g.ellipse(rx + (r() - 0.5) * 150, ry + DH / 2 + 10 + r() * 22, 4 + r() * 7, 3 + r() * 4, 0, 0, TAU); g.fill(); }
+    for (let i = 0; i < 18; i++) { g.fillStyle = 'rgba(30,40,20,0.9)'; g.beginPath(); g.arc(rx + (r() - 0.5) * DW, ry + r() * DH * 0.5, 2 + r() * 3, 0, TAU); g.fill(); } // edera
+  }
 
-  // --- l'altare di pietra a Nord, al chiaro di luna: lastra e pietra inclinata formano un 7 ---
+  // --- l'altare di pietra a Nord, al chiaro di luna: le pietre disegnano la cifra ---
   for (const dx of [0, W]) {
-    const ax = bx(0) + dx, ay = TARGETS[0].y, k7 = 0.78;
-    const A7 = (pts) => pts.map(([x, y]) => [ax + x * k7, ay + y * k7]);
-    g.fillStyle = '#1c1a1e'; g.beginPath(); g.ellipse(ax, ay + 62, 190, 28, 0, Math.PI, 0); g.fill(); // altopiano
-    stone(g, A7([[34, -32], [54, -30], [-4, 66], [-26, 64]]), r, '#5a564e', '#a8a294'); // la pietra inclinata: la gamba
-    stone(g, A7([[-54, -46], [50, -50], [56, -32], [-50, -26]]), r, '#7a7468', '#c8c2b2'); // la lastra: il tratto alto
-    g.fillStyle = 'rgba(10,8,12,0.45)'; g.beginPath(); g.ellipse(ax + 10, ay + 62, 70, 7, 0, 0, TAU); g.fill(); // ombra
+    const ax = bx(0) + dx, ay = TARGETS[0].y;
+    const st = strokesAt(TARGETS[0].digit, ax, ay);
+    g.fillStyle = '#1c1a1e'; g.beginPath(); g.ellipse(ax, ay + DH / 2 + 6, 190, 28, 0, Math.PI, 0); g.fill(); // altopiano
+    g.fillStyle = 'rgba(10,8,12,0.45)'; g.beginPath(); g.ellipse(ax + 8, ay + DH / 2 + 6, 70, 7, 0, 0, TAU); g.fill(); // ombra
+    for (const pts of st) {
+      for (let k = 0; k < pts.length - 1; k++) {
+        const lit = 150 + Math.floor(r() * 50);
+        stone(g, slab(pts[k], pts[k + 1], 17), r, '#5a564e', `rgb(${lit},${lit - 6},${lit - 22})`);
+      }
+    }
     // il cerchio di pietre intorno, più piccole e irregolari
-    for (const [ox, h] of [[-118, 30], [-84, 22], [-150, 16], [92, 28], [124, 20], [156, 14]]) stone(g, [[ax + ox, ay + 60 - h], [ax + ox + 11, ay + 60 - h - 2], [ax + ox + 12, ay + 60], [ax + ox - 1, ay + 60]], r, '#4a463e', '#8a8478');
+    for (const [ox, h] of [[-118, 30], [-84, 22], [-150, 16], [92, 28], [124, 20], [156, 14]]) stone(g, [[ax + ox, ay + DH / 2 + 4 - h], [ax + ox + 11, ay + DH / 2 + 2 - h], [ax + ox + 12, ay + DH / 2 + 4], [ax + ox - 1, ay + DH / 2 + 4]], r, '#4a463e', '#8a8478');
   }
   // velo di foschia sul fondovalle
   const haze = g.createLinearGradient(0, HORIZON - 20, 0, HORIZON + 140);
@@ -238,8 +295,9 @@ export class Landscape {
   }
 
   open(found = []) {
-    this.pano = this.pano || paintPanorama();
-    found.forEach((d) => this.found.add(d));
+    if (!panoCache) panoCache = paintPanorama();
+    this.pano = panoCache;
+    this.found = new Set(found);
     this.isOpen = true;
     this.el.hidden = false;
     this.hold = 0;
@@ -281,8 +339,9 @@ export class Landscape {
     this.slots.innerHTML = '';
     for (const t of TARGETS) {
       const d = document.createElement('div');
-      d.className = this.found.has(t.digit) ? 'on' : '';
-      d.innerHTML = `<small>${t.dir}</small><b>${this.found.has(t.digit) ? t.digit : '?'}</b>`;
+      const i = TARGETS.indexOf(t);
+      d.className = this.found.has(i) ? 'on' : '';
+      d.innerHTML = `<small>${t.dir}</small><b>${this.found.has(i) ? t.digit : '?'}</b>`;
       this.slots.appendChild(d);
     }
   }
@@ -338,7 +397,7 @@ export class Landscape {
     // registrazione: il reticolo fermo su una coordinata
     let aiming = null;
     for (const tg of TARGETS) {
-      if (this.found.has(tg.digit)) continue;
+      if (this.found.has(TARGETS.indexOf(tg))) continue;
       let db = (tg.bearing - bdeg + 540) % 360 - 180;
       const dp = (HORIZON - tg.y) / PPR * 180 / Math.PI - pitch * 180 / Math.PI;
       if (Math.hypot(db, dp) < 2.6) aiming = tg;
@@ -361,7 +420,7 @@ export class Landscape {
   }
 
   _register(tg) {
-    this.found.add(tg.digit);
+    this.found.add(TARGETS.indexOf(tg));
     this.hold = 0; this.holdT = null;
     if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
     this._renderSlots();
