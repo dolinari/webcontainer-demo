@@ -85,12 +85,16 @@ export class Magnifier {
     this.onRead = null;
 
     this._orient = (e) => {
-      if (e.beta == null || e.gamma == null) return;
+      if (e.beta == null || e.gamma == null || this.useMotion === false) return;
       this.hasGyro = true;
-      if (!this.base) { this.base = { b: e.beta, g: e.gamma, x: this.target.x, y: this.target.y }; return; }
+      // filtro passa-basso: su molti Android il sensore è rumoroso e la lente tremerebbe
+      if (!this.sm) this.sm = { b: e.beta, g: e.gamma };
+      this.sm.b += (e.beta - this.sm.b) * 0.18;
+      this.sm.g += (e.gamma - this.sm.g) * 0.18;
+      if (!this.base) { this.base = { b: this.sm.b, g: this.sm.g, x: this.target.x, y: this.target.y }; return; }
       // inclinare a destra/sinistra sposta la lente in orizzontale, avanti/indietro in verticale
-      this.target.x = this.base.x + (e.gamma - this.base.g) * (SW / 46);
-      this.target.y = this.base.y + (e.beta - this.base.b) * (SH / 52);
+      this.target.x = this.base.x + (this.sm.g - this.base.g) * (SW / 46);
+      this.target.y = this.base.y + (this.sm.b - this.base.b) * (SH / 52);
       this._clamp(this.target);
       this.last = e;
     };
@@ -137,6 +141,7 @@ export class Magnifier {
     this.open_ = true;
     this._layout();
     this.base = null;
+    this.sm = null;
     this.target = { x: SW / 2, y: 520 };
     this.pos = { ...this.target };
     window.addEventListener('deviceorientation', this._orient);

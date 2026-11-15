@@ -15,8 +15,8 @@ button:active { transform: scale(0.97); }
 #scene-title { position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 0; right: 0; text-align: center; font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim); text-shadow: 0 1px 6px #000; opacity: 0; transition: opacity 1.2s; }
 #scene-title.on { opacity: 1; }
 #hint { position: absolute; left: 20px; right: 20px; bottom: calc(env(safe-area-inset-bottom) + 96px); text-align: center; font-size: 16px; line-height: 1.35; font-style: italic; text-shadow: 0 1px 8px #000, 0 0 2px #000; text-wrap: balance; transition: opacity 0.4s; }
-#buttons { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 18px); display: flex; justify-content: center; gap: 8px; pointer-events: auto; }
-#buttons button { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 72px; padding: 9px 6px 7px; border-radius: 16px; font-size: 11px; letter-spacing: 0.04em; font-family: system-ui, sans-serif; }
+#buttons { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 18px); display: flex; justify-content: center; gap: 6px; pointer-events: auto; }
+#buttons button { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 68px; padding: 9px 6px 7px; border-radius: 16px; font-size: 11px; letter-spacing: 0.04em; font-family: system-ui, sans-serif; }
 #buttons svg { width: 22px; height: 22px; fill: var(--ink); stroke: var(--ink); stroke-width: 0; }
 #buttons svg .cut { fill: #1a0f08; }
 #btn-torch[aria-pressed='true'] { background: #f3d9a0; color: #2a1608; border-color: #fff; box-shadow: 0 0 24px rgba(255, 220, 150, 0.55); }
@@ -137,3 +137,5 @@ button.ghost:disabled { visibility: hidden; }
 .dots i.on { background: var(--amber); transform: scale(1.3); }
 @media (max-height: 700px) { .slide figure { max-height: 38vh; } .slide h2 { font-size: 22px; } .slide p { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .slides { scroll-behavior: auto; } }
+#btn-motion[aria-pressed='false'] { opacity: 0.55; }
+#btn-motion[aria-pressed='false'] .wave { display: none; }

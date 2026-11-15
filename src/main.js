@@ -258,6 +258,13 @@ async function setTorch(on) {
 }
 $('btn-torch').addEventListener('click', () => setTorch(!state.torch));
 $('btn-center').addEventListener('click', () => controls.recenter(defaultLook()));
+$('btn-motion').addEventListener('click', () => {
+  const on = !controls.gyro;
+  controls.setMotion(on);
+  $('btn-motion').setAttribute('aria-pressed', String(on));
+  $('btn-center').hidden = !on;
+  toast(on ? 'Movimento acceso: muovi il telefono per guardarti intorno.' : 'Movimento spento: trascina con il dito per guardarti intorno.', 2600);
+});
 $('btn-sound').addEventListener('click', () => {
   audio.setMuted(!audio.muted);
   $('btn-sound').setAttribute('aria-pressed', String(!audio.muted));
@@ -552,7 +559,7 @@ function toggleGramophone() {
 function focusLens() {
   const G = S.dining;
   enterFocus('lens');
-  moveTo(G.manuscriptView, G.manuscriptPos, () => { if (state.focus === 'lens') magnifier.open(); }, 1.4);
+  moveTo(G.manuscriptView, G.manuscriptPos, () => { if (state.focus === 'lens') { magnifier.useMotion = controls.gyro; magnifier.open(); } }, 1.4);
 }
 magnifier.read = state.read;
 magnifier.onRead = () => {
@@ -757,6 +764,10 @@ async function begin() {
   $('start').classList.add('out');
   $('hud').hidden = false;
   $('btn-center').hidden = !state.gyro;
+  $('btn-motion').hidden = !state.gyro;
+  if (state.gyro && controls.noGyroscope) {
+    toast('Questo telefono non ha un giroscopio: ho stabilizzato la vista. Se trema ancora, tocca «Movimento» per usare il dito.', 7000);
+  }
   state.started = true;
   controls.face(S.exterior.far.look);
   showTitle('exterior');

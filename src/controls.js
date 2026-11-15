@@ -49,11 +49,23 @@ export class LookControls {
         if (r !== 'granted') return false;
       }
     } catch { return false; }
+    // alcuni Android economici non hanno un giroscopio vero: il browser ricava
+    // l'orientamento da accelerometro e bussola, un segnale molto più rumoroso
+    const motion = (e) => {
+      const r = e.rotationRate;
+      this.noGyroscope = !r || (r.alpha == null && r.beta == null && r.gamma == null);
+      window.removeEventListener('devicemotion', motion);
+    };
+    window.addEventListener('devicemotion', motion);
     return new Promise((resolve) => {
       let done = false;
       const handler = (e) => {
         if (e.alpha == null || e.beta == null || e.gamma == null) return;
         this.device = e;
+        const t = e.timeStamp || performance.now();
+        const dt = this._lastT ? Math.min(0.1, Math.max(0.002, (t - this._lastT) / 1000)) : 1 / 60;
+        this._lastT = t;
+        if (this.gyro) this._filter(dt);
         if (!done) { done = true; this._setGyro(true); resolve(true); }
       };
       window.addEventListener('deviceorientation', handler);
@@ -63,8 +75,18 @@ export class LookControls {
 
   _setGyro(on) {
     const yaw = this.cameraYaw();
+    const f = this._v.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+    const pitch = Math.asin(Math.max(-1, Math.min(1, f.y)));
     this.gyro = on;
-    if (on) { this._computeDevice(); this.yaw = yaw - this._deviceYaw(); }
+    if (on) { this._computeDevice(); this.smoothQ = this.deviceQ.clone(); this.yaw = yaw - this._deviceYaw(); }
+    else { this.yaw = yaw; this.pitch = pitch; }
+  }
+
+  /** Accende o spegne il movimento del telefono (resta disponibile il trascinamento). */
+  setMotion(on) {
+    if (on && !this.device) return false;
+    this._setGyro(on);
+    return true;
   }
 
   _computeDevice() {
@@ -75,7 +97,7 @@ export class LookControls {
   }
 
   _deviceYaw() {
-    const f = this._v.set(0, 0, -1).applyQuaternion(this.deviceQ);
+    const f = this._v.set(0, 0, -1).applyQuaternion(this.smoothQ || this.deviceQ);
     return Math.atan2(-f.x, -f.z);
   }
 
@@ -113,8 +135,25 @@ export class LookControls {
     return Math.abs(fy) < 0.62 && roll > 0.5 && roll < 1.5;
   }
 
+  /** Stabilizzazione con filtro "1 euro", applicata a ogni lettura del sensore:
+   *  a telefono fermo il taglio è basso e il rumore sparisce; quando ruota
+   *  davvero il taglio sale e la vista segue senza ritardo percepibile. */
+  _filter(dt) {
+    this._computeDevice();
+    if (!this.smoothQ) this.smoothQ = this.deviceQ.clone();
+    if (!this._prevQ) { this._prevQ = this.smoothQ.clone(); this.spd = 0; }
+    const jump = this.smoothQ.angleTo(this.deviceQ);
+    const fcMin = this.noGyroscope ? 0.35 : 1.2; // Hz a telefono fermo
+    const beta = this.noGyroscope ? 0.03 : 0.05; // quanto sale il taglio per ogni grado/s
+    const fc = fcMin + beta * this.spd;
+    const alpha = jump > 0.6 ? 1 : 1 - Math.exp(-2 * Math.PI * fc * dt); // salto grande (rotazione schermo): segui subito
+    this._prevQ.copy(this.smoothQ);
+    this.smoothQ.slerp(this.deviceQ, alpha);
+    const moved = THREE.MathUtils.radToDeg(this._prevQ.angleTo(this.smoothQ)) / dt;
+    this.spd += (moved - this.spd) * (1 - Math.exp(-2 * Math.PI * 1.5 * dt));
+  }
+
   update(dt) {
-    if (this.gyro && this.device) this._computeDevice();
     if (this.aim) {
       const p = this.camera.position, tg = this.aim.target;
       const wantYaw = Math.atan2(-(tg.x - p.x), -(tg.z - p.z));
@@ -137,7 +176,7 @@ export class LookControls {
       if (Math.abs(this.turnLeft) < 1e-4) this.turnLeft = 0;
     }
     if (this.gyro && this.device) {
-      this.camera.quaternion.setFromAxisAngle(Y, this.yaw).multiply(this.deviceQ);
+      this.camera.quaternion.setFromAxisAngle(Y, this.yaw).multiply(this.smoothQ || this.deviceQ);
     } else {
       this._e.set(this.pitch, this.yaw, 0, 'YXZ');
       this.camera.quaternion.setFromEuler(this._e);
