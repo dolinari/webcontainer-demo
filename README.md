@@ -25,7 +25,7 @@ npm run build    # build statica in dist/
 7. **L'armadio** – nel corridoio, chiuso da un lucchetto a tre rotelle. Con 724 si apre: dentro la foto di una donna (Livia) e una poesia d'amore firmata E., che parla di «guardare con due occhi» dal muretto che guarda il tramonto.
 8. **Il binocolo** – sul muretto a sinistra della villa. Qui si accende la fotocamera posteriore dentro due oculari: si cerca una luce agganciata a un punto del mondo reale e la si tiene al centro finché va a fuoco. È Livia, con una lanterna. Fine: «Hai trovato il mistero della Villa al Tramonto».
 
-I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, coordinate, armadio, binocolo, messaggio) restano salvati nel browser.
+I progressi restano solo nella scheda aperta (`sessionStorage`): ricaricando la pagina la partita continua, riaprendo il link si riparte da zero. «Nuova partita» nel menu ricomincia in qualsiasi momento.
 
 ## Introduzione e guida
 

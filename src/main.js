@@ -39,9 +39,14 @@ const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', stu
 const magnifier = new Magnifier();
 const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
 const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
+// le versioni precedenti salvavano i progressi per sempre: si cancellano all'apertura
+try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
 const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
+  // i progressi valgono solo per questa scheda: riaprendo il link si riparte da zero,
+  // mentre un ricaricamento accidentale della stessa scheda non fa perdere la partita
+  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
+  clear() { try { Object.keys(sessionStorage).filter((k) => k.startsWith('villa-')).forEach((k) => sessionStorage.removeItem(k)); } catch { /* archiviazione bloccata */ } },
 };
 
 const state = {
@@ -569,7 +574,7 @@ $('btn-leave').addEventListener('click', () => {
   $('write').hidden = true;
   if (!hasInk) { toast('Il foglio è rimasto bianco.'); leaveFocus(); return; }
   D.setMessage(inkCanvas);
-  try { localStorage.setItem('villa-messaggio', inkCanvas.toDataURL('image/png')); } catch { /* il messaggio resta solo per questa visita */ }
+  store.set('villa-messaggio', inkCanvas.toDataURL('image/png'));
   leaveFocus();
   toast('Hai lasciato il tuo messaggio sulla scrivania.');
   D.typeReply('Non è qui\nquello che\ncerchi.\nProva l’altro\ningresso.', () => audio.click('key'), unlockSideDoor);
@@ -577,7 +582,7 @@ $('btn-leave').addEventListener('click', () => {
   setTimeout(() => setHint('La macchina da scrivere… ha battuto da sola?'), 2600);
 });
 try {
-  const saved = localStorage.getItem('villa-messaggio');
+  const saved = store.get('villa-messaggio');
   if (saved) {
     const img = new Image();
     img.onload = () => { ink.drawImage(img, 0, 0); hasInk = true; S.study.setMessage(inkCanvas); };
@@ -972,7 +977,7 @@ $('btn-newgame').addEventListener('click', () => {
     newGameT = setTimeout(resetNewGame, 4000);
     return;
   }
-  try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
+  store.clear();
   location.reload();
 });
 
