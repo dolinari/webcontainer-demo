@@ -87,3 +87,7 @@ Per capire cosa succede su un telefono, aprire il link con **`?diag`** (es. `htt
 - `src/audio.js` – audio sintetizzato, microfono, torcia LED
 
 Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rate cala), nessuna ombra dinamica, poche luci puntiformi per scena.
+
+---
+
+*La Villa al Tramonto* è un’esperienza creata da Dario Molinari con Claude. © 2026 · Tutti i diritti riservati.

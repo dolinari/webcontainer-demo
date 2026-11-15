@@ -189,3 +189,8 @@ button.ghost:disabled { visibility: hidden; }
 #voice-chip.tap i { background: #ffb08a; animation: none; }
 #scope-skip { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 72px); background: none; border: 0; color: var(--dim); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; backdrop-filter: none; -webkit-backdrop-filter: none; }
 #scope-msg { bottom: calc(env(safe-area-inset-bottom) + 118px) !important; }
+
+/* ---- crediti ---- */
+.credits { margin: 26px auto 0; max-width: 340px; font-family: system-ui, sans-serif; font-size: 12px; line-height: 1.55; color: rgba(241, 226, 196, 0.55); }
+.credits i { font-family: Georgia, serif; font-size: 13px; color: var(--dim); }
+#scope-end small { font-family: system-ui, sans-serif; font-size: 11.5px; color: rgba(241, 226, 196, 0.55); }
