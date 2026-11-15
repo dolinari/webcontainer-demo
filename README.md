@@ -61,6 +61,13 @@ Alcuni Android economici (es. Samsung Galaxy A15) non hanno un giroscopio: il br
 
 Per capire cosa succede su un telefono, aprire il link con **`?diag`** (es. `https://dolinari.github.io/webcontainer-demo/?diag`): compare un riquadro con giroscopio sì/no, modalità, letture al secondo, rumore del sensore e fps.
 
+## Comandi vocali su iPhone
+
+- Funzionano solo in **Safari** (non in Chrome per iPhone né nei browser interni di WhatsApp, Instagram…): il gioco lo riconosce e lo spiega.
+- Serve la **Dettatura** attiva: Impostazioni → Generali → Tastiera → «Abilita dettatura».
+- Safari chiude l'ascolto tra una frase e l'altra e a volte non accetta il riavvio senza un tocco: in quel caso l'etichetta in alto diventa «Tocca lo schermo per riattivare la voce» e basta un tocco qualsiasi.
+- Con `?diag` il riquadro mostra anche lo stato della voce, l'ultimo errore e l'ultima frase capita.
+
 ## Struttura
 
 - `src/main.js` – regia: scene, punti d'interesse, interfaccia, ciclo di rendering

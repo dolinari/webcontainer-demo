@@ -5,7 +5,7 @@ import { buildCorridor } from './corridor.js';
 import { buildStudy } from './study.js';
 import { LookControls } from './controls.js';
 import { AudioEngine, PhysicalTorch } from './audio.js';
-import { VoiceCommands } from './voice.js';
+import { VoiceCommands, IS_IOS, IOS_OTHER_BROWSER } from './voice.js';
 import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
@@ -312,13 +312,26 @@ function showVoiceState() {
   $('btn-voice').setAttribute('aria-pressed', String(on));
   chip.hidden = !state.started || !on;
   chip.classList.toggle('paused', voice.paused || voice.state !== 'listening');
-  if (!chip.classList.contains('heard')) chipText.textContent = voice.paused ? 'Voce in pausa' : 'Ti ascolto';
+  chip.classList.toggle('tap', voice.needsTap);
+  if (!chip.classList.contains('heard')) chipText.textContent = voice.paused ? 'Voce in pausa' : voice.needsTap ? 'Tocca lo schermo per riattivare la voce' : 'Ti ascolto';
+}
+// spiegazione chiara del perché la voce non va, con il rimedio
+function voiceProblem() {
+  if (!voice.supported) return IOS_OTHER_BROWSER
+    ? 'I comandi vocali su iPhone funzionano solo in Safari: apri il link con Safari.'
+    : 'Questo browser non ha il riconoscimento vocale: prova con Chrome (Android) o Safari (iPhone).';
+  if (voice.lastError === 'network') return 'Il riconoscimento vocale ha bisogno della connessione a internet.';
+  if (voice.lastError === 'audio-capture') return 'Il microfono è occupato da un’altra app: chiudila e tocca «Voce».';
+  if (IS_IOS) return 'Su iPhone serve la Dettatura: Impostazioni → Generali → Tastiera → «Abilita dettatura». Controlla anche Impostazioni → Privacy e sicurezza → Riconoscimento vocale. Poi tocca «Voce».';
+  return 'Il riconoscimento vocale è stato negato: consenti il microfono al sito e tocca «Voce». Intanto puoi muoverti toccando i cerchi.';
 }
 voice.onState = (s) => {
-  if (s === 'denied' && state.started) toast('Il riconoscimento vocale è stato negato: puoi muoverti toccando i cerchi.', 4500);
-  if (s === 'error' && state.started) toast('Il riconoscimento vocale si è interrotto (serve la connessione). Riattivalo con il pulsante Voce.', 4500);
+  if ((s === 'denied' || s === 'error') && state.started) toast(voiceProblem(), 9000);
   showVoiceState();
 };
+// iPhone: la voce si ferma tra una frase e l'altra e riparte solo con un tocco.
+// Ogni tocco sullo schermo la rimette in ascolto, senza fare altro.
+window.addEventListener('pointerdown', () => { if (state.started) voice.tapRestart(); }, true);
 voice.onCommand = (cmd, word) => {
   if (!state.started || !$('tutorial').hidden) return;
   chip.classList.add('heard');
@@ -827,7 +840,11 @@ const isAndroid = /Android/i.test(navigator.userAgent);
 const STEPS = [
   { k: 'motion', btn: 'Consenti il movimento', run: async () => { const p = controls.enableGyro(); audio.init(); state.gyro = await p; return state.gyro ? 'ok' : 'no'; } },
   { k: 'mic', btn: 'Consenti il microfono', run: async () => { audio.init(); state.micOk = await audio.askMicPermission(); return state.micOk ? 'ok' : 'no'; } },
-  { k: 'voice', btn: 'Attiva i comandi vocali', skip: () => !voice.supported || !state.micOk, run: async () => (await voice.enable()) ? 'ok' : 'no' },
+  { k: 'voice', btn: 'Attiva i comandi vocali', skip: () => !voice.supported || !state.micOk, run: async () => {
+    const ok = await voice.enable();
+    if (!ok) setNote('voice', IS_IOS ? 'su iPhone attiva la Dettatura: Impostazioni → Generali → Tastiera' : 'non attivi: puoi giocare col tocco');
+    return ok ? 'ok' : 'no';
+  } },
   { k: 'camera', btn: 'Consenti la fotocamera', skip: () => !navigator.mediaDevices?.getUserMedia, run: async () => {
     const ok = await askCamera();
     if (ok && isAndroid && ledTorch.supportedGuess) state.ledOk = await ledTorch.probe(); // su Android la torcia vera usa la fotocamera
@@ -841,6 +858,7 @@ async function askCamera() {
     return true;
   } catch { return false; }
 }
+function setNote(k, text) { const sp = document.querySelector(`#perms [data-k="${k}"] span`); if (sp) sp.textContent = text; }
 const LABELS = { ok: 'attivo', no: 'non attivo', skip: 'saltato', na: 'non disponibile', virtual: 'solo virtuale', wait: '…' };
 let stepIdx = -1;
 function setRow(k, status) {
@@ -853,6 +871,7 @@ function nextStep() {
   while (stepIdx < STEPS.length && STEPS[stepIdx].skip?.()) {
     const k = STEPS[stepIdx].k;
     setRow(k, 'na');
+    if (k === 'voice' && !voice.supported) setNote('voice', IOS_OTHER_BROWSER ? 'su iPhone funzionano solo in Safari' : 'non disponibili in questo browser');
     stepIdx++;
   }
   const btn = $('btn-start'), skip = $('btn-skip');
@@ -1044,6 +1063,8 @@ if (new URLSearchParams(location.search).has('diag')) {
       'letture/s: ' + Math.round(st.rate || 0),
       'rumore orizz.: ' + (st.yawNoise || 0).toFixed(2) + '° · inclin.: ' + (st.tiltNoise || 0).toFixed(2) + '°',
       'fps: ' + fps + ' · pixel ratio: ' + renderer.getPixelRatio(),
+      'voce: ' + (voice.supported ? (voice.enabled ? (voice.needsTap ? 'attende un tocco' : voice.running ? 'in ascolto' : voice.paused ? 'in pausa' : 'ferma') : 'spenta') : 'non supportata') + (voice.lastError ? ' · errore: ' + voice.lastError : '') + ' · riavvii: ' + voice.restarts,
+      'ultima frase: ' + (voice.heard || '—'),
       ua.join(' · '),
     ].join('\n');
   }, 500);
