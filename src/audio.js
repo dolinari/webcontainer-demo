@@ -295,6 +295,26 @@ export class AudioEngine {
     }, seconds * 1000);
   }
 
+  /** il carillon del finale, in sottofondo nel menu iniziale */
+  startMenuMusic() {
+    if (!this.ctx || this.menuMusic) return;
+    this.menuMusic = true;
+    clearTimeout(this._distT);
+    this.ctx.resume();
+    this.startMusicBox();
+    this.boxGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.boxGain.gain.setTargetAtTime(0.13, this.ctx.currentTime, 0.8);
+    this.windGain.gain.setTargetAtTime(0.12, this.ctx.currentTime, 1);
+  }
+
+  stopMenuMusic() {
+    if (!this.ctx || !this.menuMusic) return;
+    this.menuMusic = false;
+    this.boxGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.4);
+    clearTimeout(this._menuT);
+    this._menuT = setTimeout(() => { if (!this.menuMusic) { this.stopMusicBox(); this.boxGain.gain.value = BOX_FAR; } }, 1600);
+  }
+
   stopMusicBox() {
     this.playing = false;
     clearInterval(this._timer);

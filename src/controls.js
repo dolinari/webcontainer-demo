@@ -47,7 +47,12 @@ export class LookControls {
     if (typeof DeviceOrientationEvent === 'undefined') return false;
     try {
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // su iPhone anche l'accelerometro (contapassi del binocolo) ha il suo permesso:
+        // le due richieste partono insieme, dentro lo stesso tocco
+        const pm = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'
+          ? DeviceMotionEvent.requestPermission().catch(() => 'denied') : Promise.resolve('granted');
         const r = await DeviceOrientationEvent.requestPermission();
+        await pm;
         if (r !== 'granted') return false;
       }
     } catch { return false; }

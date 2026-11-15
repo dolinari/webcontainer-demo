@@ -23,11 +23,14 @@ npm run build    # build statica in dist/
 5. **La lente** – il manoscritto si apre a schermo intero; si muove la lente inclinando il telefono (o col dito). Le righe nascoste dicono di «guardare oltre te stesso»: chiudendo la lente il grammofono si ferma e fuori si accendono le lanterne del belvedere.
 6. **Il cannocchiale** – il belvedere è alle spalle del punto di arrivo in giardino. Dentro c'è una valle di montagna dipinta a 360° (`src/landscape.js`) con la bussola: villaggio, ruscello, rudere, altare di pietra. Tre "coordinate" sono illusioni ottiche: a Nord l'altare sembra un **7**, a Est il ruscello un **2**, a Ovest il rudere un **4**. Si registrano tenendo il reticolo fermo su ciascuna; il codice si legge da Nord in senso orario: **724**.
 7. **L'armadio** – nel corridoio, chiuso da un lucchetto a tre rotelle. Con 724 si apre: dentro la foto di una donna (Livia) e una poesia d'amore firmata E., che parla di «guardare con due occhi» dal muretto che guarda il tramonto.
-8. **Il binocolo** – sul muretto a sinistra della villa. Qui si accende la fotocamera posteriore dentro due oculari: si cerca una luce agganciata a un punto del mondo reale e la si tiene al centro finché va a fuoco. È Livia, con una lanterna. Fine: «Hai trovato il mistero della Villa al Tramonto».
+8. **Il binocolo** – sul muretto a sinistra della villa. Si accende la fotocamera posteriore in due oculari, ma la luce non c'è: bisogna alzarsi e camminare davvero, qualche passo avanti e poi a destra nella stanza accanto (contapassi dall'accelerometro + direzione del telefono). Lì la luce emerge nel mondo reale; tenuta al centro va a fuoco, la fotocamera sfuma e compare una strada di campagna dipinta dove Livia arriva da lontano con la lanterna. Fine: «Hai trovato il mistero della Villa al Tramonto». Chi non può spostarsi ha il link «Non posso spostarmi».
 
 I progressi restano solo nella scheda aperta (`sessionStorage`): ricaricando la pagina la partita continua, riaprendo il link si riparte da zero. «Nuova partita» nel menu ricomincia in qualsiasi momento.
 
 ## Introduzione e guida
+
+Nel menu iniziale suona il carillon del finale (parte al primo tocco: i browser non avviano l'audio da soli).
+
 
 La schermata iniziale spiega i tre modi di giocare (voce, sensori, tocco) e gli enigmi. Poi una guida a 5 schede, con immagini prese dal gioco (`public/tutorial/`), mostra muoversi, osservare, soffiare, la torcia, lente/orecchio/fotocamera. La guida si riapre in gioco con il tasto **Guida** o dicendo «aiuto».
 

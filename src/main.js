@@ -903,6 +903,7 @@ $('btn-skip').addEventListener('click', () => {
 
 async function begin() {
   audio.init();
+  audio.stopMenuMusic();
   audio.setAmbience('ext');
   $('start').classList.add('out');
   $('hud').hidden = false;
@@ -924,6 +925,16 @@ async function begin() {
   if (!state.gyro && 'ontouchstart' in window) toast('Movimento non attivo: trascina con il dito per guardarti intorno.', 4500);
   try { await navigator.wakeLock?.request('screen'); } catch { /* non essenziale */ }
 }
+// musica del menu: il carillon del finale. I browser fanno partire l'audio solo
+// dopo un tocco, quindi parte al primo tocco sulla schermata iniziale o sulla guida.
+const menuTouch = () => {
+  if (state.started) return;
+  audio.init();
+  audio.startMenuMusic();
+};
+$('start').addEventListener('pointerdown', menuTouch);
+$('tutorial').addEventListener('pointerdown', menuTouch);
+
 // ---------- menu principale ----------
 // si torna alla schermata iniziale: si può riprendere la partita o ricominciare
 function showMenu() {
@@ -946,8 +957,10 @@ function showMenu() {
   resetNewGame();
   $('start').classList.remove('out');
   $('start').scrollTop = 0;
+  audio.startMenuMusic();
 }
 function resume() {
+  audio.stopMenuMusic();
   state.inMenu = false;
   state.started = true;
   $('start').classList.add('out');

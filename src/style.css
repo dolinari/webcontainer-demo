@@ -187,3 +187,5 @@ button.ghost:disabled { visibility: hidden; }
 #diag { position: fixed; z-index: 50; left: 8px; right: 8px; top: calc(env(safe-area-inset-top) + 54px); margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, 0.75); color: #9f9; font: 11px/1.45 ui-monospace, Menlo, monospace; pointer-events: none; white-space: pre-wrap; }
 #voice-chip.tap { background: rgba(160, 60, 30, 0.85); color: var(--ink); }
 #voice-chip.tap i { background: #ffb08a; animation: none; }
+#scope-skip { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 72px); background: none; border: 0; color: var(--dim); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+#scope-msg { bottom: calc(env(safe-area-inset-bottom) + 118px) !important; }
