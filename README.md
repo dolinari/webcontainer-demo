@@ -21,9 +21,11 @@ npm run build    # build statica in dist/
 3. **Studio** – candele, una scritta sul muro visibile solo con la torcia, e il foglio: quando ci scrivi un messaggio, la macchina da scrivere risponde da sola «Non è qui quello che cerchi. Prova l'altro ingresso.» e si apre la porta dell'ala laterale, fuori a destra.
 4. **Sala da pranzo** (dall'altro ingresso) – camino acceso, tavola apparecchiata, un grammofono che suona un valzer per violino, ritratti, busto, pendola. In fondo, lo **studiolo**: mappamondo, mappa, lampada a olio e un manoscritto con righe minuscole in fondo.
 5. **La lente** – il manoscritto si apre a schermo intero; si muove la lente inclinando il telefono (o col dito). Le righe nascoste dicono di «guardare oltre te stesso»: chiudendo la lente il grammofono si ferma e fuori si accendono le lanterne del belvedere.
-6. **Il cannocchiale** – il belvedere è alle spalle del punto di arrivo in giardino. Guardando nel cannocchiale si accende la fotocamera posteriore dentro un oculare d'epoca; nel mondo reale c'è una luce agganciata a una direzione: va trovata muovendo il telefono e tenuta al centro del reticolo finché va a fuoco. È una lanterna: qualcuno sta tornando a casa. Fine del primo capitolo.
+6. **Il cannocchiale** – il belvedere è alle spalle del punto di arrivo in giardino. Dentro c'è una valle di montagna dipinta a 360° (`src/landscape.js`) con la bussola: villaggio, ruscello, rudere, altare di pietra. Tre "coordinate" sono illusioni ottiche: a Nord l'altare sembra un **7**, a Est il ruscello un **2**, a Ovest il rudere un **4**. Si registrano tenendo il reticolo fermo su ciascuna; il codice si legge da Nord in senso orario: **724**.
+7. **L'armadio** – nel corridoio, chiuso da un lucchetto a tre rotelle. Con 724 si apre: dentro la foto di una donna (Livia) e una poesia d'amore firmata E., che parla di «guardare con due occhi» dal muretto che guarda il tramonto.
+8. **Il binocolo** – sul muretto a sinistra della villa. Qui si accende la fotocamera posteriore dentro due oculari: si cerca una luce agganciata a un punto del mondo reale e la si tiene al centro finché va a fuoco. È Livia, con una lanterna. Fine: «Hai trovato il mistero della Villa al Tramonto».
 
-I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, messaggio) restano salvati nel browser.
+I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, coordinate, armadio, binocolo, messaggio) restano salvati nel browser.
 
 ## Introduzione e guida
 
@@ -42,7 +44,9 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Osservare | comando vocale «osserva»: descrizione breve dell'oggetto che stai guardando (testi in `src/observe.js`) | – |
 | Carillon | quasi inudibile a telefono lontano; all'orecchio (telefono verticale e inclinato) si sente forte con effetto telefonata/walkie-talkie | pulsante «Tieni premuto per ascoltare» |
 | Messaggio | disegno con il dito; la macchina da scrivere risponde e apre l'altro ingresso | – |
-| Cannocchiale | fotocamera posteriore nell'oculare + giroscopio per cercare la luce; senza fotocamera una valle dipinta | trascinamento col dito |
+| Cannocchiale | giroscopio sul panorama dipinto a 360°, bussola, tre cifre da registrare tenendo fermo il reticolo | trascinamento col dito |
+| Lucchetto | rotelle da girare col dito (frecce o trascinamento) | – |
+| Binocolo | fotocamera posteriore in due oculari + giroscopio per cercare la luce; senza fotocamera una valle dipinta | trascinamento col dito |
 | Lente | giroscopio: inclinare il telefono sposta la lente sul manoscritto; il testo ingrandito è ridisegnato in scala, quindi resta nitido | trascinamento col dito |
 
 Il riconoscimento vocale di Chrome e Safari usa i server di Google/Apple: serve la connessione.
@@ -60,7 +64,8 @@ Nessun audio viene registrato o inviato: il microfono serve solo a misurare il v
 - `src/observe.js` – descrizioni del comando «osserva»
 - `src/dining.js` – sala da pranzo e studiolo
 - `src/magnifier.js` – manoscritto e lente d'ingrandimento
-- `src/scope.js` – cannocchiale con la fotocamera
+- `src/landscape.js` – il cannocchiale: panorama e coordinate
+- `src/scope.js` – il binocolo con la fotocamera
 - `src/audio.js` – audio sintetizzato, microfono, torcia LED
 
 Prestazioni: pixel ratio limitato a 2 (e ridotto automaticamente se il frame rate cala), nessuna ombra dinamica, poche luci puntiformi per scena.

@@ -311,6 +311,27 @@ export function buildExterior() {
     cap.visible = !on;
   };
 
+  // --- binocolo sul muretto, rivolto a ponente ---
+  const NX = -7.7, NZ = 10.5;
+  const bino = new THREE.Group();
+  bino.add(cyl(0.05, 0.08, 1.15, iron, 0, 0.575, 0, 8));
+  bino.add(cyl(0.22, 0.26, 0.06, stoneTrim, 0, 0.03, 0, 12));
+  const head = new THREE.Group();
+  head.add(box(0.14, 0.12, 0.3, brass, 0, 0, 0));
+  for (const s of [-1, 1]) {
+    const t = cyl(0.045, 0.055, 0.32, brass, -0.12, 0, s * 0.085, 12); t.rotation.z = Math.PI / 2; head.add(t);
+    const e = cyl(0.03, 0.03, 0.08, iron, 0.1, 0.01, s * 0.065, 10); e.rotation.z = Math.PI / 2; head.add(e);
+  }
+  head.position.y = 1.25; head.rotation.z = -0.08;
+  bino.add(head);
+  bino.position.set(NX, 0, NZ);
+  scene.add(bino);
+  const binoGlow = glowSprite(0xffb050, 1.6, 0);
+  binoGlow.position.set(NX + 0.1, 1.5, NZ);
+  scene.add(binoGlow);
+  let binoOn = false;
+  const setBinocular = (on) => { binoOn = on; };
+
   // foglie che cadono
   const N = 110, lp = new Float32Array(N * 3), seeds = [];
   for (let i = 0; i < N; i++) {
@@ -339,6 +360,7 @@ export function buildExterior() {
     const lf = obsOn ? 0.9 + 0.08 * Math.sin(t * 8.3) : 0;
     for (const gl of obsLights) gl.material.opacity = 0.85 * lf;
     obsLight.intensity = 12 * lf;
+    binoGlow.material.opacity = binoOn ? 0.5 + 0.2 * Math.sin(t * 2.5) : 0;
   };
 
   return {
@@ -349,6 +371,10 @@ export function buildExterior() {
     exposure: 1.0,
     setSideDoor,
     setObservatory,
+    setBinocular,
+    binoPos: new THREE.Vector3(NX, 1.3, NZ),
+    binoView: new THREE.Vector3(NX + 0.75, 1.6, NZ),
+    binoLook: new THREE.Vector3(NX - 20, 1.4, NZ),
     scopePos: new THREE.Vector3(BX, 1.55, BZ - 0.3),
     scopeView: new THREE.Vector3(BX, 1.62, BZ - 0.95),
     scopeLook: new THREE.Vector3(BX, 1.5, BZ + 8),

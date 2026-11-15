@@ -79,10 +79,44 @@
     <canvas id="scope-canvas"></canvas>
     <p id="scope-msg"></p>
     <div id="scope-end" hidden>
-      <b>Fine del primo capitolo</b>
-      <span>Grazie di essere entrato nella villa.</span>
+      <b>Hai trovato il mistero della Villa al Tramonto</b>
+      <span>Grazie di essere entrato nella villa. Per ora, la storia si ferma qui.</span>
     </div>
     <div class="row"><button id="scope-close" class="primary">Chiudi</button></div>
+  </div>
+
+  <div id="land" hidden>
+    <canvas id="land-canvas"></canvas>
+    <p id="land-msg"></p>
+    <div id="land-slots"></div>
+    <div class="row"><button id="land-close" class="primary">Chiudi</button></div>
+  </div>
+
+  <div id="lock" hidden>
+    <div class="lock-card">
+      <p class="lock-over">L’armadio del corridoio</p>
+      <h2>Il lucchetto</h2>
+      <p id="lock-msg">Tre rotelle d’ottone. Servono tre cifre.</p>
+      <div class="wheels"><div class="wheel" data-i="0"><button class="up" aria-label="Rotella 1 su"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 1 giù"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div><div class="wheel" data-i="1"><button class="up" aria-label="Rotella 2 su"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 2 giù"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div><div class="wheel" data-i="2"><button class="up" aria-label="Rotella 3 su"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 3 giù"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div></div>
+      <div class="row">
+        <button id="lock-close" class="ghost">Chiudi</button>
+        <button id="lock-open" class="primary">Apri</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="letter" hidden>
+    <article class="letter-card">
+      <figure><canvas id="letter-photo" width="300" height="380"></canvas></figure>
+      <h2>A Livia</h2>
+      <div class="poem">
+        <p>Ti ho cercata nei ritratti,<br />nel fuoco, nel valzer graffiato,<br />nelle candele che lascio accese<br />per chi non torna.</p>
+        <p>Ti ho cercata nella valle,<br />tra la pietra e l’acqua,<br />ma la valle mi ha dato soltanto numeri,<br />e io volevo il tuo nome.</p>
+        <p>Se vuoi trovarmi, guarda con due occhi,<br />non con uno solo:<br />dove il muro di pietra del giardino<br />guarda il sole che muore,<br />ti ho lasciato i miei.</p>
+      </div>
+      <p class="sig">— E.</p>
+    </article>
+    <button id="letter-close" class="primary">Chiudi la lettera</button>
   </div>
 
   <div id="toast"></div>
@@ -107,7 +141,7 @@
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke-width="2"/><path d="M3 9c-1.2 2-1.2 4 0 6M21 9c1.2 2 1.2 4 0 6" fill="none" stroke-width="1.8"/></svg></i>
           <div>
             <h3>I sensori</h3>
-            <p><b>Muovi il telefono</b> per guardarti intorno. <b>Soffia</b> sul microfono per spegnere le candele, e non solo. <b>Portalo all’orecchio</b> per ascoltare. Nel cannocchiale la <b>fotocamera</b> ti fa guardare davvero.</p>
+            <p><b>Muovi il telefono</b> per guardarti intorno. <b>Soffia</b> sul microfono per spegnere le candele, e non solo. <b>Portalo all’orecchio</b> per ascoltare. Nel binocolo la <b>fotocamera</b> ti fa guardare davvero.</p>
           </div>
         </section>
         <section class="way">
@@ -121,7 +155,7 @@
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke-width="2"/><path d="M12 12h10M18 12v3M21 12v2" fill="none" stroke-width="2"/></svg></i>
           <div>
             <h3>Gli enigmi</h3>
-            <p>Punta lo sguardo e di’ «osserva»: quasi ogni cosa ha qualcosa da raccontare, spesso un indizio. Ogni sensore può essere la chiave.</p>
+            <p>Punta lo sguardo e di’ «osserva»: quasi ogni cosa ha qualcosa da raccontare, spesso un indizio. Troverai lucchetti, codici nascosti nel paesaggio, messaggi da decifrare: ogni sensore può essere la chiave.</p>
           </div>
         </section>
       </div>
@@ -138,7 +172,7 @@
         <li data-k="motion"><b>Movimento</b> <span>per guardarti intorno e muovere la lente</span><em>…</em></li>
         <li data-k="mic"><b>Microfono</b> <span>per il soffio e la voce</span><em>…</em></li>
         <li data-k="voice"><b>Comandi vocali</b> <span>«cammina», «osserva», «torcia»…</span><em>…</em></li>
-        <li data-k="camera"><b>Fotocamera</b> <span>per guardare nel cannocchiale</span><em>…</em></li>
+        <li data-k="camera"><b>Fotocamera</b> <span>per guardare nel binocolo</span><em>…</em></li>
       </ol>
       <button id="btn-start" class="primary">Inizia</button>
       <button id="btn-skip" class="link" hidden>Salta questo passo</button>
@@ -180,7 +214,7 @@
       <article class="slide">
         <figure><img src="tutorial/5-lente.jpg" alt="La lente d’ingrandimento sulle righe minuscole di un manoscritto" width="780" height="880" /></figure>
         <h2>Le mani, l’orecchio, l’occhio</h2>
-        <p><b>Scrivi</b> col dito sui fogli. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel cannocchiale, la <b>fotocamera</b> ti fa guardare oltre.</p>
+        <p><b>Scrivi</b> col dito sui fogli. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel binocolo, la <b>fotocamera</b> ti fa guardare oltre.</p>
         <div class="chips"><span class="chip gesture">scrivi</span><span class="chip gesture">inclina</span><span class="chip gesture">all’orecchio</span><span class="chip gesture">fotocamera</span></div>
       </article>
     </div>

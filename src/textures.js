@@ -517,3 +517,47 @@ export function fireGlimpseTex() {
   g.fillStyle = '#3a1410'; g.beginPath(); g.moveTo(20, 256); g.lineTo(108, 256); g.lineTo(84, 210); g.lineTo(44, 210); g.fill();
   return toTex(c);
 }
+
+/** Fotografia d'epoca di una donna (seppia, bordo bianco): per l'armadio e la lettera */
+export function womanPhotoCanvas(w = 300, h = 380) {
+  const [c, g] = mk(w, h), r = rng(170);
+  g.fillStyle = '#efe6d2'; g.fillRect(0, 0, w, h);
+  const m = w * 0.07, iw = w - m * 2, ih = h - m * 2 - h * 0.05;
+  g.save();
+  g.beginPath(); g.rect(m, m, iw, ih); g.clip();
+  const bg = g.createRadialGradient(w * 0.5, h * 0.38, 10, w * 0.5, h * 0.45, h * 0.7);
+  bg.addColorStop(0, '#b8a07a'); bg.addColorStop(1, '#4a3a28');
+  g.fillStyle = bg; g.fillRect(m, m, iw, ih);
+  const cx = w * 0.5, fy = h * 0.36, fr = w * 0.13;
+  // spalle e abito accollato
+  g.fillStyle = '#2a1e14';
+  g.beginPath(); g.moveTo(cx - w * 0.36, h); g.bezierCurveTo(cx - w * 0.34, h * 0.62, cx - w * 0.16, h * 0.56, cx, h * 0.55); g.bezierCurveTo(cx + w * 0.16, h * 0.56, cx + w * 0.34, h * 0.62, cx + w * 0.36, h); g.fill();
+  g.fillStyle = '#3a2a1c'; g.fillRect(cx - fr * 0.45, fy + fr * 1.05, fr * 0.9, fr * 0.75); // colletto alto
+  g.fillStyle = '#d8c8a8'; g.beginPath(); g.arc(cx, fy + fr * 1.55, fr * 0.12, 0, 7); g.fill(); // spilla
+  // collo e viso
+  g.fillStyle = '#c8b090'; g.fillRect(cx - fr * 0.32, fy + fr * 0.6, fr * 0.64, fr * 0.6);
+  const face = g.createRadialGradient(cx - fr * 0.2, fy - fr * 0.2, 2, cx, fy, fr * 1.2);
+  face.addColorStop(0, '#e8d8b8'); face.addColorStop(1, '#a88c68');
+  g.fillStyle = face; g.beginPath(); g.ellipse(cx, fy, fr * 0.78, fr, 0, 0, 7); g.fill();
+  // capelli raccolti
+  g.fillStyle = '#2a1a10';
+  g.beginPath(); g.ellipse(cx, fy - fr * 0.55, fr * 0.95, fr * 0.6, 0, Math.PI, 0); g.fill();
+  g.beginPath(); g.arc(cx, fy - fr * 1.25, fr * 0.42, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(cx - fr * 0.8, fy - fr * 0.1, fr * 0.22, fr * 0.5, 0.2, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(cx + fr * 0.8, fy - fr * 0.1, fr * 0.22, fr * 0.5, -0.2, 0, 7); g.fill();
+  // tratti del viso, appena accennati
+  g.fillStyle = 'rgba(50,30,20,0.7)';
+  g.beginPath(); g.ellipse(cx - fr * 0.3, fy - fr * 0.05, fr * 0.11, fr * 0.05, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(cx + fr * 0.3, fy - fr * 0.05, fr * 0.11, fr * 0.05, 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(120,60,50,0.55)'; g.beginPath(); g.ellipse(cx, fy + fr * 0.48, fr * 0.16, fr * 0.05, 0, 0, 7); g.fill();
+  // grana, macchie e vignetta della vecchia stampa
+  grain(g, w, h, r, 2500, 0.12);
+  blotches(g, w, h, r, 8, ['90,60,30'], 20, 70, 0.15);
+  const v = g.createRadialGradient(cx, h * 0.45, h * 0.25, cx, h * 0.45, h * 0.7);
+  v.addColorStop(0, 'rgba(40,25,10,0)'); v.addColorStop(1, 'rgba(40,25,10,0.6)');
+  g.fillStyle = v; g.fillRect(0, 0, w, h);
+  g.restore();
+  g.fillStyle = 'rgba(80,50,30,0.8)'; g.font = `italic ${Math.round(w * 0.055)}px Georgia, serif`; g.textAlign = 'center';
+  g.fillText('Livia, 1886', w / 2, h - m * 0.9);
+  return c;
+}

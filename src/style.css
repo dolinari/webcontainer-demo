@@ -139,3 +139,40 @@ button.ghost:disabled { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .slides { scroll-behavior: auto; } }
 #btn-motion[aria-pressed='false'] { opacity: 0.55; }
 #btn-motion[aria-pressed='false'] .wave { display: none; }
+
+/* ---- cannocchiale: paesaggio ---- */
+#land { position: fixed; inset: 0; background: #060302; touch-action: none; }
+#land canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+#land-msg { position: absolute; left: 16px; right: 16px; top: calc(env(safe-area-inset-top) + 14px); margin: 0; text-align: center; font-size: 15px; line-height: 1.4; font-style: italic; color: var(--ink); text-shadow: 0 1px 6px #000; text-wrap: balance; pointer-events: none; }
+#land-slots { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 84px); display: flex; justify-content: center; gap: 10px; pointer-events: none; }
+#land-slots div { width: 54px; padding: 5px 0 6px; border-radius: 12px; border: 1px solid var(--line); background: rgba(18, 10, 6, 0.7); display: grid; justify-items: center; }
+#land-slots small { font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 0.1em; color: var(--dim); }
+#land-slots b { font-size: 26px; font-weight: normal; color: rgba(241, 226, 196, 0.35); line-height: 1.1; }
+#land-slots div.on { border-color: #e8b060; background: rgba(232, 176, 96, 0.18); }
+#land-slots div.on b { color: #ffd890; }
+#land .row { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 22px); display: flex; justify-content: center; }
+
+/* ---- lucchetto ---- */
+#lock { position: fixed; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(6, 3, 2, 0.82); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.lock-card { width: min(100%, 360px); text-align: center; padding: 22px 18px 18px; border-radius: 22px; border: 1px solid var(--line); background: linear-gradient(#2a1a0e, #140a06); box-shadow: 0 20px 60px #000; }
+.lock-over { margin: 0; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--amber); }
+.lock-card h2 { margin: 6px 0 4px; font-weight: normal; font-size: 28px; }
+#lock-msg { margin: 0 0 16px; color: var(--dim); font-style: italic; min-height: 2.8em; text-wrap: balance; }
+.wheels { display: flex; justify-content: center; gap: 12px; margin-bottom: 18px; padding: 14px 10px; border-radius: 16px; background: linear-gradient(90deg, #6a4a18, #c89a48 50%, #6a4a18); box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6); }
+.wheel { display: grid; justify-items: center; gap: 6px; touch-action: none; }
+.wheel b { width: 62px; height: 74px; display: grid; place-items: center; font-size: 44px; font-weight: normal; color: #f6e6c0; border-radius: 10px; background: linear-gradient(#1a1008, #3a2614 30%, #2a1a0c 70%, #120a04); box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.25), inset 0 6px 10px rgba(0, 0, 0, 0.7), inset 0 -6px 10px rgba(0, 0, 0, 0.7); font-variant-numeric: tabular-nums; }
+.wheel button { width: 62px; min-height: 38px; padding: 0; border-radius: 10px; background: rgba(20, 10, 4, 0.55); display: grid; place-items: center; }
+.wheel svg { width: 22px; height: 22px; stroke: #f6e6c0; fill: none; }
+#lock .row { display: flex; gap: 10px; justify-content: center; }
+#lock .row button { min-width: 120px; }
+#lock.wrong .wheels { animation: shake 0.4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+
+/* ---- lettera nell'armadio ---- */
+#letter { position: fixed; inset: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 24px); background: rgba(6, 3, 2, 0.9); }
+.letter-card { width: min(100%, 380px); padding: 22px 22px 18px; border-radius: 4px; color: #2a1a10; background: radial-gradient(ellipse at 40% 30%, #efe2c0, #d8c49a 70%, #b89c6c); box-shadow: 0 20px 60px #000; transform: rotate(-0.6deg); text-align: center; }
+.letter-card figure { margin: 0 auto 14px; width: 150px; transform: rotate(2deg); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); }
+.letter-card canvas { display: block; width: 100%; height: auto; }
+.letter-card h2 { margin: 0 0 10px; font-weight: normal; font-style: italic; font-size: 24px; }
+.poem p { margin: 0 0 14px; font-style: italic; font-size: 16.5px; line-height: 1.5; }
+.letter-card .sig { margin: 4px 0 0; text-align: right; font-style: italic; font-size: 20px; }

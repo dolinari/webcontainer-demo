@@ -31,8 +31,12 @@ export const OBSERVABLES = {
         : 'Una piccola terrazza rotonda di pietra, affacciata sulla valle. Le lanterne sono spente.') },
     { name: 'Il cannocchiale', pos: V(-2.5, 1.62, 24.4), range: 5, size: 0.3,
       text: (c) => (c.scope
-        ? 'Un cannocchiale d’ottone sul treppiede, puntato verso la valle. Il coperchio è stato tolto. Avvicina l’occhio.'
+        ? 'Un cannocchiale d’ottone sul treppiede, puntato verso la valle. Il coperchio è stato tolto. Avvicina l’occhio, e osserva bene.'
         : 'Un cannocchiale d’ottone sul treppiede, puntato verso la valle. La lente è chiusa da un coperchio di legno.') },
+    { name: 'Il binocolo', pos: V(-7.7, 1.3, 10.5), range: 6, size: 0.3,
+      text: (c) => (c.bino
+        ? 'Un binocolo d’ottone su un piedistallo di ferro, rivolto a ponente. «Guarda con due occhi», diceva la lettera.'
+        : 'Un vecchio binocolo d’ottone su un piedistallo, rivolto verso il tramonto. Gli oculari sono appannati.') },
     { name: 'Il muretto', pos: V(-10, 0.7, 10), range: 9, size: 2.5,
       text: 'Un muretto di pietra a secco, coperto di muschio. Da qui si vede tutta la valle.' },
     { name: 'L’ala laterale', pos: V(10, 2.3, -1.2), range: 18, size: 2.5,
@@ -54,7 +58,15 @@ export const OBSERVABLES = {
     { name: 'Il trofeo di cervo', pos: V(-1.72, 2.85, -3.6), range: 6, size: 0.45,
       text: 'Un cranio di cervo con i palchi, appeso al muro. È lì da così tanto che la polvere l’ha reso grigio.' },
     { name: 'L’armadio', pos: V(-1.47, 1.3, -5.4), range: 4.5, size: 0.8,
-      text: 'Un alto armadio a due ante. Sopra c’è un vaso di ceramica. Le ante sono socchiuse, ma dentro è troppo buio per vedere.' },
+      text: (c) => (c.wardrobe
+        ? 'Le ante sono aperte. Dentro, su un ripiano, la fotografia di una donna e una lettera piegata in due.'
+        : 'Un alto armadio a due ante, chiuso da un lucchetto a combinazione: tre rotelle d’ottone.') },
+    { name: 'Il lucchetto', pos: V(-1.1, 1.27, -5.4), range: 3, size: 0.12,
+      text: (c) => (c.wardrobe
+        ? 'Il lucchetto aperto pende dall’occhiello.'
+        : c.code
+          ? 'Tre rotelle, tre cifre. Quelle che hai visto nella valle potrebbero essere la chiave.'
+          : 'Un lucchetto d’ottone con tre rotelle numerate. Servono tre cifre: qui intorno non c’è scritto niente.') },
     { name: 'Il lampadario', pos: V(0, 3.55, -6.6), range: 8, size: 0.6,
       text: 'Un lampadario di ferro con otto candele accese. Oscilla appena, anche se non c’è vento.' },
     { name: 'La stanza a destra', pos: V(3.6, 1.4, -3.5), range: 6, size: 1.5,

@@ -10,6 +10,8 @@ import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
 import { Scope } from './scope.js';
+import { Landscape, CODE } from './landscape.js';
+import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,7 +37,8 @@ camera.add(torch, torch.target);
 const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining() };
 const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', study: 'Lo studio', dining: 'La sala da pranzo' };
 const magnifier = new Magnifier();
-const scope = new Scope(controls, camera);
+const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
+const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
@@ -57,11 +60,17 @@ const state = {
   read: store.get('villa-letto') === '1',     // le righe nascoste sono state lette
   gramophone: true,
   scope: store.get('villa-cannocchiale') === '1', // il cannocchiale è stato scoperto
+  coords: JSON.parse(store.get('villa-coordinate') || '[]'), // cifre trovate nel paesaggio
+  wardrobe: store.get('villa-armadio') === '1',   // l'armadio è aperto
+  bino: store.get('villa-binocolo') === '1',       // il binocolo è stato scoperto
 };
 if (state.unlocked) S.exterior.setSideDoor(true);
 // chi aveva già letto il manoscritto con una versione precedente trova il cannocchiale pronto
 if (state.read && !state.scope) { state.scope = true; store.set('villa-cannocchiale', '1'); }
 if (state.scope) S.exterior.setObservatory(true);
+if (state.wardrobe) S.corridor.setWardrobe(true, true);
+if (state.bino) S.exterior.setBinocular(true);
+const codeDone = () => CODE.every((d) => state.coords.includes(d));
 let move = null;      // spostamento animato verso un punto
 let walk = null;      // camminata libera (comando vocale)
 let cur = S.exterior;
@@ -340,7 +349,7 @@ function observe() {
   let title, text;
   if (!hit) { title = 'Niente di particolare'; text = 'Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».'; }
   else if (hit.far) { title = hit.item.name; text = 'È troppo lontano per vederlo bene. Avvicinati.'; }
-  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope }); }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
   obsEl.hidden = false;
@@ -375,6 +384,10 @@ function hotspots() {
       const d = here.distanceTo(E.scopePos);
       if (state.scope) list.push({ pos: E.scopePos, label: d > 4 ? 'Il cannocchiale — avvicinati' : 'Guarda nel cannocchiale', act: d > 4 ? () => moveTo(E.scopeView, E.scopeLook, null, 1 + d * 0.25) : focusScope });
       else if (d < 7) list.push({ pos: E.scopePos, label: 'Il cannocchiale', act: () => toast('La lente è chiusa da un coperchio di legno. Forse non è ancora il momento.', 3000) });
+      if (state.bino) {
+        const b = here.distanceTo(E.binoPos);
+        list.push({ pos: E.binoPos, label: b > 4 ? 'Il binocolo — avvicinati' : 'Guarda nel binocolo', act: b > 4 ? () => moveTo(E.binoView, E.binoLook, null, 1 + b * 0.22) : focusBino });
+      }
     }
     if (state.unlocked) {
       const far = here.distanceTo(E.sideDoorPos) > 7;
@@ -387,6 +400,10 @@ function hotspots() {
       list.push({ pos: C.candlePos, label: 'Il candelabro — avvicinati', act: () => focusCandle(C) });
       list.push({ pos: C.musicPos, label: 'Un carillon — avvicinati', act: focusMusic });
       list.push({ pos: C.endDoor, door: true, label: 'La stanza in fondo', act: enterStudy });
+      if (here.distanceTo(C.lockPos) < 4) {
+        if (!state.wardrobe) list.push({ pos: C.lockPos, label: 'Il lucchetto dell’armadio', act: focusLock });
+        else list.push({ pos: C.wardrobeInside, label: 'La lettera nell’armadio', act: openLetter });
+      }
       list.push({ pos: C.exitDoor, door: true, label: 'Esci nel giardino', act: goOutside });
     }
   } else if (state.scene === 'dining') {
@@ -582,12 +599,84 @@ function playEnding() {
   }, 1500);
 }
 
-// ---------- cannocchiale ----------
+// ---------- cannocchiale: le tre coordinate nel paesaggio ----------
 function focusScope() {
+  const E = S.exterior;
+  enterFocus('land');
+  moveTo(E.scopeView, E.scopeLook, () => { if (state.focus === 'land') land.open(state.coords); }, 1.3);
+}
+land.onFound = (list) => { state.coords = list; store.set('villa-coordinate', JSON.stringify(list)); };
+$('land-close').addEventListener('click', () => leaveFocus());
+
+// ---------- l'armadio: lucchetto e lettera ----------
+const wheelVals = [0, 0, 0];
+const wheelEls = [...document.querySelectorAll('.wheel')];
+function setWheel(i, v) {
+  wheelVals[i] = (v + 10) % 10;
+  wheelEls[i].querySelector('b').textContent = wheelVals[i];
+  audio.click('key');
+}
+wheelEls.forEach((el, i) => {
+  el.querySelector('.up').addEventListener('click', () => setWheel(i, wheelVals[i] + 1));
+  el.querySelector('.down').addEventListener('click', () => setWheel(i, wheelVals[i] - 1));
+  // trascinare la rotella in su o in giù la fa girare
+  const b = el.querySelector('b');
+  let y0 = null;
+  b.addEventListener('pointerdown', (e) => { y0 = e.clientY; b.setPointerCapture(e.pointerId); });
+  b.addEventListener('pointermove', (e) => {
+    if (y0 == null) return;
+    const steps = Math.trunc((y0 - e.clientY) / 26);
+    if (steps) { setWheel(i, wheelVals[i] + steps); y0 -= steps * 26; }
+  });
+  b.addEventListener('pointerup', () => { y0 = null; });
+  b.addEventListener('pointercancel', () => { y0 = null; });
+});
+function focusLock() {
+  const C = S.corridor;
+  enterFocus('lock');
+  moveTo(C.lockView, C.lockPos, () => {
+    if (state.focus !== 'lock') return;
+    $('lock-msg').textContent = codeDone() ? 'Tre rotelle d’ottone. Tre cifre… forse le hai già viste da qualche parte.' : 'Tre rotelle d’ottone. Servono tre cifre.';
+    $('lock').hidden = false;
+  }, 1.2);
+}
+$('lock-open').addEventListener('click', () => {
+  if (wheelVals.join('') === CODE.join('')) {
+    $('lock-msg').textContent = 'Clic. Il lucchetto si apre.';
+    if (navigator.vibrate) navigator.vibrate([20, 50, 40]);
+    audio.click('puff');
+    state.wardrobe = true;
+    store.set('villa-armadio', '1');
+    setTimeout(() => {
+      $('lock').hidden = true;
+      S.corridor.setWardrobe(true);
+      setTimeout(() => { if (state.focus === 'lock') openLetter(); }, 1600);
+    }, 700);
+  } else {
+    $('lock').classList.remove('wrong'); void $('lock').offsetWidth; $('lock').classList.add('wrong');
+    if (navigator.vibrate) navigator.vibrate(60);
+    $('lock-msg').textContent = codeDone()
+      ? 'Il lucchetto non cede. Ricorda l’ordine: da Nord, come girano le lancette.'
+      : 'Il lucchetto non cede. Le cifre giuste sono altrove, forse oltre il giardino.';
+  }
+});
+$('lock-close').addEventListener('click', () => leaveFocus());
+let photoDrawn = false;
+function openLetter() {
+  if (!state.focus) enterFocus('letter');
+  state.focus = 'letter';
+  if (!photoDrawn) { $('letter-photo').getContext('2d').drawImage(womanPhotoCanvas(300, 380), 0, 0); photoDrawn = true; }
+  $('letter').hidden = false;
+  $('letter').scrollTop = 0;
+}
+$('letter-close').addEventListener('click', () => leaveFocus());
+
+// ---------- binocolo: la fotocamera e il finale ----------
+function focusBino() {
   const E = S.exterior;
   enterFocus('scope');
   if (state.torch) setTorch(false); // il LED usa la stessa fotocamera
-  moveTo(E.scopeView, E.scopeLook, () => { if (state.focus === 'scope') scope.open(); }, 1.3);
+  moveTo(E.binoView, E.binoLook, () => { if (state.focus === 'scope') scope.open(); }, 1.3);
 }
 scope.onReveal = () => {
   store.set('villa-fine', '1');
@@ -606,6 +695,21 @@ function leaveFocus(instant = false) {
   if (was === 'candle') audio.stopMic();
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
   if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-close').textContent = 'Chiudi'; }
+  if (was === 'land') {
+    land.close();
+    if (codeDone()) setHint('Tre cifre: ' + CODE.join(' · ') + '. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.');
+  }
+  if (was === 'lock') $('lock').hidden = true;
+  if (was === 'letter') {
+    $('letter').hidden = true;
+    if (!state.bino) {
+      state.bino = true;
+      store.set('villa-binocolo', '1');
+      S.exterior.setBinocular(true);
+      setTimeout(() => toast('«Guarda con due occhi»… In giardino, sul muretto che guarda il tramonto, c’è un binocolo.', 6500), 800);
+      setHint('Esci in giardino: sul muretto a sinistra della villa ti aspetta un binocolo.');
+    }
+  }
   if (was === 'music') {
     audio.stopMusicBox(); audio.setListen(0); S.corridor.setPlaying(false);
     state.listen = 0; listenHold = false; document.body.classList.remove('listening');
@@ -832,7 +936,7 @@ renderer.setAnimationLoop(() => {
     audio.tickFire(THREE.MathUtils.clamp(1 - camera.position.distanceTo(G.firePos) / 8, 0, 1));
   }
   updateMarkers(t);
-  if ((state.focus !== 'lens' && state.focus !== 'scope') || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
+  if (!['lens', 'scope', 'land'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
   if (state.started && ++frames > 30) {

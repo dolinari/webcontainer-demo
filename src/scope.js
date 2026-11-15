@@ -1,4 +1,4 @@
-// Il cannocchiale: la fotocamera del telefono dentro un oculare d'epoca.
+// Il binocolo: la fotocamera del telefono dentro due oculari d'epoca.
 // Nel mondo reale c'è una piccola luce "agganciata" a una direzione: va cercata
 // muovendo il telefono e tenuta ferma al centro del reticolo finché va a fuoco.
 import * as THREE from 'three';
@@ -47,7 +47,7 @@ export class Scope {
     const yaw = Math.atan2(-f.x, -f.z) - THREE.MathUtils.degToRad(38);
     const pitch = THREE.MathUtils.degToRad(3);
     this.target = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
-    this.msg.textContent = 'Muovi il telefono per guardare nella valle. Cerca una luce.';
+    this.msg.textContent = 'Guarda con due occhi. Muovi il telefono e cerca una luce.';
     this.hasCamera = await this._startCamera();
     if (!this.isOpen) { this._stopCamera(); return; }
     this.video.hidden = !this.hasCamera;
@@ -93,11 +93,30 @@ export class Scope {
     this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(h * dpr);
     this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.w = w; this.h = h;
-    this.R = Math.min(w, h * 0.8) * 0.45;
-    this.cx = w / 2; this.cy = h * 0.46;
-    // il video riempie il cerchio dell'oculare
-    const d = this.R * 2;
-    Object.assign(this.video.style, { width: d + 'px', height: d + 'px', left: this.cx - this.R + 'px', top: this.cy - this.R + 'px' });
+    // due oculari affiancati che si sovrappongono un poco
+    this.R = Math.min((w - 28) / 3.24 - 6, h * 0.3); // i due oculari, anelli compresi, stanno nello schermo
+    this.cx = w / 2; this.cy = h * 0.44;
+    this.off = this.R * 0.62;
+    // il video copre entrambi gli oculari; il resto lo nasconde la maschera
+    const vw = (this.off + this.R) * 2, vh = this.R * 2;
+    Object.assign(this.video.style, { width: vw + 'px', height: vh + 'px', left: this.cx - vw / 2 + 'px', top: this.cy - this.R + 'px', borderRadius: '0' });
+    // maschera: tutto nero tranne i due cerchi
+    this.mask = document.createElement('canvas');
+    this.mask.width = this.canvas.width; this.mask.height = this.canvas.height;
+    const m = this.mask.getContext('2d');
+    m.setTransform(dpr, 0, 0, dpr, 0, 0);
+    m.fillStyle = '#060302'; m.fillRect(0, 0, w, h);
+    m.globalCompositeOperation = 'destination-out';
+    for (const s of [-1, 1]) { m.beginPath(); m.arc(this.cx + s * this.off, this.cy, this.R, 0, Math.PI * 2); m.fill(); }
+    m.globalCompositeOperation = 'source-over';
+    // anelli d'ottone solo sul bordo esterno
+    for (const s of [-1, 1]) {
+      m.save();
+      m.beginPath(); m.rect(0, 0, w, h); m.arc(this.cx - s * this.off, this.cy, this.R + 2, 0, Math.PI * 2); m.clip('evenodd');
+      m.lineWidth = 12; m.strokeStyle = '#7a5418'; m.beginPath(); m.arc(this.cx + s * this.off, this.cy, this.R + 6, 0, Math.PI * 2); m.stroke();
+      m.lineWidth = 2; m.strokeStyle = '#e8c070'; m.beginPath(); m.arc(this.cx + s * this.off, this.cy, this.R + 1, 0, Math.PI * 2); m.stroke();
+      m.restore();
+    }
   }
 
   /** posizione della luce sullo schermo; null se è dietro di te */
@@ -124,7 +143,9 @@ export class Scope {
     this.video.style.filter = `sepia(0.55) saturate(0.8) contrast(1.08) brightness(0.82) blur(${(2.2 * (1 - focus)).toFixed(2)}px)`;
 
     g.save();
-    g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
+    g.beginPath();
+    g.arc(cx - this.off, cy, R, 0, Math.PI * 2); g.moveTo(cx + this.off + R, cy); g.arc(cx + this.off, cy, R, 0, Math.PI * 2);
+    g.clip();
     // la luce (e, rivelata, la lanterna che cammina sul sentiero)
     if (!p.behind) {
       const bob = this.revealed ? Math.sin(t * 5) * 2 : 0;
@@ -144,24 +165,16 @@ export class Scope {
         g.fillStyle = `rgba(20,10,6,${a})`;
         const fx = p.x - size * 1.6, fy = p.y + bob - size * 0.6;
         g.beginPath(); g.arc(fx, fy - size * 1.5, size * 0.42, 0, Math.PI * 2); g.fill();
-        g.beginPath(); g.moveTo(fx - size * 0.6, fy + size * 2.4); g.lineTo(fx - size * 0.35, fy - size * 1.0); g.lineTo(fx + size * 0.35, fy - size * 1.0); g.lineTo(fx + size * 0.6, fy + size * 2.4); g.fill();
+        g.beginPath(); g.moveTo(fx - size * 0.95, fy + size * 2.6); g.quadraticCurveTo(fx - size * 0.5, fy + size * 0.4, fx - size * 0.3, fy - size * 1.0); g.lineTo(fx + size * 0.3, fy - size * 1.0); g.quadraticCurveTo(fx + size * 0.5, fy + size * 0.4, fx + size * 0.95, fy + size * 2.6); g.fill();
+        g.beginPath(); g.ellipse(fx, fy - size * 1.75, size * 0.5, size * 0.28, 0, Math.PI, 0); g.fill(); // capelli raccolti
       }
     }
-    // vignetta dell'oculare
-    const v = g.createRadialGradient(cx, cy, R * 0.55, cx, cy, R);
-    v.addColorStop(0, 'rgba(20,10,4,0)'); v.addColorStop(1, 'rgba(20,10,4,0.75)');
-    g.fillStyle = v; g.fillRect(cx - R, cy - R, R * 2, R * 2);
-    // reticolo
-    g.strokeStyle = 'rgba(30,18,8,0.75)'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(cx - R, cy); g.lineTo(cx - R * 0.08, cy); g.moveTo(cx + R * 0.08, cy); g.lineTo(cx + R, cy);
-    g.moveTo(cx, cy - R); g.lineTo(cx, cy - R * 0.08); g.moveTo(cx, cy + R * 0.08); g.lineTo(cx, cy + R); g.stroke();
-    for (let i = -8; i <= 8; i++) {
-      if (!i) continue;
-      const l = i % 4 ? 4 : 9;
-      g.beginPath(); g.moveTo(cx + i * R * 0.1, cy - l); g.lineTo(cx + i * R * 0.1, cy + l); g.stroke();
-      g.beginPath(); g.moveTo(cx - l, cy + i * R * 0.1); g.lineTo(cx + l, cy + i * R * 0.1); g.stroke();
+    // vignetta morbida ai bordi
+    for (const sd of [-1, 1]) {
+      const v = g.createRadialGradient(cx + sd * this.off, cy, R * 0.6, cx + sd * this.off, cy, R);
+      v.addColorStop(0, 'rgba(10,6,4,0)'); v.addColorStop(1, 'rgba(10,6,4,0.55)');
+      g.fillStyle = v; g.fillRect(cx + sd * this.off - R, cy - R, R * 2, R * 2);
     }
-    g.beginPath(); g.arc(cx, cy, R * 0.08, 0, Math.PI * 2); g.stroke();
     // messa a fuoco: arco che si riempie al centro
     if (!this.revealed && this.hold > 0.05) {
       g.strokeStyle = 'rgba(255,214,140,0.9)'; g.lineWidth = 3;
@@ -169,23 +182,18 @@ export class Scope {
     }
     g.restore();
 
-    // tutto il resto è il buio del tubo
+    // tutto il resto è il buio dei tubi
     g.save();
-    g.fillStyle = '#060302';
-    g.beginPath(); g.rect(0, 0, w, h); g.arc(cx, cy, R, 0, Math.PI * 2, true); g.fill('evenodd');
-    // anello d'ottone
-    g.lineWidth = 14; g.strokeStyle = '#7a5418';
-    g.beginPath(); g.arc(cx, cy, R + 7, 0, Math.PI * 2); g.stroke();
-    g.lineWidth = 2; g.strokeStyle = '#e8c070';
-    g.beginPath(); g.arc(cx, cy, R + 1, 0, Math.PI * 2); g.stroke();
-    g.lineWidth = 1; g.strokeStyle = 'rgba(232,192,112,0.4)';
-    g.beginPath(); g.arc(cx, cy, R + 14, 0, Math.PI * 2); g.stroke();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.drawImage(this.mask, 0, 0);
+    g.restore();
+    g.save();
     // freccia luminosa sul bordo verso la luce, se è fuori dall'oculare
     if (!this.revealed) {
       let dx, dy, show = false;
       if (p.behind) { dx = p.x; dy = p.y; show = true; } else if (Math.hypot(p.x - cx, p.y - cy) > R * 0.95) { dx = p.x - cx; dy = -(p.y - cy); show = true; }
       if (show) {
-        const a = Math.atan2(-dy, dx), ex = cx + Math.cos(a) * (R - 18), ey = cy + Math.sin(a) * (R - 18);
+        const a = Math.atan2(-dy, dx), ex = cx + Math.cos(a) * (R + this.off * Math.abs(Math.cos(a)) - 18), ey = cy + Math.sin(a) * (R - 18);
         const eg = g.createRadialGradient(ex, ey, 0, ex, ey, 34);
         eg.addColorStop(0, `rgba(255,190,90,${0.35 + 0.2 * Math.sin(t * 4)})`); eg.addColorStop(1, 'rgba(255,150,60,0)');
         g.fillStyle = eg; g.beginPath(); g.arc(ex, ey, 34, 0, Math.PI * 2); g.fill();
@@ -197,37 +205,38 @@ export class Scope {
   // senza fotocamera: una valle dipinta che si sposta con lo sguardo
   _drawValley() {
     const { g, cx, cy, R } = this;
+    const X = R + this.off; // metà larghezza dei due oculari insieme
     const f = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
     const yaw = Math.atan2(-f.x, -f.z), pitch = Math.asin(Math.max(-1, Math.min(1, f.y)));
     const k = R / Math.tan(HALF_FOV);
     const horizon = cy + Math.tan(pitch) * k;
     g.save();
-    g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
+    g.beginPath(); g.rect(cx - X, cy - R, X * 2, R * 2); g.clip();
     const sky = g.createLinearGradient(0, horizon - R * 2, 0, horizon);
     sky.addColorStop(0, '#2a1626'); sky.addColorStop(0.7, '#8a3a22'); sky.addColorStop(1, '#d8762a');
-    g.fillStyle = sky; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+    g.fillStyle = sky; g.fillRect(cx - X, cy - R, X * 2, R * 2);
     g.fillStyle = '#1a0e10';
-    g.beginPath(); g.moveTo(cx - R, cy + R);
-    for (let x = -R; x <= R; x += 6) {
+    g.beginPath(); g.moveTo(cx - X, cy + R);
+    for (let x = -X; x <= X; x += 6) {
       const a = yaw + (x / k);
       g.lineTo(cx + x, horizon - 18 - Math.sin(a * 5) * 14 - Math.sin(a * 13 + 1) * 6);
     }
-    g.lineTo(cx + R, cy + R); g.fill();
+    g.lineTo(cx + X, cy + R); g.fill();
     g.fillStyle = '#0c0608';
-    g.beginPath(); g.moveTo(cx - R, cy + R);
-    for (let x = -R; x <= R; x += 6) {
+    g.beginPath(); g.moveTo(cx - X, cy + R);
+    for (let x = -X; x <= X; x += 6) {
       const a = yaw + (x / k);
       g.lineTo(cx + x, horizon + 10 - Math.sin(a * 3 + 2) * 10);
     }
-    g.lineTo(cx + R, cy + R); g.fill();
+    g.lineTo(cx + X, cy + R); g.fill();
     g.restore();
   }
 
   _reveal() {
     this.revealed = true;
     if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
-    this.msg.textContent = 'Laggiù, sul sentiero, una lanterna. Qualcuno sta tornando a casa.';
-    setTimeout(() => { if (this.isOpen) this.msg.textContent = 'È così ogni sera, al tramonto. Adesso lo sai anche tu.'; }, 5000);
+    this.msg.textContent = 'È lei. Livia, con una lanterna in mano, lungo il sentiero verso la villa.';
+    setTimeout(() => { if (this.isOpen) this.msg.textContent = 'Ogni sera, al tramonto, lui accendeva le candele perché lei trovasse la strada di casa. Stasera la luce l’hai vista tu.'; }, 5500);
     this.onReveal?.();
   }
 }

@@ -119,7 +119,44 @@ export function buildCorridor() {
   trophy.position.set(-HW + 0.08, 2.85, -3.6); trophy.rotation.y = Math.PI / 2; scene.add(trophy);
 
   // armadio
-  scene.add(box(0.62, 2.45, 1.35, A.woodPanel, -HW + 0.33, 1.225, -5.4));
+  // carcassa con l'interno scuro, due ante apribili e un lucchetto a combinazione
+  const WX = -HW + 0.33, WZ = -5.4, FX = -HW + 0.64; // centro e fronte dell'armadio
+  const inner = new THREE.MeshStandardMaterial({ color: 0x1a0e08, roughness: 0.9 });
+  scene.add(box(0.04, 2.4, 1.35, inner, -HW + 0.04, 1.225, WZ));
+  for (const s of [-1, 1]) scene.add(box(0.62, 2.4, 0.04, A.woodPanel, WX, 1.225, WZ + s * 0.655));
+  scene.add(box(0.56, 0.03, 1.27, inner, WX, 1.24, WZ));
+  scene.add(box(0.56, 0.03, 1.27, inner, WX, 0.2, WZ));
+  // dentro: la foto di una donna e una lettera piegata
+  const photo = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.28), new THREE.MeshStandardMaterial({ map: T.toTex(T.womanPhotoCanvas()), roughness: 0.7, emissive: 0x2a1c10, emissiveIntensity: 0.5 }));
+  photo.position.set(-HW + 0.2, 1.41, WZ - 0.22); photo.rotation.set(0, Math.PI / 2, 0); photo.rotation.z = 0; photo.rotateX(-0.12);
+  scene.add(photo);
+  scene.add(box(0.012, 0.3, 0.24, A.gold, -HW + 0.19, 1.41, WZ - 0.22));
+  const letter = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.14), new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.9, emissive: 0x3a2c18, emissiveIntensity: 0.5 }));
+  letter.rotation.x = -Math.PI / 2; letter.rotation.z = 0.3; letter.position.set(WX + 0.05, 1.26, WZ + 0.22);
+  scene.add(letter);
+  const doors = [];
+  for (const s of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(FX, 1.225, WZ + s * 0.675);
+    const leaf = box(0.04, 2.36, 0.67, A.woodPanel, 0, 0, -s * 0.335);
+    pivot.add(leaf);
+    pivot.add(box(0.03, 0.12, 0.05, A.gold, 0.03, 0.02, -s * 0.62)); // maniglia / occhiello
+    scene.add(pivot);
+    doors.push({ pivot, s });
+  }
+  const lock = new THREE.Group();
+  lock.add(box(0.035, 0.085, 0.075, A.gold, 0, 0, 0));
+  const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.006, 6, 12, Math.PI), A.bronze);
+  shackle.rotation.y = Math.PI / 2; shackle.position.y = 0.042; lock.add(shackle);
+  for (let i = 0; i < 3; i++) { const d = cyl(0.012, 0.012, 0.016, new THREE.MeshStandardMaterial({ color: 0x2a1c0c, roughness: 0.5, metalness: 0.5 }), 0.02, -0.018, -0.022 + i * 0.022, 8); d.rotation.z = Math.PI / 2; lock.add(d); }
+  lock.position.set(FX + 0.06, 1.27, WZ);
+  scene.add(lock);
+  let doorAngle = 0, doorTarget = 0;
+  const setWardrobe = (open, instant = false) => {
+    doorTarget = open ? 1 : 0;
+    lock.visible = !open;
+    if (instant) doorAngle = doorTarget;
+  };
   scene.add(box(0.72, 0.1, 1.5, A.wood, -HW + 0.35, 2.5, -5.4));
   scene.add(box(0.68, 0.12, 1.42, A.wood, -HW + 0.34, 0.06, -5.4));
   const cv = urn(new THREE.MeshStandardMaterial({ color: 0xb8ac90, roughness: 0.4 }), 0.95); cv.position.set(-HW + 0.36, 2.55, -5.4); scene.add(cv);
@@ -192,6 +229,8 @@ export function buildCorridor() {
 
   let playing = false;
   const update = (dt, t, wind) => {
+    doorAngle += (doorTarget - doorAngle) * Math.min(1, dt * 2.2);
+    for (const d of doors) d.pivot.rotation.y = -d.s * doorAngle * 1.75;
     candles.update(dt, t, wind);
     chandelier.update(dt, t, 0);
     sconces.update(dt, t, 0);
@@ -210,6 +249,10 @@ export function buildCorridor() {
     musicPos: new THREE.Vector3(mbX, 0.92, mbZ),
     musicView: new THREE.Vector3(0.55, 1.4, -9.9),
     endDoor: new THREE.Vector3(0, 1.35, Z1),
+    setWardrobe,
+    lockPos: new THREE.Vector3(FX + 0.06, 1.27, WZ),
+    lockView: new THREE.Vector3(-0.15, 1.5, WZ + 0.15),
+    wardrobeInside: new THREE.Vector3(-HW + 0.3, 1.35, WZ),
     exitDoor: new THREE.Vector3(0, 1.45, Z0 - 0.1),
   };
 }
