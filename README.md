@@ -55,6 +55,12 @@ Il riconoscimento vocale di Chrome e Safari usa i server di Google/Apple: serve 
 
 Nessun audio viene registrato o inviato: il microfono serve solo a misurare il volume in locale.
 
+## Telefoni senza giroscopio
+
+Alcuni Android economici (es. Samsung Galaxy A15) non hanno un giroscopio: il browser ricava l'orientamento da accelerometro e bussola, e in casa la bussola sbanda. Il gioco lo riconosce e parte in modalità **«Inclina»**: il telefono serve a guardare su e giù, ci si gira col dito o con «destra»/«sinistra». Il tasto **Movimento** cicla tra *Movimento* (completo, con stabilizzazione forte), *Inclina* e *Dito*.
+
+Per capire cosa succede su un telefono, aprire il link con **`?diag`** (es. `https://dolinari.github.io/webcontainer-demo/?diag`): compare un riquadro con giroscopio sì/no, modalità, letture al secondo, rumore del sensore e fps.
+
 ## Struttura
 
 - `src/main.js` – regia: scene, punti d'interesse, interfaccia, ciclo di rendering

@@ -184,3 +184,4 @@ button.ghost:disabled { visibility: hidden; }
 #menu-resume .link, #menu-first .link { display: block; margin: 10px auto 0; }
 #btn-newgame.confirm { color: #ffb08a; }
 #menu-resume { margin: 4px 0 6px; }
+#diag { position: fixed; z-index: 50; left: 8px; right: 8px; top: calc(env(safe-area-inset-top) + 54px); margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, 0.75); color: #9f9; font: 11px/1.45 ui-monospace, Menlo, monospace; pointer-events: none; white-space: pre-wrap; }

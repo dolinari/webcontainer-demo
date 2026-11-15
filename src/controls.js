@@ -17,6 +17,8 @@ export class LookControls {
     this.aim = null;
     this.onTap = null;
     this._e = new THREE.Euler();
+    this._tq = new THREE.Quaternion();
+    this.tiltOnly = false;
     this._q = new THREE.Quaternion();
     this._v = new THREE.Vector3();
 
@@ -54,6 +56,7 @@ export class LookControls {
     const motion = (e) => {
       const r = e.rotationRate;
       this.noGyroscope = !r || (r.alpha == null && r.beta == null && r.gamma == null);
+      this.absolute = null;
       window.removeEventListener('devicemotion', motion);
     };
     window.addEventListener('devicemotion', motion);
@@ -62,6 +65,7 @@ export class LookControls {
       const handler = (e) => {
         if (e.alpha == null || e.beta == null || e.gamma == null) return;
         this.device = e;
+        this.absoluteEvent = e.absolute;
         const t = e.timeStamp || performance.now();
         const dt = this._lastT ? Math.min(0.1, Math.max(0.002, (t - this._lastT) / 1000)) : 1 / 60;
         this._lastT = t;
@@ -78,14 +82,26 @@ export class LookControls {
     const f = this._v.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
     const pitch = Math.asin(Math.max(-1, Math.min(1, f.y)));
     this.gyro = on;
-    if (on) { this._computeDevice(); this.smoothQ = this.deviceQ.clone(); this.yaw = yaw - this._deviceYaw(); }
+    if (on) {
+      this._computeDevice();
+      this.fYaw = null; this.fTilt = null;
+      this._filter(1 / 60);
+      this.yaw = yaw - this._deviceYaw();
+    }
     else { this.yaw = yaw; this.pitch = pitch; }
   }
 
-  /** Accende o spegne il movimento del telefono (resta disponibile il trascinamento). */
-  setMotion(on) {
-    if (on && !this.device) return false;
-    this._setGyro(on);
+  /** Modalità del movimento: 'full' (telefono), 'tilt' (solo inclinazione,
+   *  ci si gira col dito o con la voce), 'off' (solo dito). */
+  setMotion(mode) {
+    if (mode !== 'off' && !this.device) return false;
+    if (mode === 'off') { this._setGyro(false); this.mode = 'off'; return true; }
+    const camYaw = this.cameraYaw();
+    this.tiltOnly = mode === 'tilt';
+    this.mode = mode;
+    if (!this.gyro) this._setGyro(true);
+    else this._filter(1 / 60);
+    this.yaw = camYaw - this._deviceYaw(); // la vista non salta cambiando modalità
     return true;
   }
 
@@ -135,22 +151,68 @@ export class LookControls {
     return Math.abs(fy) < 0.62 && roll > 0.5 && roll < 1.5;
   }
 
-  /** Stabilizzazione con filtro "1 euro", applicata a ogni lettura del sensore:
-   *  a telefono fermo il taglio è basso e il rumore sparisce; quando ruota
-   *  davvero il taglio sale e la vista segue senza ritardo percepibile. */
+  /** Stabilizzazione, applicata a ogni lettura del sensore.
+   *  L'orientamento viene diviso in due parti:
+   *  - rotazione orizzontale (yaw): sui telefoni senza giroscopio viene dalla
+   *    bussola magnetica, che in casa sbanda e salta. Qui si scartano i salti
+   *    isolati, si ignorano i micro-movimenti e si filtra di più;
+   *  - inclinazione (su/giù e di lato): viene dall'accelerometro, è più
+   *    affidabile e resta reattiva.
+   *  Entrambe usano un filtro "1 euro": forte a telefono fermo, leggero quando
+   *  il telefono si muove davvero. */
   _filter(dt) {
     this._computeDevice();
-    if (!this.smoothQ) this.smoothQ = this.deviceQ.clone();
-    if (!this._prevQ) { this._prevQ = this.smoothQ.clone(); this.spd = 0; }
-    const jump = this.smoothQ.angleTo(this.deviceQ);
-    const fcMin = this.noGyroscope ? 0.35 : 1.2; // Hz a telefono fermo
-    const beta = this.noGyroscope ? 0.03 : 0.05; // quanto sale il taglio per ogni grado/s
-    const fc = fcMin + beta * this.spd;
-    const alpha = jump > 0.6 ? 1 : 1 - Math.exp(-2 * Math.PI * fc * dt); // salto grande (rotazione schermo): segui subito
-    this._prevQ.copy(this.smoothQ);
-    this.smoothQ.slerp(this.deviceQ, alpha);
-    const moved = THREE.MathUtils.radToDeg(this._prevQ.angleTo(this.smoothQ)) / dt;
-    this.spd += (moved - this.spd) * (1 - Math.exp(-2 * Math.PI * 1.5 * dt));
+    const raw = this.deviceQ;
+    const f = this._v.set(0, 0, -1).applyQuaternion(raw);
+    const vertical = Math.abs(f.y) > 0.92; // guardando quasi in verticale lo yaw non è affidabile
+    const yawRaw = Math.atan2(-f.x, -f.z);
+    const tiltRaw = this._tq.setFromAxisAngle(Y, -yawRaw).multiply(raw);
+    this._measure(yawRaw, tiltRaw, dt);
+    const noisy = this.noGyroscope || this.noisy;
+
+    // --- rotazione orizzontale ---
+    if (this.fYaw == null) { this.fYaw = yawRaw; this.yawSpd = 0; this.spikes = 0; }
+    let d = Math.atan2(Math.sin(yawRaw - this.fYaw), Math.cos(yawRaw - this.fYaw));
+    if (vertical) d = 0;
+    if (Math.abs(d) > 0.35 && this.spikes < 6) { this.spikes++; d = 0; } // salto isolato della bussola
+    else if (Math.abs(d) <= 0.35) this.spikes = 0;
+    if (noisy && Math.abs(d) < 0.02) d = 0; // zona morta: sotto ~1° non si muove
+    const fcY = (noisy ? 0.3 : 1.2) + (noisy ? 0.02 : 0.05) * this.yawSpd;
+    const stepY = Math.abs(d) > 1 ? d : d * (1 - Math.exp(-2 * Math.PI * fcY * dt));
+    this.fYaw += stepY;
+    this.yawSpd += (Math.abs(stepY) / dt * 57.3 - this.yawSpd) * (1 - Math.exp(-2 * Math.PI * 1.5 * dt));
+
+    // --- inclinazione ---
+    if (!this.fTilt) { this.fTilt = tiltRaw.clone(); this.tiltSpd = 0; this._pt = new THREE.Quaternion(); }
+    const jump = this.fTilt.angleTo(tiltRaw);
+    const fcT = (noisy ? 0.9 : 1.6) + 0.05 * this.tiltSpd;
+    const aT = jump > 0.6 ? 1 : 1 - Math.exp(-2 * Math.PI * fcT * dt);
+    this._pt.copy(this.fTilt);
+    this.fTilt.slerp(tiltRaw, aT);
+    this.tiltSpd += (this._pt.angleTo(this.fTilt) / dt * 57.3 - this.tiltSpd) * (1 - Math.exp(-2 * Math.PI * 1.5 * dt));
+
+    // in modalità "solo inclinazione" la rotazione orizzontale del telefono non conta
+    if (!this.smoothQ) this.smoothQ = new THREE.Quaternion();
+    if (this.tiltOnly) this.smoothQ.copy(this.fTilt);
+    else this.smoothQ.setFromAxisAngle(Y, this.fYaw).multiply(this.fTilt);
+  }
+
+  // misura il rumore reale del sensore (mediana degli scatti tra una lettura e l'altra)
+  _measure(yawRaw, tiltRaw, dt) {
+    const st = this.stats || (this.stats = { n: 0, t0: performance.now(), yaw: [], tilt: [], rate: 0 });
+    if (st.lastYaw != null) {
+      st.yaw.push(Math.abs(Math.atan2(Math.sin(yawRaw - st.lastYaw), Math.cos(yawRaw - st.lastYaw))) * 57.3);
+      st.tilt.push(st.lastTilt.angleTo(tiltRaw) * 57.3);
+      if (st.yaw.length > 120) { st.yaw.shift(); st.tilt.shift(); }
+    }
+    st.lastYaw = yawRaw;
+    st.lastTilt = (st.lastTilt || new THREE.Quaternion()).copy(tiltRaw);
+    st.n++;
+    st.rate += (1 / dt - st.rate) * 0.05;
+    const med = (a) => { const b = [...a].sort((x, y) => x - y); return b[b.length >> 1] || 0; };
+    st.yawNoise = med(st.yaw); st.tiltNoise = med(st.tilt);
+    // dopo un paio di secondi: se il sensore è rumoroso, filtra come se mancasse il giroscopio
+    if (!this.noisy && st.yaw.length >= 100 && st.yawNoise > 0.3) { this.noisy = true; this.onNoisy?.(); }
   }
 
   update(dt) {

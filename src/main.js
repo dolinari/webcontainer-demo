@@ -267,13 +267,27 @@ async function setTorch(on) {
 }
 $('btn-torch').addEventListener('click', () => setTorch(!state.torch));
 $('btn-center').addEventListener('click', () => controls.recenter(defaultLook()));
+// tre modalità: telefono completo → solo inclinazione → solo dito
+const MOTION = {
+  full: { label: 'Movimento', toast: 'Movimento completo: muovi e ruota il telefono per guardarti intorno.' },
+  tilt: { label: 'Inclina', toast: 'Solo inclinazione: alza e abbassa il telefono per guardare su e giù; per girarti trascina il dito o di’ «destra» / «sinistra».' },
+  off: { label: 'Dito', toast: 'Movimento spento: trascina con il dito per guardarti intorno.' },
+};
+function setMotionMode(mode, quiet = false) {
+  controls.setMotion(mode);
+  $('btn-motion').setAttribute('aria-pressed', String(mode !== 'off'));
+  $('btn-motion').querySelector('span').textContent = MOTION[mode].label;
+  $('btn-center').hidden = mode === 'off';
+  if (!quiet) toast(MOTION[mode].toast, 4200);
+}
 $('btn-motion').addEventListener('click', () => {
-  const on = !controls.gyro;
-  controls.setMotion(on);
-  $('btn-motion').setAttribute('aria-pressed', String(on));
-  $('btn-center').hidden = !on;
-  toast(on ? 'Movimento acceso: muovi il telefono per guardarti intorno.' : 'Movimento spento: trascina con il dito per guardarti intorno.', 2600);
+  const next = { full: 'tilt', tilt: 'off', off: 'full' }[controls.mode || 'full'];
+  setMotionMode(next);
 });
+// se il sensore si rivela rumoroso durante il gioco, suggerisci la modalità più stabile
+controls.onNoisy = () => {
+  if (state.started && controls.mode === 'full') toast('Il sensore di questo telefono è instabile. Se la vista gira da sola, tocca «Movimento» per passare a «Inclina».', 7000);
+};
 $('btn-sound').addEventListener('click', () => {
   audio.setMuted(!audio.muted);
   $('btn-sound').setAttribute('aria-pressed', String(!audio.muted));
@@ -870,8 +884,13 @@ async function begin() {
   $('hud').hidden = false;
   $('btn-center').hidden = !state.gyro;
   $('btn-motion').hidden = !state.gyro;
-  if (state.gyro && controls.noGyroscope) {
-    toast('Questo telefono non ha un giroscopio: ho stabilizzato la vista. Se trema ancora, tocca «Movimento» per usare il dito.', 7000);
+  if (state.gyro) {
+    if (controls.noGyroscope) {
+      // senza giroscopio la rotazione orizzontale viene dalla bussola, che in casa sbanda:
+      // si parte con la sola inclinazione, più stabile
+      setMotionMode('tilt', true);
+      toast('Questo telefono non ha un giroscopio: muovilo su e giù per guardare, e trascina il dito (o di’ «destra» / «sinistra») per girarti. Il tasto «Movimento» cambia modalità.', 9000);
+    } else setMotionMode('full', true);
   }
   state.started = true;
   controls.face(S.exterior.far.look);
@@ -1003,6 +1022,32 @@ renderer.setAnimationLoop(() => {
     if (slow > 45 && pixelRatio > 1) { pixelRatio = Math.max(1, pixelRatio - 0.5); renderer.setPixelRatio(pixelRatio); resize(); slow = 0; }
   }
 });
+
+// ---------- diagnostica dei sensori (aprire il link con ?diag) ----------
+if (new URLSearchParams(location.search).has('diag')) {
+  const box = document.createElement('pre');
+  box.id = 'diag';
+  document.body.appendChild(box);
+  let frames = 0, fps = 0, t0 = performance.now();
+  const count = () => { frames++; requestAnimationFrame(count); };
+  requestAnimationFrame(count);
+  setInterval(() => {
+    const now = performance.now();
+    fps = Math.round((frames * 1000) / (now - t0)); frames = 0; t0 = now;
+    const st = controls.stats || {};
+    const ua = navigator.userAgent.match(/Android [\d.]+|iPhone OS [\d_]+|Chrome\/[\d]+|Version\/[\d.]+ Mobile/g) || [];
+    box.textContent = [
+      'DIAGNOSTICA SENSORI',
+      'giroscopio vero: ' + (controls.noGyroscope == null ? '?' : controls.noGyroscope ? 'NO' : 'sì'),
+      'modalità: ' + (controls.mode || (controls.gyro ? 'full' : 'off')) + (controls.noisy ? ' · rumoroso' : ''),
+      'orientamento assoluto (bussola): ' + (controls.absoluteEvent == null ? '?' : controls.absoluteEvent ? 'sì' : 'no'),
+      'letture/s: ' + Math.round(st.rate || 0),
+      'rumore orizz.: ' + (st.yawNoise || 0).toFixed(2) + '° · inclin.: ' + (st.tiltNoise || 0).toFixed(2) + '°',
+      'fps: ' + fps + ' · pixel ratio: ' + renderer.getPixelRatio(),
+      ua.join(' · '),
+    ].join('\n');
+  }, 500);
+}
 
 // accesso per test manuali da console
 window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus, observe };
