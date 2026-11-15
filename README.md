@@ -31,6 +31,8 @@ I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, coordinate,
 
 La schermata iniziale spiega i tre modi di giocare (voce, sensori, tocco) e gli enigmi. Poi una guida a 5 schede, con immagini prese dal gioco (`public/tutorial/`), mostra muoversi, osservare, soffiare, la torcia, lente/orecchio/fotocamera. La guida si riapre in gioco con il tasto **Guida** o dicendo «aiuto».
 
+Il tasto **Menu** (in alto a sinistra) o il comando «menu» / «menu principale» riporta alla schermata iniziale: da lì si riprende la partita, si rivede la guida o si ricomincia da capo (con conferma, azzera i progressi). Il tasto c'è anche nella schermata finale.
+
 ## Interazioni e sensori
 
 All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno, come richiede iOS): movimento, microfono, comandi vocali e fotocamera (che su Android serve anche alla torcia LED). Ogni passo si può saltare.

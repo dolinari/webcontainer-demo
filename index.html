@@ -17,6 +17,7 @@
     <div id="scene-title"></div>
     <div id="hint"></div>
     <div id="observe" hidden role="status"><b></b><p></p></div>
+    <button id="btn-menu" aria-label="Menu principale"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke-width="2"/></svg>Menu</button>
     <div id="voice-chip" hidden><i></i><span>Ti ascolto</span></div>
     <div id="buttons">
       <button id="btn-torch" aria-label="Torcia" aria-pressed="false" hidden>
@@ -82,7 +83,7 @@
       <b>Hai trovato il mistero della Villa al Tramonto</b>
       <span>Grazie di essere entrato nella villa. Per ora, la storia si ferma qui.</span>
     </div>
-    <div class="row"><button id="scope-close" class="primary">Chiudi</button></div>
+    <div class="row"><button id="scope-menu" hidden>Menu principale</button><button id="scope-close" class="primary">Chiudi</button></div>
   </div>
 
   <div id="land" hidden>
@@ -127,6 +128,12 @@
       <h1>La Villa<br />al Tramonto</h1>
       <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta. Dentro, qualcuno ha lasciato le candele accese.</p>
 
+      <div id="menu-resume" hidden>
+        <button id="btn-resume" class="primary">Riprendi la partita</button>
+        <button id="btn-guide-menu" class="link">Rivedi la guida</button>
+        <button id="btn-newgame" class="link">Nuova partita: ricomincia da capo</button>
+      </div>
+
       <h2 class="sec">Come si gioca</h2>
       <div class="ways">
         <section class="way">
@@ -134,7 +141,7 @@
           <div>
             <h3>La voce</h3>
             <p>Parla al telefono per muoverti e agire.</p>
-            <div class="chips"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span><span class="chip">«osserva»</span><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span><span class="chip">«aiuto»</span></div>
+            <div class="chips"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span><span class="chip">«osserva»</span><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span><span class="chip">«aiuto»</span><span class="chip">«menu»</span></div>
           </div>
         </section>
         <section class="way">
@@ -160,8 +167,10 @@
         </section>
       </div>
 
-      <button id="btn-guide" class="primary">Guarda la guida</button>
-      <button id="btn-skip-guide" class="link">Salta la guida, attiva i sensori</button>
+      <div id="menu-first">
+        <button id="btn-guide" class="primary">Guarda la guida</button>
+        <button id="btn-skip-guide" class="link">Salta la guida, attiva i sensori</button>
+      </div>
     </div>
 
     <div class="card" id="perm-box" hidden>

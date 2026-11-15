@@ -16,6 +16,7 @@ const WORDS = [
   [/\b(entra|apri)\b/g, 'enter'],
   [/\b(osserva|osservo|descrivi|guarda)\b/g, 'observe'],
   [/\b(aiuto|comandi)\b/g, 'help'],
+  [/\bmen[uù]/g, 'menu'], // «menu», «menù», «menu principale»
 ];
 
 export class VoiceCommands {

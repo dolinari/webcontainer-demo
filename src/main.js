@@ -322,6 +322,7 @@ voice.onCommand = (cmd, word) => {
     case 'torchOff': setTorch(false); break;
     case 'observe': observe(); break;
     case 'help': openGuide(); break;
+    case 'menu': showMenu(); break;
     case 'enter': {
       const d = activeSpots.filter((h) => h.door).sort((a, b) => camera.position.distanceTo(a.pos) - camera.position.distanceTo(b.pos))[0];
       if (d && camera.position.distanceTo(d.pos) < (state.scene === 'exterior' ? 9 : 4)) d.act();
@@ -681,7 +682,7 @@ function focusBino() {
 scope.onReveal = () => {
   store.set('villa-fine', '1');
   audio.distantMusicBox(40);
-  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = 'Torna alla villa'; $('scope-end').hidden = false; } }, 9000);
+  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = 'Torna alla villa'; $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 9000);
 };
 $('scope-close').addEventListener('click', () => leaveFocus());
 
@@ -694,7 +695,7 @@ function leaveFocus(instant = false) {
   $('write').hidden = true;
   if (was === 'candle') audio.stopMic();
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
-  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-close').textContent = 'Chiudi'; }
+  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = 'Chiudi'; }
   if (was === 'land') {
     land.close();
     if (codeDone()) setHint('Tre cifre: ' + CODE.join(' · ') + '. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.');
@@ -776,7 +777,7 @@ function syncGuide() {
   [...dotsEl.children].forEach((d, k) => d.classList.toggle('on', k === slideIdx));
   $('tut-prev').disabled = slideIdx === 0;
   const last = slideIdx === slideCount - 1;
-  $('tut-next').textContent = last ? (state.started ? 'Torna al gioco' : 'Attiva i sensori') : 'Avanti';
+  $('tut-next').textContent = last ? (state.started ? 'Torna al gioco' : state.inMenu ? 'Torna al menu' : 'Attiva i sensori') : 'Avanti';
 }
 let scrollT;
 slidesEl.addEventListener('scroll', () => {
@@ -791,7 +792,7 @@ function openGuide() {
 }
 function closeGuide() {
   $('tutorial').hidden = true;
-  if (!state.started) showPerms();
+  if (!state.started && !state.inMenu) showPerms();
 }
 $('tut-next').addEventListener('click', () => (slideIdx >= slideCount - 1 ? closeGuide() : goSlide(slideIdx + 1)));
 $('tut-prev').addEventListener('click', () => goSlide(slideIdx - 1));
@@ -880,6 +881,63 @@ async function begin() {
   if (!state.gyro && 'ontouchstart' in window) toast('Movimento non attivo: trascina con il dito per guardarti intorno.', 4500);
   try { await navigator.wakeLock?.request('screen'); } catch { /* non essenziale */ }
 }
+// ---------- menu principale ----------
+// si torna alla schermata iniziale: si può riprendere la partita o ricominciare
+function showMenu() {
+  if (!state.started) return;
+  if (state.focus) leaveFocus(true);
+  hideObserve();
+  $('tutorial').hidden = true;
+  walk = null; move = null;
+  state.started = false;
+  state.inMenu = true;
+  voice.pause();
+  audio.stopGramophone();
+  audio.setListen(0);
+  if (state.torch) setTorch(false);
+  $('hud').hidden = true;
+  $('intro').hidden = false;
+  $('perm-box').hidden = true;
+  $('menu-first').hidden = true;
+  $('menu-resume').hidden = false;
+  resetNewGame();
+  $('start').classList.remove('out');
+  $('start').scrollTop = 0;
+}
+function resume() {
+  state.inMenu = false;
+  state.started = true;
+  $('start').classList.add('out');
+  $('hud').hidden = false;
+  audio.ctx?.resume();
+  audio.setAmbience(state.scene === 'exterior' ? 'ext' : state.scene === 'dining' ? 'dining' : 'int');
+  if (state.scene === 'dining' && state.gramophone) audio.startGramophone();
+  voice.resume();
+  showVoiceState();
+  showTitle(state.scene);
+}
+let newGameT;
+function resetNewGame() {
+  clearTimeout(newGameT);
+  $('btn-newgame').classList.remove('confirm');
+  $('btn-newgame').textContent = 'Nuova partita: ricomincia da capo';
+}
+$('btn-menu').addEventListener('click', showMenu);
+$('scope-menu').addEventListener('click', () => { leaveFocus(true); showMenu(); });
+$('btn-resume').addEventListener('click', resume);
+$('btn-guide-menu').addEventListener('click', openGuide);
+$('btn-newgame').addEventListener('click', () => {
+  // conferma con un secondo tocco: si perdono porte aperte, codici e messaggio
+  if (!$('btn-newgame').classList.contains('confirm')) {
+    $('btn-newgame').classList.add('confirm');
+    $('btn-newgame').textContent = 'Tocca di nuovo: i progressi verranno cancellati';
+    newGameT = setTimeout(resetNewGame, 4000);
+    return;
+  }
+  try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
+  location.reload();
+});
+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { ledTorch.off(); if (state.torch) { state.torch = false; applyTorch(); } }
   else if (state.started) {
