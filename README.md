@@ -25,6 +25,10 @@ npm run build    # build statica in dist/
 
 I progressi (porta aperta, manoscritto letto, cannocchiale scoperto, messaggio) restano salvati nel browser.
 
+## Introduzione e guida
+
+La schermata iniziale spiega i tre modi di giocare (voce, sensori, tocco) e gli enigmi. Poi una guida a 5 schede, con immagini prese dal gioco (`public/tutorial/`), mostra muoversi, osservare, soffiare, la torcia, lente/orecchio/fotocamera. La guida si riapre in gioco con il tasto **Guida** o dicendo «aiuto».
+
 ## Interazioni e sensori
 
 All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno, come richiede iOS): movimento, microfono, comandi vocali e fotocamera (che su Android serve anche alla torcia LED). Ogni passo si può saltare.
@@ -32,7 +36,7 @@ All'avvio una schermata chiede i permessi uno alla volta (un tocco per ciascuno,
 | Interazione | Come funziona | Ripiego |
 | --- | --- | --- |
 | Guardarsi intorno | `deviceorientation` | trascinamento touch/mouse |
-| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «corri» = tre falcate più lunghe e veloci, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «aiuto» (elenco dei comandi) | cerchi luminosi da toccare |
+| Camminare | comandi vocali (Web Speech API, it-IT): «cammina» = due passi nella direzione in cui guardi, «corri» = tre falcate più lunghe e veloci, «indietro», «fermati», «destra»/«sinistra» (gira di 45°), «entra», «aiuto» (riapre la guida) | cerchi luminosi da toccare |
 | Spegnere le candele | microfono, rileva un soffio; la voce va in pausa mentre sei alle candele | tocco sulle fiamme |
 | Torcia | comando vocale «torcia» / «spegni torcia»: faretto virtuale che segue il telefono; su Android Chrome anche il LED | tasto Torcia, visibile solo se la voce non è attiva |
 | Osservare | comando vocale «osserva»: descrizione breve dell'oggetto che stai guardando (testi in `src/observe.js`) | – |

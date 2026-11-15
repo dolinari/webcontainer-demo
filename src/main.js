@@ -290,7 +290,7 @@ voice.onState = (s) => {
   showVoiceState();
 };
 voice.onCommand = (cmd, word) => {
-  if (!state.started) return;
+  if (!state.started || !$('tutorial').hidden) return;
   chip.classList.add('heard');
   chipText.textContent = '«' + word + '»';
   clearTimeout(chipTimer);
@@ -305,7 +305,7 @@ voice.onCommand = (cmd, word) => {
     case 'torchOn': setTorch(true); break;
     case 'torchOff': setTorch(false); break;
     case 'observe': observe(); break;
-    case 'help': toast('Comandi: «cammina», «corri», «indietro», «fermati», «destra», «sinistra», «osserva», «torcia», «spegni torcia», «entra».', 7000); break;
+    case 'help': openGuide(); break;
     case 'enter': {
       const d = activeSpots.filter((h) => h.door).sort((a, b) => camera.position.distanceTo(a.pos) - camera.position.distanceTo(b.pos))[0];
       if (d && camera.position.distanceTo(d.pos) < (state.scene === 'exterior' ? 9 : 4)) d.act();
@@ -651,6 +651,50 @@ function updateMarkers(t) {
   if (!state.focus) hintEl.textContent = focusLabel || baseHint;
 }
 
+// ---------- guida a schede ----------
+const slidesEl = $('slides'), dotsEl = $('tut-dots');
+const slideCount = slidesEl.children.length;
+dotsEl.innerHTML = '<i></i>'.repeat(slideCount);
+let slideIdx = 0;
+function goSlide(i, smooth = true) {
+  slideIdx = Math.max(0, Math.min(slideCount - 1, i));
+  slidesEl.scrollTo({ left: slideIdx * slidesEl.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+  syncGuide();
+}
+function syncGuide() {
+  [...dotsEl.children].forEach((d, k) => d.classList.toggle('on', k === slideIdx));
+  $('tut-prev').disabled = slideIdx === 0;
+  const last = slideIdx === slideCount - 1;
+  $('tut-next').textContent = last ? (state.started ? 'Torna al gioco' : 'Attiva i sensori') : 'Avanti';
+}
+let scrollT;
+slidesEl.addEventListener('scroll', () => {
+  clearTimeout(scrollT);
+  scrollT = setTimeout(() => { slideIdx = Math.round(slidesEl.scrollLeft / slidesEl.clientWidth); syncGuide(); }, 60);
+});
+function openGuide() {
+  $('tutorial').hidden = false;
+  hideObserve();
+  walk = null;
+  goSlide(0, false);
+}
+function closeGuide() {
+  $('tutorial').hidden = true;
+  if (!state.started) showPerms();
+}
+$('tut-next').addEventListener('click', () => (slideIdx >= slideCount - 1 ? closeGuide() : goSlide(slideIdx + 1)));
+$('tut-prev').addEventListener('click', () => goSlide(slideIdx - 1));
+$('tut-skip').addEventListener('click', closeGuide);
+$('btn-guide').addEventListener('click', openGuide);
+$('btn-skip-guide').addEventListener('click', showPerms);
+$('btn-guide-hud').addEventListener('click', openGuide);
+function showPerms() {
+  $('intro').hidden = true;
+  $('perm-box').hidden = false;
+  $('start').scrollTop = 0;
+  if (stepIdx < 0) nextStep();
+}
+
 // ---------- permessi all'avvio ----------
 // Un passo per tap: iOS accetta le richieste di permesso solo dentro un gesto dell'utente.
 const isAndroid = /Android/i.test(navigator.userAgent);
@@ -691,7 +735,7 @@ function nextStep() {
   btn.disabled = false;
 }
 $('btn-start').addEventListener('click', async () => {
-  if (stepIdx < 0) { $('intro').hidden = true; $('perm-box').hidden = false; nextStep(); return; }
+  if (stepIdx < 0) { showPerms(); return; }
   if (stepIdx >= STEPS.length) { begin(); return; }
   const step = STEPS[stepIdx];
   $('btn-start').disabled = true;

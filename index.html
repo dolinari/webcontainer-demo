@@ -27,6 +27,10 @@
         <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg>
         <span>Voce</span>
       </button>
+      <button id="btn-guide-hud" aria-label="Guida ai comandi">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6" fill="none" stroke-width="2"/><circle cx="12" cy="17.2" r="1.2"/></svg>
+        <span>Guida</span>
+      </button>
       <button id="btn-center" aria-label="Ricentra la vista" hidden>
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke-width="2"/></svg>
         <span>Ricentra</span>
@@ -80,34 +84,106 @@
   <div id="toast"></div>
 
   <div id="start">
-    <div class="card">
+    <div class="card" id="intro">
       <p class="over">Un’esplorazione sensoriale</p>
       <h1>La Villa<br />al Tramonto</h1>
-      <div id="intro">
-        <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta.</p>
-        <p class="how">Si esplora con la voce. Parla al telefono:</p>
-        <dl class="cmds">
-          <dt>«cammina» · «corri»</dt><dd>due passi o tre falcate in avanti</dd>
-          <dt>«indietro» · «fermati»</dt><dd>torna indietro, fermati</dd>
-          <dt>«destra» · «sinistra»</dt><dd>girati</dd>
-          <dt>«osserva»</dt><dd>descrive l’oggetto che hai davanti</dd>
-          <dt>«torcia» · «spegni torcia»</dt><dd>accende e spegne la luce</dd>
-          <dt>«entra»</dt><dd>attraversa la porta vicina</dd>
-        </dl>
-        <p class="how">E con il telefono: <b>muovilo</b> per guardarti intorno, <b>soffia</b> sulle candele, <b>portalo all’orecchio</b> per ascoltare il carillon, <b>scrivi</b> con il dito sul foglio, <b>guarda</b> nel cannocchiale con la fotocamera.</p>
+      <p class="lead">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta. Dentro, qualcuno ha lasciato le candele accese.</p>
+
+      <h2 class="sec">Come si gioca</h2>
+      <div class="ways">
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg></i>
+          <div>
+            <h3>La voce</h3>
+            <p>Parla al telefono per muoverti e agire.</p>
+            <div class="chips"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span><span class="chip">«osserva»</span><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span><span class="chip">«aiuto»</span></div>
+          </div>
+        </section>
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke-width="2"/><path d="M3 9c-1.2 2-1.2 4 0 6M21 9c1.2 2 1.2 4 0 6" fill="none" stroke-width="1.8"/></svg></i>
+          <div>
+            <h3>I sensori</h3>
+            <p><b>Muovi il telefono</b> per guardarti intorno. <b>Soffia</b> sul microfono per spegnere le candele, e non solo. <b>Portalo all’orecchio</b> per ascoltare. Nel cannocchiale la <b>fotocamera</b> ti fa guardare davvero.</p>
+          </div>
+        </section>
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2" fill="none" stroke-width="2"/><circle cx="12" cy="7" r="7" fill="none" stroke-width="1.2" opacity=".5"/><path d="M12 11v10" stroke-width="2"/></svg></i>
+          <div>
+            <h3>Il tocco</h3>
+            <p>Vuoi fare in fretta? Tocca i <b>cerchi luminosi</b>: ti portano subito dove vuoi. Col dito <b>scrivi</b> sui fogli e muovi la <b>lente</b>.</p>
+          </div>
+        </section>
+        <section class="way riddle">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke-width="2"/><path d="M12 12h10M18 12v3M21 12v2" fill="none" stroke-width="2"/></svg></i>
+          <div>
+            <h3>Gli enigmi</h3>
+            <p>Punta lo sguardo e di’ «osserva»: quasi ogni cosa ha qualcosa da raccontare, spesso un indizio. Ogni sensore può essere la chiave.</p>
+          </div>
+        </section>
       </div>
-      <div id="perm-box" hidden>
-        <p class="lead">Prima di entrare, attiviamo i sensori del telefono. Tocca il pulsante e consenti ogni richiesta.</p>
-        <ol id="perms">
-          <li data-k="motion"><b>Movimento</b> <span>per guardarti intorno</span><em>…</em></li>
-          <li data-k="mic"><b>Microfono</b> <span>per il soffio e la voce</span><em>…</em></li>
-          <li data-k="voice"><b>Comandi vocali</b> <span>«cammina», «corri», «destra»</span><em>…</em></li>
-          <li data-k="camera"><b>Fotocamera</b> <span>per guardare nel cannocchiale</span><em>…</em></li>
-        </ol>
-      </div>
+
+      <button id="btn-guide" class="primary">Guarda la guida</button>
+      <button id="btn-skip-guide" class="link">Salta la guida, attiva i sensori</button>
+    </div>
+
+    <div class="card" id="perm-box" hidden>
+      <p class="over">Un’esplorazione sensoriale</p>
+      <h2 class="title">Attiva i sensori</h2>
+      <p class="lead">Tocca il pulsante e consenti ogni richiesta del telefono. Puoi saltare un passo, ma alcune parti funzioneranno in modo ridotto.</p>
+      <ol id="perms">
+        <li data-k="motion"><b>Movimento</b> <span>per guardarti intorno e muovere la lente</span><em>…</em></li>
+        <li data-k="mic"><b>Microfono</b> <span>per il soffio e la voce</span><em>…</em></li>
+        <li data-k="voice"><b>Comandi vocali</b> <span>«cammina», «osserva», «torcia»…</span><em>…</em></li>
+        <li data-k="camera"><b>Fotocamera</b> <span>per guardare nel cannocchiale</span><em>…</em></li>
+      </ol>
       <button id="btn-start" class="primary">Inizia</button>
       <button id="btn-skip" class="link" hidden>Salta questo passo</button>
-      <p class="note">Il microfono serve solo a sentire il soffio e i comandi: nulla viene registrato né salvato. Alza il volume e togli la modalità silenziosa.</p>
+      <p class="note">Microfono e fotocamera servono solo durante il gioco: nulla viene registrato né salvato. Alza il volume e togli la modalità silenziosa.</p>
+    </div>
+  </div>
+
+  <div id="tutorial" hidden>
+    <div class="tut-top">
+      <span class="tut-label">Guida</span>
+      <button id="tut-skip" class="link">Salta</button>
+    </div>
+    <div class="slides" id="slides">
+      <article class="slide">
+        <figure><img src="tutorial/1-cammina.jpg" alt="Il corridoio della villa con i cerchi luminosi sul pavimento" width="780" height="880" /></figure>
+        <h2>Muoviti con la voce</h2>
+        <p>Di’ <b>«cammina»</b> per fare due passi, <b>«corri»</b> per tre falcate più veloci: ripetilo per continuare. Vai dove stai guardando.</p>
+        <div class="chips"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span></div>
+        <p class="tip">Più in fretta: tocca un cerchio luminoso e ci arrivi subito.</p>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/2-osserva.jpg" alt="La sala da pranzo con la descrizione del camino" width="780" height="880" /></figure>
+        <h2>Guarda e osserva</h2>
+        <p><b>Muovi il telefono</b> per guardarti intorno. Punta lo sguardo su qualcosa e di’ <b>«osserva»</b>: ti racconta cos’è. Spesso è un indizio.</p>
+        <div class="chips"><span class="chip">«osserva»</span><span class="chip">«aiuto»</span><span class="chip gesture">muovi il telefono</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/3-soffia.jpg" alt="Il candelabro da vicino, con l’indicatore del soffio" width="780" height="880" /></figure>
+        <h2>Soffia</h2>
+        <p>Avvicinati alle candele e <b>soffia sul microfono</b>, in basso sul telefono: ogni soffio spegne una fiamma. In certi momenti il soffio servirà anche ad altro.</p>
+        <div class="chips"><span class="chip gesture">soffia sul microfono</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/4-torcia.jpg" alt="La torcia illumina una scritta sul muro dello studio" width="780" height="880" /></figure>
+        <h2>Accendi la torcia</h2>
+        <p>Nelle stanze buie di’ <b>«torcia»</b>: il fascio segue il telefono e rivela ciò che al buio non si vede. Di’ <b>«spegni torcia»</b> per spegnerla.</p>
+        <div class="chips"><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/5-lente.jpg" alt="La lente d’ingrandimento sulle righe minuscole di un manoscritto" width="780" height="880" /></figure>
+        <h2>Le mani, l’orecchio, l’occhio</h2>
+        <p><b>Scrivi</b> col dito sui fogli. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel cannocchiale, la <b>fotocamera</b> ti fa guardare oltre.</p>
+        <div class="chips"><span class="chip gesture">scrivi</span><span class="chip gesture">inclina</span><span class="chip gesture">all’orecchio</span><span class="chip gesture">fotocamera</span></div>
+      </article>
+    </div>
+    <div class="tut-nav">
+      <button id="tut-prev" class="ghost" aria-label="Scheda precedente">Indietro</button>
+      <div class="dots" id="tut-dots"></div>
+      <button id="tut-next" class="primary">Avanti</button>
     </div>
   </div>
 
