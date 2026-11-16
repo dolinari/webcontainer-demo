@@ -1,6 +1,6 @@
 // Audio interamente sintetizzato (Web Audio): vento, stanza, carillon, effetti. Più il microfono per il soffio.
 
-const BOX_FAR = 0.035; // volume del carillon a telefono lontano dall'orecchio
+const BOX_FAR = 0.05; // volume del carillon a telefono lontano dall'orecchio
 
 function softClip(k) {
   const n = 1024, c = new Float32Array(n);
@@ -75,10 +75,16 @@ export class AudioEngine {
     const lg = ctx.createGain(); lg.gain.value = 180; lfo.connect(lg); lg.connect(wf.frequency); lfo.start();
     this._noise().connect(wf); wf.connect(this.windGain); this.windGain.connect(this.master);
 
-    // tono della stanza (interno)
+    // tono della stanza (interno): un brusio grave più un'"aria" a media frequenza,
+    // perché l'altoparlante del telefono non riproduce i bassi e da solo il brusio non si sentirebbe
     this.roomGain = ctx.createGain(); this.roomGain.gain.value = 0;
-    const rf = ctx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 140;
-    this._noise().connect(rf); rf.connect(this.roomGain); this.roomGain.connect(this.master);
+    const rf = ctx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 420;
+    this._noise().connect(rf); rf.connect(this.roomGain);
+    const air = ctx.createBiquadFilter(); air.type = 'bandpass'; air.frequency.value = 900; air.Q.value = 0.7;
+    const airG = ctx.createGain(); airG.gain.value = 0.35;
+    this._noise().connect(air); air.connect(airG); airG.connect(this.roomGain);
+    this.roomGain.connect(this.master);
+    this.boost = 1; // compensazione quando il microfono è acceso (il telefono abbassa l'audio)
 
     // carillon, due percorsi:
     //  - "lontano": suono pulito con un filo di eco, quasi impercettibile
@@ -142,14 +148,19 @@ export class AudioEngine {
 
   setMuted(m) {
     this.muted = m;
-    if (this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.1);
+    if (this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.9 * this.boost, this.ctx.currentTime, 0.1);
   }
 
   setAmbience(kind) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     this.windGain.gain.setTargetAtTime(kind === 'ext' ? 0.5 : 0.05, t, 0.8);
-    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.22 : 0.5, t, 0.8);
+    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.4 : 0.75, t, 0.8);
+    this.interior = kind !== 'ext';
+    // scricchiolii lontani del legno, ogni tanto, negli interni
+    clearTimeout(this._creakT);
+    const creak = () => { if (this.interior && !this.muted) this._creak(); this._creakT = setTimeout(creak, 9000 + Math.random() * 14000); };
+    if (this.interior) this._creakT = setTimeout(creak, 4000 + Math.random() * 6000);
     if (kind !== 'dining') { this.setGramophoneLevel(0); this.tickFire(0); }
   }
 
@@ -327,9 +338,10 @@ export class AudioEngine {
     if (k !== this.listenK) this._squelch(k > this.listenK);
     this.listenK = k;
     this.boxGain.gain.setTargetAtTime(BOX_FAR * (1 - k), t, 0.12);
-    this.radioGain.gain.setTargetAtTime(1.1 * k, t + (k ? 0.12 : 0), 0.08);
-    this.staticGain.gain.setTargetAtTime(0.05 * k, t + (k ? 0.12 : 0), 0.08);
-    this.roomGain.gain.setTargetAtTime(0.5 * (1 - 0.85 * k), t, 0.2);
+    // all'orecchio: più forte di quando è lontano, ma senza il salto di prima
+    this.radioGain.gain.setTargetAtTime(0.5 * k, t + (k ? 0.12 : 0), 0.1);
+    this.staticGain.gain.setTargetAtTime(0.03 * k, t + (k ? 0.12 : 0), 0.1);
+    this.roomGain.gain.setTargetAtTime(0.75 * (1 - 0.6 * k), t, 0.2);
     this.windGain.gain.setTargetAtTime(0.05 * (1 - k), t, 0.2);
   }
 
@@ -351,7 +363,7 @@ export class AudioEngine {
   /** sfarfallio del fruscio mentre si ascolta: va chiamato a ogni frame */
   tickRadio() {
     if (!this.ctx || !this.listenK) return;
-    if (Math.random() < 0.06) this.staticGain.gain.setTargetAtTime(0.03 + Math.random() * 0.05, this.ctx.currentTime, 0.04);
+    if (Math.random() < 0.06) this.staticGain.gain.setTargetAtTime(0.018 + Math.random() * 0.025, this.ctx.currentTime, 0.04);
   }
 
   /** piccolo rumore percussivo: tasto della macchina da scrivere / candela che si spegne */
@@ -361,21 +373,58 @@ export class AudioEngine {
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); const g = ctx.createGain();
     if (kind === 'step' || kind === 'run') {
+      // il corpo del passo sta sulle medie frequenze (l'altoparlante del telefono non fa i bassi)
       const run = kind === 'run';
-      f.type = 'lowpass'; f.frequency.value = (run ? 380 : 260) + Math.random() * 80;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(run ? 1.9 : 1.4, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + (run ? 0.11 : 0.16));
+      f.type = 'bandpass'; f.frequency.value = (run ? 900 : 650) + Math.random() * 150; f.Q.value = 1.1;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(run ? 3.2 : 2.6, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + (run ? 0.1 : 0.14));
       s.playbackRate.value = run ? 2 : 1.5;
+      this._scuff(t, run);
     } else if (kind === 'key') {
       f.type = 'bandpass'; f.frequency.value = 2200 + Math.random() * 800; f.Q.value = 2;
       g.gain.setValueAtTime(1.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
       s.playbackRate.value = 6;
     } else {
-      f.type = 'lowpass'; f.frequency.value = 900;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.9, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      // il soffio che spegne la candela: ben udibile
+      f.type = 'lowpass'; f.frequency.value = 1700;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(2.4, t + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t + 0.48);
       s.playbackRate.value = 3;
     }
     s.connect(f); f.connect(g); g.connect(this.master);
     s.start(t, Math.random() * 2); s.stop(t + 0.5);
+  }
+
+  /** lo strofinio della suola, sopra il colpo del passo */
+  _scuff(t, run) {
+    const ctx = this.ctx;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 4;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2400;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t + 0.01); g.gain.exponentialRampToValueAtTime(run ? 0.35 : 0.22, t + 0.03); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(t, Math.random() * 2); s.stop(t + 0.15);
+  }
+
+  /** uno scricchiolio lontano del legno */
+  _creak() {
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator(); o.type = 'sawtooth';
+    const f0 = 180 + Math.random() * 120;
+    o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * (0.7 + Math.random() * 0.2), t + 0.7);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 3;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.035, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+    // tremolo irregolare, come una tavola che cede
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 22 + Math.random() * 12;
+    const lg = ctx.createGain(); lg.gain.value = 0.02;
+    lfo.connect(lg); lg.connect(g.gain);
+    o.connect(bp); bp.connect(g); g.connect(this.master);
+    o.start(t); lfo.start(t); o.stop(t + 0.85); lfo.stop(t + 0.85);
+  }
+
+  /** quando il microfono è acceso il telefono abbassa l'audio: si compensa alzando il volume generale */
+  _setBoost(b) {
+    this.boost = b;
+    if (this.ctx && !this.muted) this.master.gain.setTargetAtTime(0.9 * b, this.ctx.currentTime, 0.3);
   }
 
   // ---- microfono ----
@@ -392,6 +441,7 @@ export class AudioEngine {
     this.micSrc.connect(this.analyser); // non collegato agli altoparlanti: nessun feedback
     this.micData = new Float32Array(this.analyser.fftSize);
     this.micOn = true;
+    this._setBoost(1.8); // il telefono abbassa l'uscita mentre registra: l'ambiente resta udibile
     this._floor = 0.02;
     this._above = 0;
     this._cool = 0;
@@ -411,6 +461,7 @@ export class AudioEngine {
   stopMic() {
     if (!this.micOn) return;
     this.micOn = false;
+    this._setBoost(1);
     this.micLevel = 0;
     this.blowAmount = 0;
     try { this.micSrc.disconnect(); } catch { /* già scollegato */ }

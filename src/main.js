@@ -794,7 +794,8 @@ scope.onReveal = () => {
   store.set('villa-fine', '1');
   audio.distantMusicBox(40);
   if (!state.library) { state.library = true; store.set('villa-biblioteca', '1'); S.corridor.setLibrary(true); }
-  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = L('Torna alla villa', 'Back to the villa'); $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 19000);
+  // la storia continua: niente «Menu principale» qui, solo l'invito a tornare nella villa
+  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = L('Torna nella villa', 'Back into the villa'); $('scope-end').hidden = false; } }, 19000);
 };
 $('scope-close').addEventListener('click', () => leaveFocus());
 
@@ -809,7 +810,7 @@ function leaveFocus(instant = false) {
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
   if (was === 'scope') {
     scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = L('Chiudi', 'Close');
-    if (state.library && !state.shelfSolved) setHint(L('«Cercami tra le pagine del libro che amavamo»… La biblioteca, nel primo corridoio, ora è aperta.', '“Look for me among the pages of the book we loved”… The library, in the first corridor, is now open.'));
+    if (state.library && !state.shelfSolved) setHint(L('«Cercami tra le pagine del libro che amavamo»… Nel primo corridoio qualcosa si è aperto: forse una stanza in cui prima non potevi entrare.', '“Look for me among the pages of the book we loved”… Something has opened in the first corridor: perhaps a room you couldn’t enter before.'));
   }
   if (was === 'novel') novel.close();
   if (was === 'shelf') shelf.close();
@@ -1115,7 +1116,13 @@ renderer.setAnimationLoop(() => {
   if (move) {
     move.t += dt / move.dur;
     const k = ease(Math.min(1, move.t));
+    const before = camera.position.clone();
     camera.position.lerpVectors(move.from, move.to, k);
+    // i passi si sentono anche quando ci si sposta toccando un cerchio
+    if (state.started && !state.busy) {
+      move.walked = (move.walked || 0) + Math.hypot(camera.position.x - before.x, camera.position.z - before.z);
+      if (move.walked > 0.7) { move.walked -= 0.7; audio.click('step'); }
+    }
     camera.position.y += Math.sin(k * Math.PI * 6) * 0.012 * Math.sin(k * Math.PI); // passo leggero
     if (move.t >= 1) { const d = move.done; move = null; d?.(); }
   }
