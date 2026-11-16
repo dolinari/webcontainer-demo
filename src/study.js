@@ -80,7 +80,7 @@ export function buildStudy() {
   const paperBase = T.parchmentCanvas(384, 540);
   const paperTex = T.toTex(paperCanvas);
   const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.42), new THREE.MeshStandardMaterial({ map: paperTex, roughness: 0.9, emissive: 0x2a1c0c, emissiveIntensity: 0.6 }));
-  paper.rotation.x = -Math.PI / 2; paper.rotation.z = 0.18; paper.position.set(-0.12, DT + 0.004, DZ + 0.2); scene.add(paper);
+  paper.rotation.x = -Math.PI / 2; paper.rotation.z = 0.18; paper.position.set(-0.12, DT + 0.006, DZ + 0.2); scene.add(paper);
   const pen = cyl(0.004, 0.006, 0.17, black, 0.1, DT + 0.01, DZ + 0.25, 5); pen.rotation.set(Math.PI / 2, 0, 0.9); scene.add(pen);
   const ink = cyl(0.03, 0.035, 0.045, black, 0.12, DT + 0.022, DZ + 0.02, 8); scene.add(ink);
   // libri impilati

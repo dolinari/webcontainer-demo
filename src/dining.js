@@ -65,8 +65,8 @@ export function buildDining() {
   scene.add(box(0.9, 0.05, 2.6, marble, X0 + 0.45, 0.025, FZ));
   const soot = new THREE.MeshBasicMaterial({ color: 0x080404 });
   plane(1.2, 0.95, soot, X0 + 0.02, 0.475, FZ, Math.PI / 2);
-  plane(0.5, 0.95, soot, X0 + 0.25, 0.475, FZ - 0.6, 0);
-  plane(0.5, 0.95, soot, X0 + 0.25, 0.475, FZ + 0.6, Math.PI);
+  plane(0.5, 0.95, soot, X0 + 0.25, 0.475, FZ - 0.585, 0); // 1,5 cm davanti al marmo: niente sfarfallio
+  plane(0.5, 0.95, soot, X0 + 0.25, 0.475, FZ + 0.585, Math.PI);
   const logMat = new THREE.MeshStandardMaterial({ color: 0x2a160a, roughness: 1, emissive: 0x3a1004, emissiveIntensity: 0.6 });
   for (const [y, z, r] of [[0.1, -0.15, 0.2], [0.1, 0.18, -0.15], [0.22, 0.02, 0.05]]) {
     const lg = cyl(0.06, 0.07, 0.9, logMat, X0 + 0.3, y, FZ + z, 7);
@@ -210,7 +210,7 @@ export function buildDining() {
   plane(Z1 - SZ1, SH, sPlaster, SX, SH / 2, (Z1 + SZ1) / 2, -Math.PI / 2);
   plane(SX * 2, SH, sPlaster, 0, SH / 2, SZ1, 0);
   for (const s of [-1, 1]) plane(SX - PW / 2, SH, sPlaster, s * (PW / 2 + (SX - PW / 2) / 2), SH / 2, Z1 - 0.01, Math.PI);
-  plane(SX * 2, 0.7, sPlaster, 0, SH, Z1 - 0.01, Math.PI);
+  plane(PW, SH - PH, sPlaster, 0, (SH + PH) / 2, Z1 - 0.01, Math.PI);
   // libreria
   plane(3.2, 2.5, new THREE.MeshStandardMaterial({ map: T.booksTex([1.3, 1]), roughness: 0.9 }), -SX + 0.03, 1.25, -11, Math.PI / 2);
   scene.add(box(0.2, 2.6, 3.4, A.wood, -SX + 0.02, 1.3, -11));

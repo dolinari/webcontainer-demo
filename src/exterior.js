@@ -144,7 +144,7 @@ export function buildExterior() {
 
   // balcone
   const iron = new THREE.MeshStandardMaterial({ color: 0x15110e, roughness: 0.6, metalness: 0.5 });
-  scene.add(box(3.6, 0.16, 1.0, stoneTrim, 0, 4.78, 0.5));
+  scene.add(box(3.6, 0.2, 1.0, stoneTrim, 0, 4.78, 0.5)); // più spesso: il fondo non coincide con la cornice della finestra
   for (const x of [-1.4, 1.4]) scene.add(box(0.25, 0.5, 0.7, stoneTrim, x, 4.46, 0.35));
   scene.add(box(3.6, 0.05, 0.05, iron, 0, 5.75, 0.97));
   for (let i = 0; i <= 14; i++) scene.add(box(0.03, 0.9, 0.03, iron, -1.75 + i * 0.25, 5.3, 0.97));
@@ -195,20 +195,36 @@ export function buildExterior() {
 
   // edera rossa sulla facciata
   const ivyMats = [0x8a1a10, 0xa82c14, 0x6a1410, 0x7a3a14].map((c) => new THREE.MeshStandardMaterial({ map: A.leaf, color: c, alphaTest: 0.35, roughness: 1 }));
-  const ivy = (cx, cy, w, h, n) => {
+  // ogni foglia ha la sua profondità (niente sfarfallio tra foglie sovrapposte) e
+  // non invade porta, balcone, lanterna, gradini o lo spigolo della facciata
+  const keepOut = [
+    [-1.42, 1.42, -1, D0 + 4.5], // portone, stipiti e battenti aperti
+    [-1.95, 1.95, 4.05, 6.05], // balcone e mensole
+    [-2.55, -1.85, 2.35, 3.5], // lanterna laterale
+    [-2.4, 2.4, -1, 0.75], // gradini
+  ];
+  let layer = 0;
+  const ivy = (cx, cy, w, h, n, smax = 2.8) => {
     for (let i = 0; i < n; i++) {
-      const s = 1.2 + rand() * 1.6;
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 1.2), ivyMats[(rand() * ivyMats.length) | 0]);
-      p.position.set(cx + (rand() - 0.5) * w, cy + (rand() - 0.5) * h, 0.14 + rand() * 0.1);
-      p.rotation.z = rand() * 6;
-      scene.add(p);
+      for (let tries = 0; tries < 12; tries++) {
+        const s = Math.min(smax, 1.2 + rand() * 1.6);
+        const x = cx + (rand() - 0.5) * w, y = cy + (rand() - 0.5) * h, rot = rand() * 6;
+        const r = s * 0.62; // mezza diagonale della foglia ruotata, un po' abbondante
+        if (x - r < -6.95 || x + r > 6.95 || y + r > 9.9) continue;
+        if (keepOut.some(([x0, x1, y0, y1]) => x + r > x0 && x - r < x1 && y + r > y0 && y - r < y1)) continue;
+        const p = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 1.2), ivyMats[(rand() * ivyMats.length) | 0]);
+        p.position.set(x, y, 0.2 + layer++ * 0.003); // davanti alle persiane (max 0.19)
+        p.rotation.z = rot;
+        scene.add(p);
+        break;
+      }
     }
   };
   ivy(3.9, 3.6, 1.8, 7, 16);
   ivy(1.5, 7.3, 2.4, 1.4, 6);
   ivy(-3.9, 5.6, 1.6, 5, 10);
-  ivy(-1.6, 3.2, 0.9, 2.6, 5);
-  ivy(6.5, 5, 0.9, 6, 7);
+  ivy(-1.75, 2.0, 0.5, 3.2, 8, 0.55); // un tralcio sottile accanto al portone
+  ivy(6.2, 5, 0.9, 6, 7);
 
   // muretto in primo piano
   const wallMat = new THREE.MeshStandardMaterial({ map: T.stoneTex([2, 0.4]), roughness: 1 });

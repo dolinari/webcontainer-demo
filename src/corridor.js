@@ -36,7 +36,7 @@ export function buildCorridor() {
   wall(LZ0 - LZ1, WH - 2.75, plasterS, HW, (WH + 2.75) / 2, (LZ0 + LZ1) / 2, -Math.PI / 2);
   // stipiti
   for (const z of [LZ0, LZ1]) scene.add(box(0.5, 2.75, 0.16, A.wood, HW + 0.2, 1.375, z));
-  scene.add(box(0.5, 0.16, LZ0 - LZ1 + 0.16, A.wood, HW + 0.2, 2.75, (LZ0 + LZ1) / 2));
+  scene.add(box(0.54, 0.18, LZ0 - LZ1 + 0.3, A.wood, HW + 0.2, 2.8, (LZ0 + LZ1) / 2));
   // doppia porta della biblioteca: chiusa finché Livia non dice di cercarla tra i libri
   const libDoors = [];
   for (const [zh, dir] of [[LZ0, -1], [LZ1, 1]]) {
@@ -132,7 +132,7 @@ export function buildCorridor() {
   // carcassa con l'interno scuro, due ante apribili e un lucchetto a combinazione
   const WX = -HW + 0.33, WZ = -5.4, FX = -HW + 0.64; // centro e fronte dell'armadio
   const inner = new THREE.MeshStandardMaterial({ color: 0x1a0e08, roughness: 0.9 });
-  scene.add(box(0.04, 2.4, 1.35, inner, -HW + 0.04, 1.225, WZ));
+  scene.add(box(0.04, 2.38, 1.27, inner, -HW + 0.04, 1.225, WZ));
   for (const s of [-1, 1]) scene.add(box(0.62, 2.4, 0.04, A.woodPanel, WX, 1.225, WZ + s * 0.655));
   scene.add(box(0.56, 0.03, 1.27, inner, WX, 1.24, WZ));
   scene.add(box(0.56, 0.03, 1.27, inner, WX, 0.2, WZ));
@@ -147,8 +147,8 @@ export function buildCorridor() {
   const doors = [];
   for (const s of [-1, 1]) {
     const pivot = new THREE.Group();
-    pivot.position.set(FX, 1.225, WZ + s * 0.675);
-    const leaf = box(0.04, 2.36, 0.67, A.woodPanel, 0, 0, -s * 0.335);
+    pivot.position.set(FX + 0.01, 1.225, WZ + s * 0.665);
+    const leaf = box(0.04, 2.34, 0.655, A.woodPanel, 0, 0, -s * 0.3325);
     pivot.add(leaf);
     pivot.add(box(0.03, 0.12, 0.05, A.gold, 0.03, 0.02, -s * 0.62)); // maniglia / occhiello
     scene.add(pivot);
@@ -216,7 +216,7 @@ export function buildCorridor() {
   const top = box(0.5, 0.04, 0.38, A.wood, 0, 1.08, 0); top.rotation.x = -0.45; lect.add(top);
   // l'atlante aperto è appoggiato sul piano inclinato (ne segue la rotazione)
   const atlas = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.32), new THREE.MeshStandardMaterial({ map: T.mapTex(), roughness: 0.8 }));
-  atlas.position.set(0, 0.022, 0); atlas.rotation.x = -Math.PI / 2; top.add(atlas);
+  atlas.position.set(0, 0.026, 0); atlas.rotation.x = -Math.PI / 2; top.add(atlas);
   lect.position.set(LX1 - 1.3, 0, LZa - 0.9); lect.rotation.y = Math.PI * 0.85;
   scene.add(lect);
   // il romanzo: sporge dallo scaffale della parete destra, con il dorso leggibile
@@ -235,10 +235,12 @@ export function buildCorridor() {
   };
   const novelSpine = T.toTex(spineCanvas(IS_EN ? 'THE LANTERN KEEPER' : 'IL CUSTODE DELLE LANTERNE', 'M. Ashcombe · 1831', 64, 512, '#5a1a14'));
   const novelMat = new THREE.MeshStandardMaterial({ color: 0x5a1a14, roughness: 0.7 });
-  const novel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.22), [new THREE.MeshStandardMaterial({ color: 0xd8c8a0 }), new THREE.MeshStandardMaterial({ map: novelSpine, roughness: 0.6, emissive: 0x2a1006, emissiveIntensity: 0.6 }), novelMat, novelMat, novelMat, novelMat]);
-  novel.rotation.y = -Math.PI / 2;
+  const novel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.22), [novelMat, novelMat, novelMat, novelMat, new THREE.MeshStandardMaterial({ map: novelSpine, roughness: 0.6, emissive: 0x2a1006, emissiveIntensity: 0.6 }), new THREE.MeshStandardMaterial({ color: 0xd8c8a0 })]);
+  novel.rotation.y = -Math.PI / 2; // così il dorso col titolo guarda verso la stanza
   novel.position.set(LX1 - 0.18, 1.45, -2.4);
   scene.add(novel);
+  // la mensola su cui poggia (prima il libro restava sospeso nel vuoto)
+  scene.add(box(0.32, 0.03, 0.5, A.woodPanel, LX1 - 0.16, 1.285, -2.4));
   const novelGlint = glowSprite(0xffc070, 0.5, 0.25); novelGlint.position.set(LX1 - 0.3, 1.45, -2.4); scene.add(novelGlint);
   // lo scaffale dell'enigma, contro la parete di fondo: otto libri con una lettera sul dorso
   const SX = (LX1 + HW) / 2, SZ = LZb, BW = 0.2;
@@ -287,10 +289,16 @@ export function buildCorridor() {
   scene.add(niche);
   const tome = new THREE.Group();
   const tomeCover = new THREE.MeshStandardMaterial({ color: 0x3a1a0c, roughness: 0.55 });
-  tome.add(box(0.52, 0.09, 0.38, tomeCover, 0, 0, 0));
-  tome.add(box(0.5, 0.07, 0.36, new THREE.MeshStandardMaterial({ color: 0xe0d0a8, roughness: 0.9 }), 0, 0.01, 0));
-  for (const x of [-0.24, 0.24]) tome.add(box(0.03, 0.1, 0.4, A.gold, x, 0, 0));
-  tome.add(box(0.6, 0.9, 0.3, A.wood, 0, -0.5, 0)); // il piccolo leggio della nicchia
+  // libro aperto: copertina sotto, due blocchi di pagine sopra (nessuna faccia sovrapposta)
+  tome.add(box(0.54, 0.03, 0.38, tomeCover, 0, -0.015, 0));
+  const pagesM = new THREE.MeshStandardMaterial({ color: 0xe0d0a8, roughness: 0.9 });
+  for (const s of [-1, 1]) {
+    const pg = box(0.245, 0.045, 0.35, pagesM, s * 0.13, 0.0225, 0);
+    pg.rotation.z = s * 0.05; // le pagine scendono verso la piega
+    tome.add(pg);
+  }
+  for (const x of [-0.262, 0.262]) tome.add(box(0.02, 0.05, 0.39, A.gold, x, -0.005, 0));
+  tome.add(box(0.6, 0.97, 0.3, A.wood, 0, -0.515, 0)); // il piccolo leggio della nicchia, poggiato a terra
   tome.position.set(SX, 1.0, SZ + 0.2);
   tome.visible = false;
   scene.add(tome);
@@ -313,7 +321,7 @@ export function buildCorridor() {
   const mbWood = new THREE.MeshStandardMaterial({ color: 0x5a2a14, roughness: 0.35 });
   mb.add(box(0.2, 0.08, 0.14, mbWood, 0, 0.04, 0));
   const lid = box(0.2, 0.012, 0.14, mbWood, 0, 0.07, 0); lid.geometry.translate(0, 0, -0.07); lid.position.set(0, 0.082, 0.07); lid.rotation.x = 1.9; mb.add(lid);
-  mb.add(box(0.17, 0.004, 0.11, A.gold, 0, 0.081, 0));
+  mb.add(box(0.17, 0.004, 0.11, A.gold, 0, 0.083, 0));
   const drum = cyl(0.022, 0.022, 0.12, A.gold, 0, 0.1, 0.0, 10); drum.rotation.z = Math.PI / 2; mb.add(drum);
   const crank = cyl(0.004, 0.004, 0.05, A.gold, 0.115, 0.05, 0, 4); crank.rotation.z = Math.PI / 2; mb.add(crank);
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 6), A.gold); knob.position.set(0.14, 0.065, 0); mb.add(knob);
@@ -335,7 +343,7 @@ export function buildCorridor() {
     shelfOpen += (shelfTarget - shelfOpen) * Math.min(1, dt * 0.9);
     halves[0].position.x = SX - shelfOpen * 0.95; halves[1].position.x = SX + shelfOpen * 0.95;
     tome.position.z = SZ + 0.2 + Math.max(0, shelfOpen - 0.5) * 1.0; // il libro esce dalla nicchia
-    tome.visible = shelfOpen > 0.04; // prima che lo scaffale si apra non deve intravedersi
+    tome.visible = shelfOpen > 0.34; // compare solo quando le due metà dello scaffale non lo attraversano più
     tomeGlow.material.opacity = 0.6 * shelfOpen * (0.9 + 0.1 * Math.sin(t * 3));
     tomeLight.intensity = 6 * shelfOpen;
     novelGlint.material.opacity = 0.18 + 0.1 * Math.sin(t * 2.2);
