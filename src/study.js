@@ -9,7 +9,7 @@ export function buildStudy() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x030202);
   scene.fog = new THREE.FogExp2(0x050302, 0.05);
-  scene.add(new THREE.HemisphereLight(0x6a5040, 0x120c08, 0.5));
+  scene.add(new THREE.HemisphereLight(0x6a5040, 0x120c08, 0.75));
 
   const HW = 3, Z0 = 1.2, Z1 = -7, H = 3.3, ZC = (Z0 + Z1) / 2, LEN = Z0 - Z1;
   const plaster = new THREE.MeshStandardMaterial({ map: T.plasterTex([2.2, 1.1], 1), roughness: 0.95 });
@@ -110,7 +110,7 @@ export function buildStudy() {
   // scritta nascosta: si legge bene solo con la torcia
   const msg = wall(2.6, 1.3, new THREE.MeshStandardMaterial({
     map: T.textTex(IS_EN ? ['Those who leave words', 'never truly', 'go away.'] : ['Chi lascia parole', 'non se ne va', 'mai del tutto.'], { w: 512, h: 256, color: '#e8d8b0', font: 'italic 40px Georgia, serif', lineH: 58 }),
-    transparent: true, opacity: 0.5, roughness: 1, depthWrite: false,
+    transparent: true, opacity: 0.08, roughness: 1, depthWrite: false,
   }), HW - 0.02, 1.9, -2.6, -Math.PI / 2);
 
   let typing = null;
@@ -132,7 +132,7 @@ export function buildStudy() {
 
   return {
     scene, update, candles, msg,
-    exposure: 1.0,
+    exposure: 1.7, // resta la stanza più buia (serve la torcia), ma si vede
     home: new THREE.Vector3(0, 1.6, -0.3),
     homeLook: new THREE.Vector3(0, 1.1, DZ),
     candlePos: candles.center.clone(),

@@ -8,7 +8,7 @@ export function buildCorridor() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050302);
   scene.fog = new THREE.FogExp2(0x0a0503, 0.035);
-  scene.add(new THREE.HemisphereLight(0x8a6850, 0x1a120c, 0.95));
+  scene.add(new THREE.HemisphereLight(0x8a6850, 0x1a120c, 1.25));
 
   const HW = 1.8, Z0 = 3, Z1 = -15, WH = 3.2, LEN = Z0 - Z1, ZC = (Z0 + Z1) / 2;
   const plaster = new THREE.MeshStandardMaterial({ map: T.plasterTex([5, 1.2]), roughness: 0.95 });
@@ -242,7 +242,7 @@ export function buildCorridor() {
   return {
     scene, update, candles,
     setPlaying: (v) => { playing = v; },
-    exposure: 1.0,
+    exposure: 1.5, // più luminoso: su molti telefoni gli interni risultavano troppo scuri
     waypoints: [new THREE.Vector3(0, 1.6, 1.4), new THREE.Vector3(0, 1.6, -5.2), new THREE.Vector3(0, 1.6, -11.6)],
     candlePos: candles.center.clone(),
     candleView: new THREE.Vector3(-0.55, 1.5, -0.2),

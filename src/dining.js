@@ -9,7 +9,7 @@ export function buildDining() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x050302);
   scene.fog = new THREE.FogExp2(0x0a0503, 0.03);
-  scene.add(new THREE.HemisphereLight(0x8a6048, 0x1a100a, 0.75));
+  scene.add(new THREE.HemisphereLight(0x8a6048, 0x1a100a, 1.0));
 
   const X0 = -4, X1 = 4, Z0 = 3, Z1 = -9, H = 3.6;
   const paper = new THREE.MeshStandardMaterial({ map: T.wallpaperTex([6, 1.6]), roughness: 0.9 });
@@ -287,7 +287,7 @@ export function buildDining() {
 
   return {
     scene, update,
-    exposure: 1.0,
+    exposure: 1.45,
     setPlaying: (v) => { playing = v; },
     entry: new THREE.Vector3(0, 1.6, 1.9),
     entryLook: new THREE.Vector3(0, 1.4, -6),

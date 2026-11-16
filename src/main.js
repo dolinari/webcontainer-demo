@@ -272,6 +272,8 @@ function updateWalk(dt) {
 function applyTorch() {
   torch.intensity = state.torch ? (state.scene === 'exterior' ? 90 : 55) : 0;
   renderer.toneMappingExposure = cur.exposure * (state.torch ? 1.18 : 1);
+  // la scritta sul muro dello studio si rivela solo con la torcia
+  S.study.msg.material.opacity = state.torch ? 0.6 : 0.08;
   $('btn-torch').setAttribute('aria-pressed', String(state.torch));
 }
 async function setTorch(on) {
