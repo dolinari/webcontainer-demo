@@ -11,6 +11,7 @@ import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
 import { Scope } from './scope.js';
+import { Novel, Shelf, Tome, START_ORDER } from './library.js';
 import { Landscape, CODE, setCode, randomCode } from './landscape.js';
 import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
@@ -46,6 +47,7 @@ const TITLES = { exterior: L('La villa al tramonto', 'The villa at sunset'), cor
 const magnifier = new Magnifier();
 const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
 const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
+const novel = new Novel(), shelf = new Shelf(), tome = new Tome(); // la biblioteca
 // le versioni precedenti salvavano i progressi per sempre: si cancellano all'apertura
 try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
 const store = {
@@ -75,6 +77,9 @@ const state = {
   coords: JSON.parse(store.get('villa-coordinate') || '[]'), // coordinate trovate nel paesaggio (0 = N, 1 = E, 2 = O)
   wardrobe: store.get('villa-armadio') === '1',   // l'armadio è aperto
   bino: store.get('villa-binocolo') === '1',       // il binocolo è stato scoperto
+  library: store.get('villa-biblioteca') === '1',   // la biblioteca è aperta (dopo Livia)
+  novelRead: store.get('villa-romanzo') === '1',    // il romanzo è stato sfogliato fino all'indovinello
+  shelfSolved: store.get('villa-scaffale') === '1', // lo scaffale è stato aperto
 };
 if (state.unlocked) S.exterior.setSideDoor(true);
 // chi aveva già letto il manoscritto con una versione precedente trova il cannocchiale pronto
@@ -82,6 +87,13 @@ if (state.read && !state.scope) { state.scope = true; store.set('villa-cannocchi
 if (state.scope) S.exterior.setObservatory(true);
 if (state.wardrobe) S.corridor.setWardrobe(true, true);
 if (state.bino) S.exterior.setBinocular(true);
+if (state.library) S.corridor.setLibrary(true, true);
+let shelfOrder = null;
+try { shelfOrder = JSON.parse(store.get('villa-ordine')); } catch { /* nessun ordine salvato */ }
+if (!Array.isArray(shelfOrder) || shelfOrder.length !== 8) shelfOrder = [...START_ORDER];
+S.corridor.setShelf(shelfOrder);
+shelf.solved = state.shelfSolved;
+if (state.shelfSolved) S.corridor.openShelf(true);
 // il codice del lucchetto cambia a ogni partita; resta uguale se si ricarica la stessa scheda
 {
   let code = null;
@@ -199,7 +211,17 @@ const WORLD = {
     },
   },
   corridor: {
-    clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -1.1, 1.1); p.z = THREE.MathUtils.clamp(p.z, -14.3, 2.6); },
+    clamp(p) {
+      const C = THREE.MathUtils.clamp, here = camera.position;
+      const inDoor = (z) => z < -2.5 && z > -4.5;
+      if (state.library && (p.x > 1.9 || here.x > 1.9)) {
+        // dentro la biblioteca; si esce solo dal vano della porta
+        if (p.x < 1.95 && !inDoor(p.z)) p.x = 1.95;
+        p.x = C(p.x, p.x < 1.95 ? 1.0 : 1.95, 5.6); p.z = C(p.z, -6.0, -1.0);
+      } else if (state.library && p.x > 1.0 && inDoor(p.z)) {
+        p.x = C(p.x, -1.1, 5.6); // nel vano della porta
+      } else { p.x = C(p.x, -1.1, 1.1); p.z = C(p.z, -14.3, 2.6); }
+    },
     door(p) {
       if (p.z < -13.9 && Math.abs(p.x) < 0.75) return enterStudy;
       if (p.z > 2.4 && Math.abs(p.x) < 0.8) return goOutside;
@@ -398,7 +420,7 @@ function observe() {
   let title, text;
   if (!hit) { title = L('Niente di particolare', 'Nothing in particular'); text = L('Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».', 'Look towards an object and get closer, then say “observe” again.'); }
   else if (hit.far) { title = hit.item.name; text = L('È troppo lontano per vederlo bene. Avvicinati.', 'It’s too far away to see well. Get closer.'); }
-  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino }); }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino, library: state.library, novelRead: state.novelRead, shelfSolved: state.shelfSolved }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
   obsEl.hidden = false;
@@ -442,6 +464,14 @@ function hotspots() {
       const far = here.distanceTo(E.sideDoorPos) > 7;
       list.push({ pos: E.sideDoorPos, door: true, label: far ? L('L’altro ingresso — avvicinati', 'The other entrance — get closer') : L('Entra dall’altro ingresso', 'Go in through the other entrance'), act: far ? () => moveTo(E.sideNear.pos, E.sideNear.look, null, 3) : enterDining });
     }
+  } else if (state.scene === 'corridor' && state.library && here.x > 1.9) {
+    // dentro la biblioteca: solo i suoi punti (gli altri si vedrebbero attraverso il muro)
+    if (!state.focus) {
+      list.push({ pos: C.novelPos, label: L('Un libro dal dorso dorato', 'A book with a gilded spine'), act: focusNovel });
+      if (!state.shelfSolved) list.push({ pos: C.shelfPos, label: L('Lo scaffale con la targhetta d’ottone', 'The shelf with the brass plate'), act: focusShelf });
+      else list.push({ pos: C.tomePos, label: L('Il libro antico', 'The ancient book'), act: openTome });
+      list.push({ pos: C.libraryDoor, door: true, label: L('Torna nel corridoio', 'Back to the corridor'), act: () => moveTo(C.libraryExit, V(0, 1.5, -10), null, 1.6) });
+    }
   } else if (state.scene === 'corridor') {
     if (state.focus === 'candle') candleTapSpot(list, C);
     else if (!state.focus) {
@@ -449,6 +479,7 @@ function hotspots() {
       list.push({ pos: C.candlePos, label: L('Il candelabro — avvicinati', 'The candelabra — get closer'), act: () => focusCandle(C) });
       list.push({ pos: C.musicPos, label: L('Un carillon — avvicinati', 'A music box — get closer'), act: focusMusic });
       list.push({ pos: C.endDoor, door: true, label: L('La stanza in fondo', 'The room at the end'), act: enterStudy });
+      if (state.library && here.distanceTo(C.libraryDoor) < 7) list.push({ pos: C.libraryDoor, door: true, label: L('La biblioteca — entra', 'The library — go in'), act: () => moveTo(C.libraryEntry, C.libraryLook, null, 1.6) });
       if (here.distanceTo(C.lockPos) < 4) {
         if (!state.wardrobe) list.push({ pos: C.lockPos, label: L('Il lucchetto dell’armadio', 'The wardrobe padlock'), act: focusLock });
         else list.push({ pos: C.wardrobeInside, label: L('La lettera nell’armadio', 'The letter in the wardrobe'), act: openLetter });
@@ -720,6 +751,38 @@ function openLetter() {
 }
 $('letter-close').addEventListener('click', () => leaveFocus());
 
+// ---------- biblioteca: romanzo, scaffale, libro antico ----------
+function focusNovel() {
+  const C = S.corridor;
+  enterFocus('novel');
+  moveTo(C.novelView, C.novelPos, () => { if (state.focus === 'novel') novel.open(); }, 1.2);
+}
+novel.onLastPage = () => { if (!state.novelRead) { state.novelRead = true; store.set('villa-romanzo', '1'); } };
+$('novel-close').addEventListener('click', () => leaveFocus());
+function focusShelf() {
+  const C = S.corridor;
+  enterFocus('shelf');
+  moveTo(C.shelfView, C.shelfPos, () => { if (state.focus === 'shelf') shelf.open(shelfOrder); }, 1.3);
+}
+shelf.onChange = (order) => { shelfOrder = [...order]; store.set('villa-ordine', JSON.stringify(order)); S.corridor.setShelf(order); };
+shelf.onSolved = () => {
+  state.shelfSolved = true;
+  store.set('villa-scaffale', '1');
+  shelf.close();
+  state.focus = 'shelfOpening'; // si guarda lo scaffale che si apre, poi il libro antico
+  S.corridor.openShelf();
+  controls.aimAt(S.corridor.tomePos, 3);
+  audio.click('puff');
+  setTimeout(() => { if (state.focus === 'shelfOpening') { state.focus = 'tome'; tome.open(); } }, 4200);
+};
+$('shelf-close').addEventListener('click', () => leaveFocus());
+function openTome() {
+  enterFocus('tome');
+  tome.open();
+}
+$('tome-close').addEventListener('click', () => leaveFocus());
+$('tome-menu').addEventListener('click', () => { leaveFocus(true); showMenu(); });
+
 // ---------- binocolo: la fotocamera e il finale ----------
 function focusBino() {
   const E = S.exterior;
@@ -730,7 +793,8 @@ function focusBino() {
 scope.onReveal = () => {
   store.set('villa-fine', '1');
   audio.distantMusicBox(40);
-  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = L('Torna alla villa', 'Back to the villa'); $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 9000);
+  if (!state.library) { state.library = true; store.set('villa-biblioteca', '1'); S.corridor.setLibrary(true); }
+  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = L('Torna alla villa', 'Back to the villa'); $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 19000);
 };
 $('scope-close').addEventListener('click', () => leaveFocus());
 
@@ -743,7 +807,13 @@ function leaveFocus(instant = false) {
   $('write').hidden = true;
   if (was === 'candle') audio.stopMic();
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
-  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = L('Chiudi', 'Close'); }
+  if (was === 'scope') {
+    scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = L('Chiudi', 'Close');
+    if (state.library && !state.shelfSolved) setHint(L('«Cercami tra le pagine del libro che amavamo»… La biblioteca, nel primo corridoio, ora è aperta.', '“Look for me among the pages of the book we loved”… The library, in the first corridor, is now open.'));
+  }
+  if (was === 'novel') novel.close();
+  if (was === 'shelf') shelf.close();
+  if (was === 'tome') tome.close();
   if (was === 'land') {
     land.close();
     if (codeDone()) setHint(L('Tre cifre: ', 'Three digits: ') + CODE.join(' · ') + L('. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.', '. A padlock, in the first corridor, is waiting for exactly three digits.'));
@@ -1066,7 +1136,7 @@ renderer.setAnimationLoop(() => {
     audio.tickFire(THREE.MathUtils.clamp(1 - camera.position.distanceTo(G.firePos) / 8, 0, 1));
   }
   updateMarkers(t);
-  if (!['lens', 'scope', 'land'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
+  if (!['lens', 'scope', 'land', 'novel', 'tome'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
   if (state.started && ++frames > 30) {

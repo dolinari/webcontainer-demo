@@ -1,6 +1,7 @@
 // Scena 2 — Corridoio principale
 import * as THREE from 'three';
 import * as T from './textures.js';
+import { IS_EN } from './i18n.js';
 import { assets, box, cyl, lathe, glowSprite, CandleSet, candelabra, bust, painting, armchair, stool, foliageCross, urn, sconce, worldPoints } from './props.js';
 
 export function buildCorridor() {
@@ -36,8 +37,17 @@ export function buildCorridor() {
   // stipiti
   for (const z of [LZ0, LZ1]) scene.add(box(0.5, 2.75, 0.16, A.wood, HW + 0.2, 1.375, z));
   scene.add(box(0.5, 0.16, LZ0 - LZ1 + 0.16, A.wood, HW + 0.2, 2.75, (LZ0 + LZ1) / 2));
-  const leaf = box(0.07, 2.7, 1.0, A.woodPanel, HW + 0.05, 1.35, LZ0 + 0.55);
-  scene.add(leaf);
+  // doppia porta della biblioteca: chiusa finché Livia non dice di cercarla tra i libri
+  const libDoors = [];
+  for (const [zh, dir] of [[LZ0, -1], [LZ1, 1]]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(HW + 0.06, 1.35, zh);
+    pivot.add(box(0.07, 2.66, 1.18, A.woodPanel, 0, 0, dir * 0.59));
+    pivot.add(box(0.05, 0.14, 0.05, A.gold, -0.05, 0, dir * 1.08)); // maniglia
+    scene.add(pivot);
+    libDoors.push({ pivot, dir });
+  }
+  let libAngle = 0, libTarget = 0;
 
   // volta a botte + costoloni
   const vault = new THREE.Mesh(new THREE.CylinderGeometry(HW, HW, LEN, 18, 1, true, Math.PI / 2, Math.PI), vaultMat);
@@ -198,6 +208,96 @@ export function buildCorridor() {
   const lampGlow = glowSprite(0xff9a40, 1.8, 0.55); lampGlow.position.copy(shade.position); scene.add(lampGlow);
   const lamp = new THREE.PointLight(0xffb468, 16, 12, 2); lamp.position.set(lampX, 1.5, lampZ); scene.add(lamp);
 
+  // --- arredi nuovi della biblioteca: leggio, romanzo, scaffale dell'enigma ---
+  // il leggio, con un atlante aperto
+  const lect = new THREE.Group();
+  lect.add(cyl(0.05, 0.07, 1.05, A.wood, 0, 0.52, 0, 8));
+  lect.add(cyl(0.22, 0.26, 0.05, A.wood, 0, 0.025, 0, 10));
+  const top = box(0.5, 0.04, 0.38, A.wood, 0, 1.08, 0); top.rotation.x = -0.45; lect.add(top);
+  // l'atlante aperto è appoggiato sul piano inclinato (ne segue la rotazione)
+  const atlas = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.32), new THREE.MeshStandardMaterial({ map: T.mapTex(), roughness: 0.8 }));
+  atlas.position.set(0, 0.022, 0); atlas.rotation.x = -Math.PI / 2; top.add(atlas);
+  lect.position.set(LX1 - 1.3, 0, LZa - 0.9); lect.rotation.y = Math.PI * 0.85;
+  scene.add(lect);
+  // il romanzo: sporge dallo scaffale della parete destra, con il dorso leggibile
+  const spineCanvas = (title, author, w, h, color) => {
+    const [c, g] = T.mk(w, h);
+    g.fillStyle = color; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 0, w, 6); g.fillRect(0, h - 6, w, 6);
+    g.strokeStyle = '#d8b060'; g.lineWidth = 2;
+    for (const y of [18, 26, h - 26, h - 18]) { g.beginPath(); g.moveTo(6, y); g.lineTo(w - 6, y); g.stroke(); }
+    g.save(); g.translate(w / 2, h / 2); g.rotate(-Math.PI / 2);
+    g.fillStyle = '#f0d088'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `bold ${Math.round(w * 0.36)}px Georgia, serif`; g.fillText(title, 0, -w * 0.08);
+    g.font = `italic ${Math.round(w * 0.22)}px Georgia, serif`; g.fillText(author, 0, w * 0.3);
+    g.restore();
+    return c;
+  };
+  const novelSpine = T.toTex(spineCanvas(IS_EN ? 'THE LANTERN KEEPER' : 'IL CUSTODE DELLE LANTERNE', 'M. Ashcombe · 1831', 64, 512, '#5a1a14'));
+  const novelMat = new THREE.MeshStandardMaterial({ color: 0x5a1a14, roughness: 0.7 });
+  const novel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.22), [new THREE.MeshStandardMaterial({ color: 0xd8c8a0 }), new THREE.MeshStandardMaterial({ map: novelSpine, roughness: 0.6, emissive: 0x2a1006, emissiveIntensity: 0.6 }), novelMat, novelMat, novelMat, novelMat]);
+  novel.rotation.y = -Math.PI / 2;
+  novel.position.set(LX1 - 0.18, 1.45, -2.4);
+  scene.add(novel);
+  const novelGlint = glowSprite(0xffc070, 0.5, 0.25); novelGlint.position.set(LX1 - 0.3, 1.45, -2.4); scene.add(novelGlint);
+  // lo scaffale dell'enigma, contro la parete di fondo: otto libri con una lettera sul dorso
+  const SX = (LX1 + HW) / 2, SZ = LZb, BW = 0.2;
+  const halves = [new THREE.Group(), new THREE.Group()];
+  halves.forEach((hg, i) => {
+    const side = i ? 1 : -1;
+    // mobile aperto: fondo con altri libri, fianchi, cielo, zoccolo e ripiani
+    hg.add(box(0.86, 2.5, 0.02, new THREE.MeshStandardMaterial({ map: T.booksTex([0.5, 1]), roughness: 0.9 }), side * 0.45, 1.3, 0.03));
+    for (const x of [0.015, 0.885]) hg.add(box(0.03, 2.6, 0.34, A.wood, side * x, 1.3, 0.17));
+    hg.add(box(0.9, 0.06, 0.34, A.wood, side * 0.45, 2.57, 0.17));
+    hg.add(box(0.9, 0.12, 0.34, A.wood, side * 0.45, 0.06, 0.17));
+    for (const y of [0.55, 1.12, 1.62, 2.2]) hg.add(box(0.86, 0.04, 0.3, A.wood, side * 0.45, y, 0.18));
+    hg.position.set(SX, 0, SZ + 0.02);
+    scene.add(hg);
+  });
+  // la fila dei libri con le lettere, appoggiata sul ripiano a 1.14 m
+  const letterBooks = [];
+  const bookColors = ['#3a1a12', '#1e2a1c', '#4a2a14', '#2a1828', '#3a2a10', '#1a2228', '#4a1a1a', '#2a2018'];
+  const letterTex = (ch, color) => {
+    const [c, g] = T.mk(64, 192);
+    g.fillStyle = color; g.fillRect(0, 0, 64, 192);
+    g.strokeStyle = '#c8a050'; g.lineWidth = 3; g.strokeRect(6, 8, 52, 176);
+    g.fillStyle = '#f0d088'; g.font = 'bold 46px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, 32, 96);
+    return T.toTex(c);
+  };
+  for (let i = 0; i < 8; i++) {
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.6, emissive: 0x1a0c06, emissiveIntensity: 0.5 });
+    const bk = new THREE.Mesh(new THREE.BoxGeometry(BW - 0.012, 0.42, 0.24), [mat, mat, mat, mat, mat, mat]);
+    const half = i < 4 ? 0 : 1;
+    bk.position.set((i < 4 ? -0.82 + i * BW : 0.02 + (i - 4) * BW) + BW / 2 - 0.0, 1.35, 0.2);
+    halves[half].add(bk);
+    letterBooks.push(bk);
+  }
+  // la targhetta d'ottone sotto i primi quattro
+  const plate = box(0.62, 0.06, 0.02, A.gold, -0.42, 1.08, 0.36); halves[0].add(plate);
+  const setShelf = (letters) => {
+    letters.forEach((ch, i) => {
+      const color = bookColors[(ch.charCodeAt(0) + i * 0) % bookColors.length];
+      const front = new THREE.MeshStandardMaterial({ map: letterTex(ch, color), roughness: 0.6, emissive: 0x2a1408, emissiveIntensity: 0.55 });
+      const m = letterBooks[i].material; m[4] = front;
+      for (const k of [0, 1, 2, 3, 5]) m[k] = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+    });
+  };
+  // dietro lo scaffale: una nicchia con il libro antico
+  const niche = box(1.7, 2.4, 0.02, new THREE.MeshStandardMaterial({ color: 0x140a06, roughness: 1 }), SX, 1.25, SZ + 0.03);
+  scene.add(niche);
+  const tome = new THREE.Group();
+  const tomeCover = new THREE.MeshStandardMaterial({ color: 0x3a1a0c, roughness: 0.55 });
+  tome.add(box(0.52, 0.09, 0.38, tomeCover, 0, 0, 0));
+  tome.add(box(0.5, 0.07, 0.36, new THREE.MeshStandardMaterial({ color: 0xe0d0a8, roughness: 0.9 }), 0, 0.01, 0));
+  for (const x of [-0.24, 0.24]) tome.add(box(0.03, 0.1, 0.4, A.gold, x, 0, 0));
+  tome.add(box(0.6, 0.9, 0.3, A.wood, 0, -0.5, 0)); // il piccolo leggio della nicchia
+  tome.position.set(SX, 1.0, SZ + 0.2);
+  tome.visible = false;
+  scene.add(tome);
+  const tomeGlow = glowSprite(0xffd090, 1.6, 0); tomeGlow.position.set(SX, 1.2, SZ + 0.45); scene.add(tomeGlow);
+  const tomeLight = new THREE.PointLight(0xffc888, 0, 5, 2); tomeLight.position.set(SX, 1.6, SZ + 0.9); scene.add(tomeLight);
+  let shelfOpen = 0, shelfTarget = 0;
+
   // piedistallo con busto scuro
   scene.add(box(0.46, 1.1, 0.46, A.woodPanel, HW - 0.3, 0.55, -6.3));
   scene.add(box(0.54, 0.06, 0.54, A.wood, HW - 0.3, 1.13, -6.3));
@@ -230,6 +330,15 @@ export function buildCorridor() {
   let playing = false;
   const update = (dt, t, wind) => {
     doorAngle += (doorTarget - doorAngle) * Math.min(1, dt * 2.2);
+    libAngle += (libTarget - libAngle) * Math.min(1, dt * 1.6);
+    for (const d of libDoors) d.pivot.rotation.y = -d.dir * libAngle * 1.6;
+    shelfOpen += (shelfTarget - shelfOpen) * Math.min(1, dt * 0.9);
+    halves[0].position.x = SX - shelfOpen * 0.95; halves[1].position.x = SX + shelfOpen * 0.95;
+    tome.position.z = SZ + 0.2 + Math.max(0, shelfOpen - 0.5) * 1.0; // il libro esce dalla nicchia
+    tome.visible = shelfOpen > 0.04; // prima che lo scaffale si apra non deve intravedersi
+    tomeGlow.material.opacity = 0.6 * shelfOpen * (0.9 + 0.1 * Math.sin(t * 3));
+    tomeLight.intensity = 6 * shelfOpen;
+    novelGlint.material.opacity = 0.18 + 0.1 * Math.sin(t * 2.2);
     for (const d of doors) d.pivot.rotation.y = -d.s * doorAngle * 1.75;
     candles.update(dt, t, wind);
     chandelier.update(dt, t, 0);
@@ -250,6 +359,18 @@ export function buildCorridor() {
     musicView: new THREE.Vector3(0.55, 1.4, -9.9),
     endDoor: new THREE.Vector3(0, 1.35, Z1),
     setWardrobe,
+    setLibrary: (open, instant = false) => { libTarget = open ? 1 : 0; if (instant) libAngle = libTarget; },
+    setShelf,
+    openShelf: (instant = false) => { shelfTarget = 1; if (instant) shelfOpen = 1; },
+    libraryEntry: new THREE.Vector3(3.3, 1.6, -3.5),
+    libraryLook: new THREE.Vector3(4, 1.4, -6.4),
+    libraryExit: new THREE.Vector3(0, 1.6, -3.5),
+    libraryDoor: new THREE.Vector3(HW + 0.1, 1.4, (LZ0 + LZ1) / 2),
+    novelPos: new THREE.Vector3(LX1 - 0.2, 1.45, -2.4),
+    novelView: new THREE.Vector3(LX1 - 1.3, 1.55, -2.4),
+    shelfPos: new THREE.Vector3(SX - 0.4, 1.35, SZ + 0.35),
+    shelfView: new THREE.Vector3(SX, 1.55, SZ + 1.6),
+    tomePos: new THREE.Vector3(SX, 1.05, SZ + 0.7),
     lockPos: new THREE.Vector3(FX + 0.06, 1.27, WZ),
     lockView: new THREE.Vector3(-0.15, 1.5, WZ + 0.15),
     wardrobeInside: new THREE.Vector3(-HW + 0.3, 1.35, WZ),

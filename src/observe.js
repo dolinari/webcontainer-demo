@@ -70,8 +70,22 @@ export const OBSERVABLES = {
           : L('Un lucchetto d’ottone con tre rotelle numerate. Servono tre cifre: qui intorno non c’è scritto niente.', 'A brass padlock with three numbered wheels. Three digits are needed: nothing is written anywhere around here.')) },
     { name: L('Il lampadario', 'The chandelier'), pos: V(0, 3.55, -6.6), range: 8, size: 0.6,
       text: L('Un lampadario di ferro con otto candele accese. Oscilla appena, anche se non c’è vento.', 'An iron chandelier with eight lit candles. It sways slightly, even though there’s no wind.') },
-    { name: L('La stanza a destra', 'The room on the right'), pos: V(3.6, 1.4, -3.5), range: 6, size: 1.5,
-      text: L('Una biblioteca: scaffali pieni di libri, una lampada accesa e una poltrona di velluto rosso. Ma la soglia è sbarrata: da qui non si entra.', 'A library: shelves full of books, a lit lamp and a red velvet armchair. But the doorway is barred: you can’t get in from here.') },
+    { name: L('La biblioteca', 'The library'), pos: V(3.6, 1.4, -3.5), range: 6, size: 1.5,
+      text: (c) => (c.library
+        ? L('La doppia porta adesso è aperta. Dentro: scaffali fino al soffitto, una poltrona di velluto rosso, un leggio con un atlante aperto. Qui c’è il libro che amavano entrambi.', 'The double door is open now. Inside: shelves up to the ceiling, a red velvet armchair, a lectern with an open atlas. The book they both loved is somewhere here.')
+        : L('Una biblioteca, dietro una doppia porta chiusa. Dalle fessure filtra la luce di una lampada. È sbarrata: da qui, per ora, non si entra.', 'A library, behind a closed double door. Lamplight seeps through the cracks. It is barred: for now, there’s no way in.')) },
+    { name: L('Un libro dal dorso dorato', 'A book with a gilded spine'), pos: V(5.82, 1.45, -2.4), range: 3.5, size: 0.15,
+      text: (c) => (c.novelRead
+        ? L('«Il Custode delle Lanterne», di M. Ashcombe. Sul margine dell’ultima pagina c’è un indovinello scritto a matita.', '“The Lantern Keeper”, by M. Ashcombe. In the margin of the last page there is a riddle written in pencil.')
+        : L('Un solo libro sporge dagli scaffali, e il suo dorso dorato si legge benissimo: «Il Custode delle Lanterne», M. Ashcombe, 1831.', 'A single book sticks out from the shelves, and its gilded spine is easy to read: “The Lantern Keeper”, M. Ashcombe, 1831.')) },
+    { name: L('Lo scaffale con la targhetta', 'The shelf with the brass plate'), pos: V(3.6, 1.35, -6.05), range: 4.5, size: 0.6,
+      text: (c) => (c.shelfSolved
+        ? L('Lo scaffale si è aperto in due. Nella nicchia, su un piccolo leggio, c’è un grande libro antico.', 'The shelf has split in two. In the niche, on a small stand, lies a large ancient book.')
+        : L('Otto libri con una lettera dorata sul dorso. Sotto i primi quattro, una targhetta d’ottone senza scritte. I libri si possono spostare.', 'Eight books with a gilded letter on the spine. Under the first four, a blank brass plate. The books can be moved.')) },
+    { name: L('Il leggio', 'The lectern'), pos: V(4.7, 1.1, -1.5), range: 3.5, size: 0.3,
+      text: L('Un leggio di legno con un atlante aperto su una valle di montagna. Qualcuno ha cerchiato a matita un villaggio con il campanile.', 'A wooden lectern with an atlas open on a mountain valley. Someone has circled a village with a bell tower in pencil.') },
+    { name: L('La poltrona', 'The armchair'), pos: V(4.1, 0.7, -4.3), range: 4, size: 0.5,
+      text: L('Una poltrona di velluto rosso, consumata sui braccioli. Accanto, la lampada a stelo è accesa, come se qualcuno stesse per tornare a leggere.', 'A red velvet armchair, worn on the arms. Beside it the floor lamp is lit, as if someone were about to come back and read.') },
     { name: L('Il busto scuro', 'The dark bust'), pos: V(1.5, 1.6, -6.3), range: 4.5, size: 0.35,
       text: L('Un busto di pietra scura su un piedistallo di legno: un uomo anziano, lo sguardo severo. Sembra seguirti mentre passi.', 'A dark stone bust on a wooden pedestal: an old man with a stern gaze. He seems to follow you as you pass.') },
     { name: L('Il ritratto', 'The portrait'), pos: V(1.76, 2.2, -8.2), range: 5.5, size: 0.6,

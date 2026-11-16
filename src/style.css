@@ -200,3 +200,46 @@ button.ghost:disabled { visibility: hidden; }
 #lang-switch button { min-height: 32px; min-width: 44px; padding: 4px 10px; border: 0; background: none; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--dim); backdrop-filter: none; -webkit-backdrop-filter: none; }
 #lang-switch button[aria-pressed='true'] { background: var(--amber); color: #2a1608; }
 #start { padding-top: calc(env(safe-area-inset-top) + 64px); } /* spazio per il selettore della lingua */
+
+/* ---- biblioteca: romanzo, scaffale, libro antico ---- */
+#novel, #shelf, #tome { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 18px); background: rgba(6, 3, 2, 0.92); }
+.ov-label { margin: 0; font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--amber); }
+.ov-hint { margin: 0; font-size: 13px; color: var(--dim); font-family: system-ui, sans-serif; }
+#novel .row, #tome .row { display: flex; align-items: center; gap: 14px; }
+#novel-num { font-family: system-ui, sans-serif; font-size: 13px; color: var(--dim); min-width: 44px; text-align: center; }
+#novel-prev, #novel-next { width: 52px; font-size: 24px; padding: 4px 0; }
+#novel-prev:disabled, #novel-next:disabled { opacity: 0.25; }
+.book { width: min(100%, 360px); flex: 0 1 auto; max-height: 64vh; perspective: 900px; }
+#novel-page { min-height: min(58vh, 480px); max-height: 64vh; overflow-y: auto; padding: 26px 24px 22px; border-radius: 3px 10px 10px 3px; color: #2a1a10; background: linear-gradient(90deg, #c8b48a, #ecdfbf 7%, #efe3c6 60%, #ddcca4); box-shadow: inset 8px 0 14px rgba(80, 50, 20, 0.35), 0 18px 50px #000; touch-action: pan-y; transition: transform 0.22s ease, opacity 0.22s ease; transform-origin: left center; font-family: Georgia, serif; }
+#novel-page.out-left { transform: perspective(900px) rotateY(-75deg); opacity: 0; }
+#novel-page.out-right { transform: perspective(900px) rotateY(40deg); opacity: 0; }
+#novel-page.in-right { transform: perspective(900px) rotateY(25deg); opacity: 0; transition: none; }
+#novel-page.in-left { transform: perspective(900px) rotateY(-25deg); opacity: 0; transition: none; }
+#novel-page p { margin: 0 0 14px; font-size: 16.5px; line-height: 1.55; text-align: justify; hyphens: auto; }
+#novel-page h4 { margin: 4px 0 16px; text-align: center; font-weight: normal; font-variant: small-caps; letter-spacing: 0.08em; font-size: 19px; }
+#novel-page .tp { text-align: center; padding-top: 18px; }
+#novel-page .tp small { font-style: italic; color: #6a4a2a; }
+#novel-page .tp h3 { margin: 14px 0 10px; font-weight: normal; font-size: 30px; line-height: 1.15; }
+#novel-page .tp .au { font-style: italic; text-align: center; }
+#novel-page .tp .yr { letter-spacing: 0.3em; text-align: center; color: #6a4a2a; }
+#novel-page .hand, #novel-page .pencil { font-family: 'Segoe Script', 'Bradley Hand', 'Snell Roundhand', cursive; font-style: italic; text-align: left; }
+#novel-page .hand { margin-top: 34px; color: #4a2410; font-size: 17px; transform: rotate(-3deg); }
+#novel-page .pencil { margin-top: 22px; padding: 10px 12px; color: #5a5650; font-size: 15px; line-height: 1.5; border-left: 2px solid rgba(90, 86, 80, 0.4); transform: rotate(-1.5deg); }
+#shelf-msg { margin: 0; text-align: center; font-style: italic; max-width: 340px; text-wrap: balance; }
+.shelf-wood { width: min(100%, 380px); padding: 16px 10px 12px; border-radius: 8px; background: linear-gradient(#3a2414, #24160c); box-shadow: inset 0 -10px 0 #4a2e18, 0 16px 40px #000; }
+#shelf-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: 190px; align-items: end; touch-action: none; }
+.spine { height: 100%; display: grid; place-items: center; border-radius: 4px 4px 2px 2px; background: linear-gradient(90deg, hsl(var(--hue), 35%, 14%), hsl(var(--hue), 40%, 24%) 45%, hsl(var(--hue), 35%, 13%)); border: 1px solid rgba(240, 200, 120, 0.25); box-shadow: inset 0 10px 0 -7px rgba(220, 180, 100, 0.6), inset 0 -10px 0 -7px rgba(220, 180, 100, 0.6); touch-action: none; transition: transform 0.15s; cursor: grab; }
+.spine b { font-family: Georgia, serif; font-weight: bold; font-size: 26px; color: #f0d088; text-shadow: 0 1px 3px #000; }
+.spine.lift { transition: none; z-index: 2; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6); }
+#shelf-row.solved .spine:nth-child(-n+4) { border-color: #ffd890; box-shadow: 0 0 18px rgba(255, 200, 110, 0.7); }
+.plate { width: calc(50% - 6px); margin-top: 8px; padding: 4px 0; text-align: center; border-radius: 3px; font-family: system-ui, sans-serif; font-size: 10.5px; letter-spacing: 0.06em; color: #3a2408; background: linear-gradient(#e8c070, #a8782a); }
+#tome { justify-content: flex-start; overflow-y: auto; }
+.tome-card { width: min(100%, 400px); margin-top: 6px; padding: 18px 18px 16px; border-radius: 6px; color: #2a1a10; background: radial-gradient(ellipse at 40% 30%, #ecdcb8, #d4bc8c 75%, #b89a64); box-shadow: 0 20px 60px #000, inset 0 0 0 6px rgba(90, 50, 20, 0.25); text-align: center; }
+.tome-card figure { margin: 0 0 12px; }
+.tome-card img { width: 100%; height: auto; display: block; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); transform: rotate(-0.8deg); }
+.tome-card figcaption { margin-top: 8px; font-style: italic; font-size: 14px; color: #5a3a1a; }
+.tome-card h3 { margin: 6px 0 8px; font-weight: normal; font-size: 23px; line-height: 1.2; font-variant: small-caps; }
+.tome-card p { margin: 0 0 10px; font-size: 15.5px; line-height: 1.5; }
+.tome-card .ink { font-style: italic; color: rgba(60, 30, 14, 0.7); font-size: 16px; }
+.tome-end { margin: 6px 0 0; font-style: italic; color: var(--ink); font-size: 17px; }
+#tome .credits { margin-top: 4px; }

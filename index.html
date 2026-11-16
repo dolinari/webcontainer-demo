@@ -84,9 +84,8 @@
     <p id="scope-msg"></p>
     <button id="scope-skip" class="link" hidden data-en="I can’t move around">Non posso spostarmi</button>
     <div id="scope-end" hidden>
-      <b data-en="You have found the mystery of the Villa at Sunset">Hai trovato il mistero della Villa al Tramonto</b>
-      <span data-en="Thank you for stepping into the villa. For now, the story ends here.">Grazie di essere entrato nella villa. Per ora, la storia si ferma qui.</span>
-      <small data-en="An interactive experience created by Dario Molinari · © 2026 · All rights reserved">Un’experience interattiva creata da Dario Molinari · © 2026 · Tutti i diritti riservati</small>
+      <b data-en="The library is now open">La biblioteca ora è aperta</b>
+      <span data-en="Go back to the first corridor: the door on the right is no longer barred.">Torna nel primo corridoio: la porta a destra non è più sbarrata.</span>
     </div>
     <div class="row"><button id="scope-menu" hidden data-en="Main menu">Menu principale</button><button id="scope-close" class="primary" data-en="Close">Chiudi</button></div>
   </div>
@@ -125,6 +124,43 @@
     <button id="letter-close" class="primary" data-en="Close the letter">Chiudi la lettera</button>
   </div>
 
+  <div id="novel" hidden>
+    <p class="ov-label" data-en="The novel">Il romanzo</p>
+    <div class="book"><div id="novel-page"></div></div>
+    <p class="ov-hint" data-en="Swipe the page to turn it">Trascina la pagina per sfogliarla</p>
+    <div class="row">
+      <button id="novel-prev" class="ghost" aria-label="Pagina precedente" data-en-aria="Previous page">‹</button>
+      <span id="novel-num"></span>
+      <button id="novel-next" class="ghost" aria-label="Pagina successiva" data-en-aria="Next page">›</button>
+    </div>
+    <button id="novel-close" class="primary" data-en="Close the book">Chiudi il libro</button>
+  </div>
+
+  <div id="shelf" hidden>
+    <p class="ov-label" data-en="The shelf">Lo scaffale</p>
+    <p id="shelf-msg"></p>
+    <div class="shelf-wood">
+      <div id="shelf-row"></div>
+      <div class="plate" data-en="under the brass plate">sotto la targhetta d’ottone</div>
+    </div>
+    <button id="shelf-close" class="primary" data-en="Close">Chiudi</button>
+  </div>
+
+  <div id="tome" hidden>
+    <article class="tome-card">
+      <figure><img src="villa-1826.jpg" alt="La villa in una fotografia antica" data-en-alt="The villa in an old photograph" width="960" height="690" /><figcaption id="tome-caption"></figcaption></figure>
+      <h3 id="tome-title"></h3>
+      <p id="tome-text"></p>
+      <p id="tome-ink" class="ink"></p>
+    </article>
+    <p class="tome-end" data-en="For now, the story ends here.">Per ora, la storia si ferma qui.</p>
+    <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+    <div class="row">
+      <button id="tome-menu" data-en="Main menu">Menu principale</button>
+      <button id="tome-close" class="primary" data-en="Close">Chiudi</button>
+    </div>
+  </div>
+
   <div id="toast"></div>
 
   <div id="start">
@@ -161,7 +197,7 @@
           <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2" fill="none" stroke-width="2"/><circle cx="12" cy="7" r="7" fill="none" stroke-width="1.2" opacity=".5"/><path d="M12 11v10" stroke-width="2"/></svg></i>
           <div>
             <h3 data-en="Touch">Il tocco</h3>
-            <p data-en="In a hurry? Tap the &lt;b&gt;glowing circles&lt;/b&gt;: they take you straight there. Use your finger to &lt;b&gt;write&lt;/b&gt; on paper and move the &lt;b&gt;magnifying glass&lt;/b&gt;.">Vuoi fare in fretta? Tocca i <b>cerchi luminosi</b>: ti portano subito dove vuoi. Col dito <b>scrivi</b> sui fogli e muovi la <b>lente</b>.</p>
+            <p data-en="In a hurry? Tap the &lt;b&gt;glowing circles&lt;/b&gt;: they take you straight there. Use your finger to &lt;b&gt;write&lt;/b&gt; on paper, &lt;b&gt;leaf through&lt;/b&gt; books, &lt;b&gt;move&lt;/b&gt; objects and steer the &lt;b&gt;magnifying glass&lt;/b&gt;.">Vuoi fare in fretta? Tocca i <b>cerchi luminosi</b>: ti portano subito dove vuoi. Col dito <b>scrivi</b> sui fogli, <b>sfogli</b> i libri, <b>sposti</b> gli oggetti e muovi la <b>lente</b>.</p>
           </div>
         </section>
         <section class="way riddle">
@@ -231,7 +267,7 @@
       <article class="slide">
         <figure><img src="tutorial/5-lente.jpg" data-en-src="tutorial/en/5-lente.jpg" alt="La lente d’ingrandimento sulle righe minuscole di un manoscritto" data-en-alt="The magnifying glass over the tiny lines of a manuscript" width="780" height="880" /></figure>
         <h2 data-en="Hands, ear, eye">Le mani, l’orecchio, l’occhio</h2>
-        <p data-en="&lt;b&gt;Write&lt;/b&gt; on paper with your finger. &lt;b&gt;Tilt your phone&lt;/b&gt; to move the magnifying glass. &lt;b&gt;Hold it to your ear&lt;/b&gt; to hear the music box. In the binoculars, the &lt;b&gt;camera&lt;/b&gt; lets you look beyond."><b>Scrivi</b> col dito sui fogli. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel binocolo, la <b>fotocamera</b> ti fa guardare oltre.</p>
+        <p data-en="&lt;b&gt;Write&lt;/b&gt; on paper with your finger and &lt;b&gt;leaf through&lt;/b&gt; books. &lt;b&gt;Tilt your phone&lt;/b&gt; to move the magnifying glass. &lt;b&gt;Hold it to your ear&lt;/b&gt; to hear the music box. In the binoculars, the &lt;b&gt;camera&lt;/b&gt; lets you look beyond."><b>Scrivi</b> col dito sui fogli e <b>sfoglia</b> i libri. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel binocolo, la <b>fotocamera</b> ti fa guardare oltre.</p>
         <div class="chips" data-en="&lt;span class=&quot;chip gesture&quot;&gt;write&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;tilt&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;to your ear&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;camera&lt;/span&gt;"><span class="chip gesture">scrivi</span><span class="chip gesture">inclina</span><span class="chip gesture">all’orecchio</span><span class="chip gesture">fotocamera</span></div>
       </article>
     </div>

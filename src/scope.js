@@ -397,6 +397,8 @@ export class Scope {
     if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
     this._say(L('È lei. Livia, con una lanterna in mano, lungo la strada verso la villa.', 'It’s her. Livia, a lantern in her hand, on the road to the villa.'));
     setTimeout(() => { if (this.isOpen) this._say(L('Ogni sera, al tramonto, lui accendeva le candele perché lei trovasse la strada di casa. Stasera la luce l’hai vista tu.', 'Every evening at sunset he lit the candles so she would find her way home. Tonight, you saw the light.')); }, 6000);
+    // Livia si ferma, alza la lanterna, e la sua voce arriva da lontano
+    setTimeout(() => { if (this.isOpen) this._say(L('Poi la sua voce, lontana: «Mi hai vista. Ma mi stai ancora cercando. Ricorda le parole che ti ho lasciato, e cercami meglio tra le pagine del libro che amavamo entrambi.»', 'Then her voice, far away: “You have seen me. But you are still looking for me. Remember the words I left you, and look for me more closely among the pages of the book we both loved.”')); }, 13000);
     this.onReveal?.();
   }
 }
