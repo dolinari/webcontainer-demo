@@ -113,9 +113,9 @@ export function buildDining() {
   for (const z of [-1.7, -3.2, -4.7]) for (const s of [-1, 1]) {
     scene.add(cyl(0.12, 0.1, 0.012, china, TX + s * 0.42, 0.805, z, 16));
     scene.add(cyl(0.025, 0.02, 0.1, glass, TX + s * 0.42 - s * 0.05, 0.85, z - 0.18, 8));
-    chairs.push([TX + s * 0.98, z, s]);
+    chairs.push([TX + s * 0.8, z, s]); // spinte sotto il tavolo
   }
-  chairs.push([TX, -0.45, 0], [TX, -5.95, 2]);
+  chairs.push([TX, -0.82, 0], [TX, -5.58, 2]);
   for (const [x, z, s] of chairs) {
     const ch = new THREE.Group();
     ch.add(box(0.46, 0.06, 0.46, A.velvet, 0, 0.48, 0));
@@ -123,8 +123,10 @@ export function buildDining() {
     ch.add(box(0.36, 0.5, 0.02, A.velvet, 0, 0.9, -0.19));
     for (const [cx, cz] of [[-0.2, 0.2], [0.2, 0.2], [-0.2, -0.2], [0.2, -0.2]]) ch.add(cyl(0.022, 0.018, 0.46, A.wood, cx, 0.23, cz, 6));
     ch.position.set(x, 0, z);
-    ch.rotation.y = s === 0 ? Math.PI : s === 2 ? 0 : s * Math.PI / 2;
-    if (s === 0) { ch.position.x += 0.35; ch.position.z += 0.25; ch.rotation.y += 0.5; } // la sedia scostata
+    // tutte rivolte verso il tavolo (il davanti della seduta è +z locale)
+    ch.rotation.y = s === 0 ? Math.PI : s === 2 ? 0 : -s * Math.PI / 2;
+    // tranne quella a capotavola verso l'ingresso: qualcuno si è appena alzato
+    if (s === 0) { ch.position.x += 0.3; ch.position.z += 0.55; ch.rotation.y += 0.45; }
     scene.add(ch);
   }
   const tc = candelabra(5, 0.46, 0.12);

@@ -325,7 +325,7 @@ export function buildCorridor() {
   const drum = cyl(0.022, 0.022, 0.12, A.gold, 0, 0.1, 0.0, 10); drum.rotation.z = Math.PI / 2; mb.add(drum);
   const crank = cyl(0.004, 0.004, 0.05, A.gold, 0.115, 0.05, 0, 4); crank.rotation.z = Math.PI / 2; mb.add(crank);
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.01, 6, 6), A.gold); knob.position.set(0.14, 0.065, 0); mb.add(knob);
-  mb.position.set(mbX - 0.02, 0.825, mbZ); mb.rotation.y = -Math.PI / 2 + 0.25; scene.add(mb);
+  mb.position.set(mbX - 0.02, 0.825, mbZ); mb.rotation.y = Math.PI - 0.41; scene.add(mb); // il davanti (lato opposto alla cerniera) guarda chi arriva dall'ingresso, manovella verso il corridoio
   const mbGlint = glowSprite(0xffd080, 0.35, 0.0); mbGlint.position.set(mbX - 0.02, 0.95, mbZ); scene.add(mbGlint);
 
   // applique sopra il carillon e in fondo
