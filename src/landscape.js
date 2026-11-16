@@ -13,14 +13,25 @@ const TAU = Math.PI * 2;
 
 // le tre coordinate, in ordine di lettura (da Nord, in senso orario)
 export const CODE = [7, 2, 4];
+// tre altezze diverse: bisogna alzare e abbassare davvero il cannocchiale
+//  N: l'altare in cima a una montagna (circa 20° sopra l'orizzonte)
+//  E: il ruscello nel fondovalle, sotto il paese (circa 18° sotto)
+//  O: il rudere su una collina, all'altezza dell'orizzonte
 const TARGETS = [
-  { digit: 7, dir: 'N', bearing: 0, y: HORIZON + 28 },
-  { digit: 2, dir: 'E', bearing: 90, y: HORIZON + 92 },
-  { digit: 4, dir: 'O', bearing: 270, y: HORIZON - 52 },
+  { digit: 7, dir: 'N', base: 0, baseY: HORIZON - 250, bearing: 0, y: HORIZON - 250 },
+  { digit: 2, dir: 'E', base: 90, baseY: HORIZON + 210, bearing: 90, y: HORIZON + 210 },
+  { digit: 4, dir: 'O', base: 270, baseY: HORIZON - 40, bearing: 270, y: HORIZON - 40 },
 ];
-/** Imposta il codice della partita (tre cifre) e ridisegna il paesaggio. */
+/** Imposta il codice della partita (tre cifre) e ridisegna il paesaggio.
+ *  Le posizioni si spostano un poco a ogni partita (±12° e un po' su o giù). */
 export function setCode(code) {
-  code.forEach((d, i) => { CODE[i] = d; TARGETS[i].digit = d; });
+  const seed = code[0] * 100 + code[1] * 10 + code[2] + 1;
+  code.forEach((d, i) => {
+    const t = TARGETS[i], h = seed * (i + 3) + 17 * i;
+    CODE[i] = d; t.digit = d;
+    t.bearing = t.base + ((h * 37) % 25) - 12;
+    t.y = t.baseY + ((h * 53) % 41) - 20;
+  });
   panoCache = null;
 }
 export function randomCode() { return [0, 1, 2].map(() => Math.floor(Math.random() * 10)); }
@@ -121,8 +132,8 @@ function paintPanorama() {
     g.fillRect(x, y, r() < 0.1 ? 2 : 1, r() < 0.1 ? 2 : 1);
   }
   // luna sopra l'altare, a Nord
-  for (const dx of [0, W]) {
-    const mx = bx(20) + dx - W * (dx ? 1 : 0), my = 180;
+  for (const dx of [-W, 0, W]) {
+    const mx = bx(TARGETS[0].bearing + 24) + dx, my = Math.max(70, TARGETS[0].y - 140);
     const mg = g.createRadialGradient(mx, my, 4, mx, my, 120);
     mg.addColorStop(0, 'rgba(240,235,220,0.5)'); mg.addColorStop(1, 'rgba(200,200,220,0)');
     g.fillStyle = mg; g.fillRect(mx - 120, my - 120, 240, 240);
@@ -175,7 +186,8 @@ function paintPanorama() {
 
   // --- il ruscello a Est: visto dall'alto, il suo corso disegna la cifra ---
   {
-    const st = strokesAt(TARGETS[1].digit, bx(90), TARGETS[1].y, STREAM_DIGITS);
+    const sxc = bx(TARGETS[1].bearing);
+    const st = strokesAt(TARGETS[1].digit, sxc, TARGETS[1].y, STREAM_DIGITS);
     g.lineCap = 'round'; g.lineJoin = 'round';
     const course = () => {
       g.beginPath();
@@ -193,7 +205,7 @@ function paintPanorama() {
     g.strokeStyle = 'rgba(200,215,225,0.6)'; g.lineWidth = 3; course(); g.stroke(); // riflessi spezzati
     g.setLineDash([]);
     for (let i = 0; i < 90; i++) {
-      const px = bx(90) + (r() - 0.5) * 140, py = TARGETS[1].y + (r() - 0.5) * 170;
+      const px = sxc + (r() - 0.5) * 140, py = TARGETS[1].y + (r() - 0.5) * 170;
       g.fillStyle = r() < 0.7 ? `rgba(${20 + r() * 20},${34 + r() * 20},${20},0.9)` : 'rgba(90,86,80,0.8)';
       g.beginPath(); g.ellipse(px, py, 2 + r() * 3, 1.5 + r() * 2, r() * 3, 0, TAU); g.fill();
     }
@@ -207,7 +219,7 @@ function paintPanorama() {
 
   // --- il rudere a Ovest, controluce: torre e muri disegnano la cifra ---
   {
-    const rx = bx(270), ry = TARGETS[2].y;
+    const rx = bx(TARGETS[2].bearing), ry = TARGETS[2].y;
     const st = strokesAt(TARGETS[2].digit, rx, ry);
     g.fillStyle = '#140c10';
     g.beginPath(); g.ellipse(rx, ry + DH / 2 + 26, 170, 40, 0, Math.PI, 0); g.fill(); // la collina
@@ -237,10 +249,29 @@ function paintPanorama() {
   }
 
   // --- l'altare di pietra a Nord, al chiaro di luna: le pietre disegnano la cifra ---
-  for (const dx of [0, W]) {
-    const ax = bx(0) + dx, ay = TARGETS[0].y;
+  for (const dx of [-W, 0, W]) {
+    const ax = bx(TARGETS[0].bearing) + dx, ay = TARGETS[0].y;
+    if (ax < -700 || ax > W + 700) continue;
     const st = strokesAt(TARGETS[0].digit, ax, ay);
-    g.fillStyle = '#1c1a1e'; g.beginPath(); g.ellipse(ax, ay + DH / 2 + 6, 190, 28, 0, Math.PI, 0); g.fill(); // altopiano
+    // la montagna con il pianoro in cima, dove sta l'altare
+    const top = ay + DH / 2 + 6;
+    rough(g, [[ax - 560, HORIZON + 40], [ax - 330, top + 150], [ax - 190, top + 40], [ax - 150, top], [ax + 150, top], [ax + 200, top + 45], [ax + 340, top + 160], [ax + 580, HORIZON + 40]], 18, r);
+    const mg = g.createLinearGradient(0, top, 0, HORIZON + 40);
+    mg.addColorStop(0, '#4a4462'); mg.addColorStop(1, '#201c28');
+    g.fillStyle = mg; g.fill();
+    g.save(); g.clip();
+    // rocce chiare al chiaro di luna, più fitte in alto
+    for (let i = 0; i < 40; i++) {
+      const t = Math.pow(r(), 1.6), side = r() < 0.5 ? -1 : 1;
+      const x = ax + side * (60 + t * 380 + r() * 40), y = top + 8 + t * (HORIZON - top) * 0.85;
+      g.fillStyle = `rgba(200,195,220,${0.12 + r() * 0.16})`;
+      g.beginPath(); g.ellipse(x, y, 8 + r() * 18, 3 + r() * 5, (r() - 0.5) * 0.6, 0, TAU); g.fill();
+    }
+    g.restore();
+    // bordo del crinale illuminato dalla luna
+    g.strokeStyle = 'rgba(220,215,235,0.35)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(ax - 330, top + 150); g.lineTo(ax - 190, top + 40); g.lineTo(ax - 150, top); g.lineTo(ax + 150, top); g.lineTo(ax + 200, top + 45); g.stroke();
+    g.fillStyle = '#2a2632'; g.beginPath(); g.ellipse(ax, top, 165, 22, 0, Math.PI, 0); g.fill(); // il pianoro
     g.fillStyle = 'rgba(10,8,12,0.45)'; g.beginPath(); g.ellipse(ax + 8, ay + DH / 2 + 6, 70, 7, 0, 0, TAU); g.fill(); // ombra
     for (const pts of st) {
       for (let k = 0; k < pts.length - 1; k++) {
@@ -306,7 +337,7 @@ export class Landscape {
     this._renderSlots();
     this.msg.textContent = this.found.size >= 3
       ? 'Le tre coordinate sono già tue: ' + CODE.join(' · ') + '.'
-      : 'Osserva bene. Nella valle si nascondono tre coordinate.';
+      : 'Osserva bene, in ogni direzione: in alto, in basso. Nella valle si nascondono tre coordinate.';
     let t0 = 0;
     const loop = (t) => {
       if (!this.isOpen) return;
