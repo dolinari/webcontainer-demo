@@ -27,6 +27,10 @@ npm run build    # build statica in dist/
 
 I progressi restano solo nella scheda aperta (`sessionStorage`): ricaricando la pagina la partita continua, riaprendo il link si riparte da zero. «Nuova partita» nel menu ricomincia in qualsiasi momento.
 
+## Lingue
+
+L'esperienza è in **italiano e inglese**. La prima volta si usa la lingua del telefono; il selettore **IT | EN** in alto nella schermata iniziale (e nel menu) cambia lingua e ricarica la pagina, mantenendo i progressi della scheda. Sono tradotti tutti i testi, le descrizioni di «osserva», manoscritto, poesia, scritte nelle scene, bussola e le immagini della guida (`public/tutorial/en/`). In inglese anche i comandi vocali sono in inglese: “walk”, “run”, “forward”, “back”, “stop”, “right”, “left”, “enter”, “observe”, “torch”, “torch off”, “help”, “menu”. Il testo inglese dell'HTML sta negli attributi `data-en`, quello del codice nelle chiamate `L('italiano', 'english')` (`src/i18n.js`).
+
 ## Introduzione e guida
 
 Nel menu iniziale suona il carillon del finale (parte al primo tocco: i browser non avviano l'audio da soli).
@@ -78,6 +82,7 @@ Per capire cosa succede su un telefono, aprire il link con **`?diag`** (es. `htt
 - `src/props.js` – candele, candelabri, mobili
 - `src/textures.js` – texture procedurali su canvas (nessun asset esterno)
 - `src/controls.js` – giroscopio / trascinamento, posa «all'orecchio»
+- `src/i18n.js` – lingua (italiano / inglese)
 - `src/voice.js` – comandi vocali
 - `src/observe.js` – descrizioni del comando «osserva»
 - `src/dining.js` – sala da pranzo e studiolo

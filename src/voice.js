@@ -1,5 +1,6 @@
 // Comandi vocali con la Web Speech API (Chrome Android, Safari iOS 14.5+).
-// Riconosce parole chiave in italiano e le passa a chi ascolta.
+// Riconosce parole chiave in italiano o in inglese, secondo la lingua scelta.
+import { IS_EN } from './i18n.js';
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const UA = navigator.userAgent;
@@ -8,7 +9,21 @@ export const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'Ma
 export const IOS_OTHER_BROWSER = IS_IOS && /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram|WhatsApp|Line\//.test(UA);
 
 // parola detta → comando
-const WORDS = [
+const WORDS_EN = [
+  [/\b(walk(?:ing)?(?: forward)?|go forward|forward|ahead)\b/g, 'walk'],
+  [/\b(run(?:ning)?)\b/g, 'run'],
+  [/\b(go back|back(?:wards?)?)\b/g, 'back'],
+  [/\b(stop|halt|wait)\b/g, 'stop'],
+  [/\b(right)\b/g, 'right'],
+  [/\b(left)\b/g, 'left'],
+  [/\b(off)\b/g, 'torchOff'],
+  [/\b(torch|flashlight|light|lamp)\b/g, 'torchOn'],
+  [/\b(enter|open|go in|go inside)\b/g, 'enter'],
+  [/\b(observe|look|describe|examine|inspect)\b/g, 'observe'],
+  [/\b(help|commands)\b/g, 'help'],
+  [/\bmenu/g, 'menu'],
+];
+const WORDS_IT = [
   [/\b(cammina(?:re)?(?: avanti)?|avanti)\b/g, 'walk'],
   [/\b(corri|correre|di corsa)\b/g, 'run'],
   [/\b(torna indietro|indietro|arretra)\b/g, 'back'],
@@ -22,6 +37,8 @@ const WORDS = [
   [/\b(aiuto|comandi)\b/g, 'help'],
   [/\bmen[uù]/g, 'menu'], // «menu», «menù», «menu principale»
 ];
+const WORDS = IS_EN ? WORDS_EN : WORDS_IT;
+const OFF = IS_EN ? /\boff\b/ : /\bspegni\b/; // «spegni la torcia» / "torch off" non deve accenderla
 
 export class VoiceCommands {
   constructor() {
@@ -42,7 +59,7 @@ export class VoiceCommands {
 
   _create() {
     const r = new SR();
-    r.lang = 'it-IT';
+    r.lang = IS_EN ? 'en-US' : 'it-IT';
     r.continuous = true;
     r.interimResults = true;
     r.maxAlternatives = 1;
@@ -160,7 +177,7 @@ export class VoiceCommands {
       // provvisori la frase cresce, quindi scatta solo ciò che è nuovo
       const seen = this._fired.get(i) || {};
       for (const [re, cmd] of WORDS) {
-        if (cmd === 'torchOn' && /\bspegni\b/.test(text)) continue; // "spegni la torcia"
+        if (cmd === 'torchOn' && OFF.test(text)) continue; // «spegni la torcia» / "torch off"
         const n = (text.match(re) || []).length;
         const before = seen[cmd] || 0;
         for (let k = before; k < n; k++) this._fire(cmd, text.match(re)[k]);

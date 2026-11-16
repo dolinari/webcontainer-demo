@@ -1,12 +1,21 @@
 // La lente d'ingrandimento: il manoscritto a schermo intero e una lente che si
 // muove inclinando il telefono (o trascinando il dito). Le ultime righe sono
 // scritte così in piccolo che si leggono solo sotto la lente.
+import { L, IS_EN } from './i18n.js';
 import { parchmentCanvas } from './textures.js';
 
 // coordinate del foglio: 720 × 1000 unità
 const SW = 720, SH = 1000;
-const TITLE = 'Villa al Tramonto, 14 novembre';
-const BODY = [
+const TITLE = L('Villa al Tramonto, 14 novembre', 'The Villa at Sunset, 14 November');
+const BODY = IS_EN ? [
+  'I put the music box back in its place,',
+  'as every evening. I lit the fire',
+  'and left the record on the gramophone,',
+  'so that the house would not stay silent.',
+  '',
+  'The rest I wrote below, in a small hand,',
+  'so that only those who truly seek will read it.',
+] : [
   'Ho rimesso il carillon al suo posto,',
   'come ogni sera. Ho acceso il fuoco',
   'e ho lasciato il disco sul grammofono,',
@@ -15,7 +24,14 @@ const BODY = [
   'Il resto l’ho scritto qui sotto, piccolo,',
   'perché lo legga solo chi lo cerca davvero.',
 ];
-export const TINY = [
+export const TINY = IS_EN ? [
+  'If you have come this far, you heard the music box',
+  'and left your words upon my desk.',
+  'But what you seek is not within these walls.',
+  'To see it, you must look beyond yourself:',
+  'go back to where you arrived and turn. On the terrace',
+  'the telescope watches the valley. Look with it.',
+] : [
   'Se sei arrivato fin qui, hai ascoltato il carillon',
   'e hai lasciato le tue parole sulla mia scrivania.',
   'Ma quello che cerchi non è tra queste mura.',
@@ -159,10 +175,10 @@ export class Magnifier {
 
   _setMsg() {
     this.msg.textContent = this.read
-      ? 'Hai letto le righe nascoste.'
+      ? L('Hai letto le righe nascoste.', 'You have read the hidden lines.')
       : this.hasGyro || 'ondeviceorientation' in window
-        ? 'Inclina il telefono per muovere la lente, o trascina il dito. Cerca le righe minuscole in fondo.'
-        : 'Trascina il dito per muovere la lente. Cerca le righe minuscole in fondo.';
+        ? L('Inclina il telefono per muovere la lente, o trascina il dito. Cerca le righe minuscole in fondo.', 'Tilt your phone to move the magnifying glass, or drag your finger. Look for the tiny lines at the bottom.')
+        : L('Trascina il dito per muovere la lente. Cerca le righe minuscole in fondo.', 'Drag your finger to move the magnifying glass. Look for the tiny lines at the bottom.');
   }
 
   _frame() {

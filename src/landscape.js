@@ -3,6 +3,7 @@
 // pietre di un altare, a Est il corso di un ruscello, a Ovest un rudere
 // controluce disegnano ciascuno una cifra. Le cifre cambiano a ogni partita.
 // Si registrano tenendo il reticolo fermo su ciascuna.
+import { L, IS_EN } from './i18n.js';
 import * as THREE from 'three';
 
 const W = 4096, H = 1100, HORIZON = 560;
@@ -20,7 +21,7 @@ export const CODE = [7, 2, 4];
 const TARGETS = [
   { digit: 7, dir: 'N', base: 0, baseY: HORIZON - 250, bearing: 0, y: HORIZON - 250 },
   { digit: 2, dir: 'E', base: 90, baseY: HORIZON + 210, bearing: 90, y: HORIZON + 210 },
-  { digit: 4, dir: 'O', base: 270, baseY: HORIZON - 40, bearing: 270, y: HORIZON - 40 },
+  { digit: 4, dir: IS_EN ? 'W' : 'O', base: 270, baseY: HORIZON - 40, bearing: 270, y: HORIZON - 40 },
 ];
 /** Imposta il codice della partita (tre cifre) e ridisegna il paesaggio.
  *  Le posizioni si spostano un poco a ogni partita (±12° e un po' su o giù). */
@@ -297,7 +298,7 @@ function nearTarget(x, y, rad) {
   }) || (Math.abs(x - bx(180)) < 280 && y < HORIZON + 130 && y > HORIZON - 120);
 }
 
-const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+const DIRS = IS_EN ? ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] : ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
 
 export class Landscape {
   constructor(controls, camera) {
@@ -336,8 +337,8 @@ export class Landscape {
     this._layout();
     this._renderSlots();
     this.msg.textContent = this.found.size >= 3
-      ? 'Le tre coordinate sono già tue: ' + CODE.join(' · ') + '.'
-      : 'Osserva bene, in ogni direzione: in alto, in basso. Nella valle si nascondono tre coordinate.';
+      ? L('Le tre coordinate sono già tue: ', 'The three coordinates are already yours: ') + CODE.join(' · ') + '.'
+      : L('Osserva bene, in ogni direzione: in alto, in basso. Nella valle si nascondono tre coordinate.', 'Look closely, in every direction: up high, down low. Three coordinates are hidden in the valley.');
     let t0 = 0;
     const loop = (t) => {
       if (!this.isOpen) return;
@@ -457,10 +458,10 @@ export class Landscape {
     this._renderSlots();
     this.onFound?.([...this.found]);
     const n = this.found.size;
-    if (n === 1) this.msg.textContent = 'Una coordinata. La valle ne nasconde altre due.';
-    else if (n === 2) this.msg.textContent = 'Due coordinate. Ne manca una sola.';
+    if (n === 1) this.msg.textContent = L('Una coordinata. La valle ne nasconde altre due.', 'One coordinate. The valley hides two more.');
+    else if (n === 2) this.msg.textContent = L('Due coordinate. Ne manca una sola.', 'Two coordinates. Only one is missing.');
     else {
-      this.msg.textContent = `Tre coordinate. Da Nord, come girano le lancette: ${CODE.join(' · ')}. Qualcosa nella villa si apre con tre cifre… forse un lucchetto, nel primo corridoio.`;
+      this.msg.textContent = L(`Tre coordinate. Da Nord, come girano le lancette: ${CODE.join(' · ')}. Qualcosa nella villa si apre con tre cifre… forse un lucchetto, nel primo corridoio.`, `Three coordinates. From North, the way clock hands turn: ${CODE.join(' · ')}. Something in the villa opens with three digits… perhaps a padlock, in the first corridor.`);
       this.onComplete?.();
     }
   }

@@ -194,3 +194,9 @@ button.ghost:disabled { visibility: hidden; }
 .credits { margin: 26px auto 0; max-width: 340px; font-family: system-ui, sans-serif; font-size: 12px; line-height: 1.55; color: rgba(241, 226, 196, 0.55); }
 .credits i { font-family: Georgia, serif; font-size: 13px; color: var(--dim); }
 #scope-end small { font-family: system-ui, sans-serif; font-size: 11.5px; color: rgba(241, 226, 196, 0.55); }
+
+/* ---- lingua ---- */
+#lang-switch { position: fixed; z-index: 2; top: calc(env(safe-area-inset-top) + 12px); right: max(12px, env(safe-area-inset-right)); display: flex; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: rgba(18, 10, 6, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#lang-switch button { min-height: 32px; min-width: 44px; padding: 4px 10px; border: 0; background: none; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--dim); backdrop-filter: none; -webkit-backdrop-filter: none; }
+#lang-switch button[aria-pressed='true'] { background: var(--amber); color: #2a1608; }
+#start { padding-top: calc(env(safe-area-inset-top) + 64px); } /* spazio per il selettore della lingua */

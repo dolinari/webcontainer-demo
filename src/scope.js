@@ -4,6 +4,7 @@
 // Lì la luce appare nel mondo reale, "agganciata" a una direzione; tenuta al
 // centro va a fuoco e la fotocamera lascia il posto a una strada di campagna
 // dove Livia arriva da lontano con la lanterna.
+import { L } from './i18n.js';
 import * as THREE from 'three';
 
 const HALF_FOV = THREE.MathUtils.degToRad(19); // metà del campo visivo dell'oculare
@@ -87,7 +88,7 @@ export class Scope {
     this.video.style.opacity = '1';
     this._layout();
     this.heading0 = this._heading();
-    this._say('La luce non è qui. Alzati in piedi, tieni il telefono davanti agli occhi come un binocolo e cammina in avanti per qualche passo.');
+    this._say(L('La luce non è qui. Alzati in piedi, tieni il telefono davanti agli occhi come un binocolo e cammina in avanti per qualche passo.', 'The light isn’t here. Stand up, hold your phone in front of your eyes like binoculars and walk forward a few steps.'));
     this.walker.onStep = (n) => this._onStep(n);
     this.walker.start();
     // chi non può alzarsi (o un telefono senza contapassi) ha comunque un modo di proseguire
@@ -122,12 +123,12 @@ export class Scope {
       if (n >= STEPS_AHEAD) {
         this.phase = 'turn';
         if (navigator.vibrate) navigator.vibrate(30);
-        this._say('Ora girati verso destra: c’è una stanza accanto. Entra.');
-      } else this._say(`Avanti… ${'● '.repeat(n)}${'○ '.repeat(STEPS_AHEAD - n)}`);
+        this._say(L('Ora girati verso destra: c’è una stanza accanto. Entra.', 'Now turn to the right: there’s a room next door. Go in.'));
+      } else this._say(L('Avanti… ', 'Forward… ') + `${'● '.repeat(n)}${'○ '.repeat(STEPS_AHEAD - n)}`);
     } else if (this.phase === 'right') {
       const k = n - this.stepsAtTurn;
       if (k >= STEPS_RIGHT) this._found(false);
-      else this._say(`Entra nella stanza… ${'● '.repeat(k)}${'○ '.repeat(STEPS_RIGHT - k)}`);
+      else this._say(L('Entra nella stanza… ', 'Into the room… ') + `${'● '.repeat(k)}${'○ '.repeat(STEPS_RIGHT - k)}`);
     }
   }
 
@@ -139,11 +140,11 @@ export class Scope {
         this.phase = 'right';
         this.stepsAtTurn = this.walker.steps;
         if (navigator.vibrate) navigator.vibrate(20);
-        this._say('Così. Adesso entra, ancora qualche passo.');
-      } else if (rel < -40) this._say('Dall’altra parte: verso destra.');
+        this._say(L('Così. Adesso entra, ancora qualche passo.', 'That’s it. Now go in, a few more steps.'));
+      } else if (rel < -40) this._say(L('Dall’altra parte: verso destra.', 'The other way: to the right.'));
     } else if (this.phase === 'right' && rel < 25) {
       this.phase = 'turn';
-      this._say('Torna a girarti verso destra.');
+      this._say(L('Torna a girarti verso destra.', 'Turn back to the right.'));
     }
   }
 
@@ -158,7 +159,7 @@ export class Scope {
     const pitch = THREE.MathUtils.degToRad(2);
     this.target = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
     if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
-    this._say(skipped ? 'Cerca una luce, un po’ più a destra. Tienila al centro.' : 'C’è qualcosa, laggiù… una luce. Tienila al centro, ferma.');
+    this._say(skipped ? L('Cerca una luce, un po’ più a destra. Tienila al centro.', 'Look for a light, a little further right. Keep it in the centre.') : L('C’è qualcosa, laggiù… una luce. Tienila al centro, ferma.', 'There’s something, over there… a light. Keep it in the centre, steady.'));
   }
 
   async _startCamera() {
@@ -394,8 +395,8 @@ export class Scope {
     this.revealed = true;
     this.walker.stop();
     if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
-    this._say('È lei. Livia, con una lanterna in mano, lungo la strada verso la villa.');
-    setTimeout(() => { if (this.isOpen) this._say('Ogni sera, al tramonto, lui accendeva le candele perché lei trovasse la strada di casa. Stasera la luce l’hai vista tu.'); }, 6000);
+    this._say(L('È lei. Livia, con una lanterna in mano, lungo la strada verso la villa.', 'It’s her. Livia, a lantern in her hand, on the road to the villa.'));
+    setTimeout(() => { if (this.isOpen) this._say(L('Ogni sera, al tramonto, lui accendeva le candele perché lei trovasse la strada di casa. Stasera la luce l’hai vista tu.', 'Every evening at sunset he lit the candles so she would find her way home. Tonight, you saw the light.')); }, 6000);
     this.onReveal?.();
   }
 }

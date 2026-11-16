@@ -1,5 +1,6 @@
 // La Villa al Tramonto — regia: scene, permessi, camminata, punti d'interesse, interfaccia.
 import * as THREE from 'three';
+import { L, IS_EN, LANG, setLang, translatePage } from './i18n.js';
 import { buildExterior } from './exterior.js';
 import { buildCorridor } from './corridor.js';
 import { buildStudy } from './study.js';
@@ -15,6 +16,12 @@ import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
+translatePage();
+// selettore della lingua nella schermata iniziale (cambiare lingua ricarica la pagina, i progressi restano)
+document.querySelectorAll('#lang-switch button').forEach((b) => {
+  b.setAttribute('aria-pressed', String(b.dataset.lang === LANG));
+  b.addEventListener('click', () => setLang(b.dataset.lang));
+});
 const canvas = $('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 let pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -35,7 +42,7 @@ torch.target.position.set(0, -0.02, -1);
 camera.add(torch, torch.target);
 
 const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining() };
-const TITLES = { exterior: 'La villa al tramonto', corridor: 'Il corridoio', study: 'Lo studio', dining: 'La sala da pranzo' };
+const TITLES = { exterior: L('La villa al tramonto', 'The villa at sunset'), corridor: L('Il corridoio', 'The corridor'), study: L('Lo studio', 'The study'), dining: L('La sala da pranzo', 'The dining room') };
 const magnifier = new Magnifier();
 const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
 const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
@@ -113,8 +120,8 @@ function showTitle(name) {
   el.classList.add('on');
   setTimeout(() => el.classList.remove('on'), 4200);
 }
-const lookWord = () => (controls.gyro ? 'Muovi il telefono' : 'Trascina con il dito');
-const walkWord = () => (voice.enabled ? 'Di’ «cammina» o «corri» per muoverti, «osserva» davanti a un oggetto.' : 'Tocca i cerchi luminosi per muoverti.');
+const lookWord = () => (controls.gyro ? L('Muovi il telefono', 'Move your phone') : L('Trascina con il dito', 'Drag with your finger'));
+const walkWord = () => (voice.enabled ? L('Di’ «cammina» o «corri» per muoverti, «osserva» davanti a un oggetto.', 'Say “walk” or “run” to move, “observe” in front of an object.') : L('Tocca i cerchi luminosi per muoverti.', 'Tap the glowing circles to move.'));
 
 // ---------- spostamenti animati ----------
 function moveTo(pos, look, done, dur = 1.5) {
@@ -159,25 +166,25 @@ function goScene(name, pos, look, after) {
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 function enterCorridorFromOutside() {
   moveTo(V(0, 1.9, 1.6), S.exterior.doorPos, null, 1.6);
-  goScene('corridor', S.corridor.waypoints[0], V(0, 1.6, -8), () => setHint(lookWord() + ' per guardarti intorno. ' + walkWord()));
+  goScene('corridor', S.corridor.waypoints[0], V(0, 1.6, -8), () => setHint(lookWord() + L(' per guardarti intorno. ', ' to look around. ') + walkWord()));
 }
 function enterStudy() {
   moveTo(V(0, 1.6, -13.6), S.corridor.endDoor, null, 1.2);
-  goScene('study', S.study.home, S.study.homeLook, () => setHint(voice.enabled ? 'È più buio, qui. Di’ «torcia» per accendere la luce.' : 'È più buio, qui. La torcia può aiutare.'));
+  goScene('study', S.study.home, S.study.homeLook, () => setHint(voice.enabled ? L('È più buio, qui. Di’ «torcia» per accendere la luce.', 'It’s darker here. Say “torch” to turn on the light.') : L('È più buio, qui. La torcia può aiutare.', 'It’s darker here. The torch can help.')));
 }
 function backToCorridor() {
-  goScene('corridor', V(0, 1.6, -12.6), V(0, 1.5, 0), () => setHint('Il corridoio. La porta d’ingresso è in fondo.'));
+  goScene('corridor', V(0, 1.6, -12.6), V(0, 1.5, 0), () => setHint(L('Il corridoio. La porta d’ingresso è in fondo.', 'The corridor. The front door is at the far end.')));
 }
 function goOutside() {
-  goScene('exterior', S.exterior.near.pos, V(-4, 3, 30), () => setHint('L’aria della sera. La porta è alle tue spalle.'));
+  goScene('exterior', S.exterior.near.pos, V(-4, 3, 30), () => setHint(L('L’aria della sera. La porta è alle tue spalle.', 'The evening air. The door is behind you.')));
 }
 function enterDining() {
-  if (!state.unlocked) { toast('La porta è chiusa a chiave.', 2000); return; }
+  if (!state.unlocked) { toast(L('La porta è chiusa a chiave.', 'The door is locked.'), 2000); return; }
   moveTo(V(10.2, 1.65, 1.0), S.exterior.sideDoorPos, null, 1.4);
-  goScene('dining', S.dining.entry, S.dining.entryLook, () => setHint('Il calore del camino, un valzer al grammofono. ' + (voice.enabled ? 'Di’ «osserva» davanti alle cose.' : 'Tocca i cerchi per muoverti.')));
+  goScene('dining', S.dining.entry, S.dining.entryLook, () => setHint(L('Il calore del camino, un valzer al grammofono. ', 'The warmth of the fire, a waltz on the gramophone. ') + (voice.enabled ? L('Di’ «osserva» davanti alle cose.', 'Say “observe” in front of things.') : L('Tocca i cerchi per muoverti.', 'Tap the circles to move.'))));
 }
 function diningToOutside() {
-  goScene('exterior', V(10.2, 1.65, 3.6), V(8, 2.5, 20), () => setHint('Sei di nuovo fuori. Il portone principale è più a sinistra.'));
+  goScene('exterior', V(10.2, 1.65, 3.6), V(8, 2.5, 20), () => setHint(L('Sei di nuovo fuori. Il portone principale è più a sinistra.', 'You are outside again. The main door is further left.')));
 }
 
 // ---------- camminata libera (voce) ----------
@@ -255,7 +262,7 @@ function updateWalk(dt) {
   if (walk.since > g.stride * 0.5) { walk.since -= g.stride; audio.click(g === GAIT.run ? 'run' : 'step'); }
   camera.position.y = 1.6 + Math.abs(Math.sin((walk.left / g.stride) * Math.PI)) * g.bob;
   if (walk.left <= 0 || moved < d * 0.25) {
-    if (moved < d * 0.25) toast('Non si passa da qui.', 1600);
+    if (moved < d * 0.25) toast(L('Non si passa da qui.', 'You can’t get through here.'), 1600);
     walk = null;
     camera.position.y = 1.6;
   }
@@ -281,9 +288,9 @@ $('btn-torch').addEventListener('click', () => setTorch(!state.torch));
 $('btn-center').addEventListener('click', () => controls.recenter(defaultLook()));
 // tre modalità: telefono completo → solo inclinazione → solo dito
 const MOTION = {
-  full: { label: 'Movimento', toast: 'Movimento completo: muovi e ruota il telefono per guardarti intorno.' },
-  tilt: { label: 'Inclina', toast: 'Solo inclinazione: alza e abbassa il telefono per guardare su e giù; per girarti trascina il dito o di’ «destra» / «sinistra».' },
-  off: { label: 'Dito', toast: 'Movimento spento: trascina con il dito per guardarti intorno.' },
+  full: { label: L('Movimento', 'Motion'), toast: L('Movimento completo: muovi e ruota il telefono per guardarti intorno.', 'Full motion: move and turn your phone to look around.') },
+  tilt: { label: L('Inclina', 'Tilt'), toast: L('Solo inclinazione: alza e abbassa il telefono per guardare su e giù; per girarti trascina il dito o di’ «destra» / «sinistra».', 'Tilt only: raise and lower your phone to look up and down; to turn, drag your finger or say “right” / “left”.') },
+  off: { label: L('Dito', 'Finger'), toast: L('Movimento spento: trascina con il dito per guardarti intorno.', 'Motion off: drag with your finger to look around.') },
 };
 function setMotionMode(mode, quiet = false) {
   controls.setMotion(mode);
@@ -298,7 +305,7 @@ $('btn-motion').addEventListener('click', () => {
 });
 // se il sensore si rivela rumoroso durante il gioco, suggerisci la modalità più stabile
 controls.onNoisy = () => {
-  if (state.started && controls.mode === 'full') toast('Il sensore di questo telefono è instabile. Se la vista gira da sola, tocca «Movimento» per passare a «Inclina».', 7000);
+  if (state.started && controls.mode === 'full') toast(L('Il sensore di questo telefono è instabile. Se la vista gira da sola, tocca «Movimento» per passare a «Inclina».', 'This phone’s sensor is unstable. If the view turns by itself, tap “Motion” to switch to “Tilt”.'), 7000);
 };
 $('btn-sound').addEventListener('click', () => {
   audio.setMuted(!audio.muted);
@@ -325,17 +332,17 @@ function showVoiceState() {
   chip.hidden = !state.started || !on;
   chip.classList.toggle('paused', voice.paused || voice.state !== 'listening');
   chip.classList.toggle('tap', voice.needsTap);
-  if (!chip.classList.contains('heard')) chipText.textContent = voice.paused ? 'Voce in pausa' : voice.needsTap ? 'Tocca lo schermo per riattivare la voce' : 'Ti ascolto';
+  if (!chip.classList.contains('heard')) chipText.textContent = voice.paused ? L('Voce in pausa', 'Voice paused') : voice.needsTap ? L('Tocca lo schermo per riattivare la voce', 'Tap the screen to turn the voice back on') : L('Ti ascolto', 'Listening');
 }
 // spiegazione chiara del perché la voce non va, con il rimedio
 function voiceProblem() {
   if (!voice.supported) return IOS_OTHER_BROWSER
-    ? 'I comandi vocali su iPhone funzionano solo in Safari: apri il link con Safari.'
-    : 'Questo browser non ha il riconoscimento vocale: prova con Chrome (Android) o Safari (iPhone).';
-  if (voice.lastError === 'network') return 'Il riconoscimento vocale ha bisogno della connessione a internet.';
-  if (voice.lastError === 'audio-capture') return 'Il microfono è occupato da un’altra app: chiudila e tocca «Voce».';
-  if (IS_IOS) return 'Su iPhone serve la Dettatura: Impostazioni → Generali → Tastiera → «Abilita dettatura». Controlla anche Impostazioni → Privacy e sicurezza → Riconoscimento vocale. Poi tocca «Voce».';
-  return 'Il riconoscimento vocale è stato negato: consenti il microfono al sito e tocca «Voce». Intanto puoi muoverti toccando i cerchi.';
+    ? L('I comandi vocali su iPhone funzionano solo in Safari: apri il link con Safari.', 'On iPhone, voice commands only work in Safari: open the link in Safari.')
+    : L('Questo browser non ha il riconoscimento vocale: prova con Chrome (Android) o Safari (iPhone).', 'This browser has no speech recognition: try Chrome (Android) or Safari (iPhone).');
+  if (voice.lastError === 'network') return L('Il riconoscimento vocale ha bisogno della connessione a internet.', 'Speech recognition needs an internet connection.');
+  if (voice.lastError === 'audio-capture') return L('Il microfono è occupato da un’altra app: chiudila e tocca «Voce».', 'The microphone is busy in another app: close it and tap “Voice”.');
+  if (IS_IOS) return L('Su iPhone serve la Dettatura: Impostazioni → Generali → Tastiera → «Abilita dettatura». Controlla anche Impostazioni → Privacy e sicurezza → Riconoscimento vocale. Poi tocca «Voce».', 'On iPhone you need Dictation: Settings → General → Keyboard → “Enable Dictation”. Also check Settings → Privacy & Security → Speech Recognition. Then tap “Voice”.');
+  return L('Il riconoscimento vocale è stato negato: consenti il microfono al sito e tocca «Voce». Intanto puoi muoverti toccando i cerchi.', 'Speech recognition was denied: allow the microphone for this site and tap “Voice”. Meanwhile you can move by tapping the circles.');
 }
 voice.onState = (s) => {
   if ((s === 'denied' || s === 'error') && state.started) toast(voiceProblem(), 9000);
@@ -347,7 +354,7 @@ window.addEventListener('pointerdown', () => { if (state.started) voice.tapResta
 voice.onCommand = (cmd, word) => {
   if (!state.started || !$('tutorial').hidden) return;
   chip.classList.add('heard');
-  chipText.textContent = '«' + word + '»';
+  chipText.textContent = L('«', '“') + word + L('»', '”');
   clearTimeout(chipTimer);
   chipTimer = setTimeout(() => { chip.classList.remove('heard'); showVoiceState(); }, 1200);
   switch (cmd) {
@@ -365,16 +372,16 @@ voice.onCommand = (cmd, word) => {
     case 'enter': {
       const d = activeSpots.filter((h) => h.door).sort((a, b) => camera.position.distanceTo(a.pos) - camera.position.distanceTo(b.pos))[0];
       if (d && camera.position.distanceTo(d.pos) < (state.scene === 'exterior' ? 9 : 4)) d.act();
-      else toast('Nessuna porta qui vicino.', 1600);
+      else toast(L('Nessuna porta qui vicino.', 'No door nearby.'), 1600);
       break;
     }
   }
 };
 $('btn-voice').addEventListener('click', async () => {
-  if (voice.enabled) { voice.disable(); toast('Comandi vocali spenti.', 1800); }
+  if (voice.enabled) { voice.disable(); toast(L('Comandi vocali spenti.', 'Voice commands off.'), 1800); }
   else {
     const ok = await voice.enable();
-    toast(ok ? 'Comandi vocali accesi: di’ «cammina».' : 'Non riesco ad avviare il riconoscimento vocale.', 2500);
+    toast(ok ? L('Comandi vocali accesi: di’ «cammina».', 'Voice commands on: say “walk”.') : L('Non riesco ad avviare il riconoscimento vocale.', 'I can’t start speech recognition.'), 2500);
     if (ok && state.focus) voice.pause();
   }
   showVoiceState();
@@ -387,8 +394,8 @@ function observe() {
   if (state.focus || state.busy) return;
   const hit = findObserved(state.scene, camera);
   let title, text;
-  if (!hit) { title = 'Niente di particolare'; text = 'Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».'; }
-  else if (hit.far) { title = hit.item.name; text = 'È troppo lontano per vederlo bene. Avvicinati.'; }
+  if (!hit) { title = L('Niente di particolare', 'Nothing in particular'); text = L('Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».', 'Look towards an object and get closer, then say “observe” again.'); }
+  else if (hit.far) { title = hit.item.name; text = L('È troppo lontano per vederlo bene. Avvicinati.', 'It’s too far away to see well. Get closer.'); }
   else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
@@ -415,51 +422,51 @@ function hotspots() {
   const E = S.exterior, C = S.corridor, D = S.study, list = [];
   const here = camera.position;
   if (state.scene === 'exterior') {
-    if (here.z > 9) list.push({ pos: E.doorPos, door: true, label: 'Tocca il cerchio per avvicinarti all’ingresso', act: () => moveTo(E.near.pos, E.near.look, () => setHint('La porta è aperta. Tocca il cerchio o di’ «entra».'), 3.2) });
+    if (here.z > 9) list.push({ pos: E.doorPos, door: true, label: L('Tocca il cerchio per avvicinarti all’ingresso', 'Tap the circle to approach the entrance'), act: () => moveTo(E.near.pos, E.near.look, () => setHint(L('La porta è aperta. Tocca il cerchio o di’ «entra».', 'The door is open. Tap the circle or say “enter”.')), 3.2) });
     else {
-      list.push({ pos: E.doorPos, door: true, label: 'Entra nella villa', act: enterCorridorFromOutside });
-      list.push({ pos: floorOf(E.far.pos), label: 'Torna sul viale', act: () => moveTo(E.far.pos, null, null, 3.2) });
+      list.push({ pos: E.doorPos, door: true, label: L('Entra nella villa', 'Enter the villa'), act: enterCorridorFromOutside });
+      list.push({ pos: floorOf(E.far.pos), label: L('Torna sul viale', 'Back to the driveway'), act: () => moveTo(E.far.pos, null, null, 3.2) });
     }
     {
       const d = here.distanceTo(E.scopePos);
-      if (state.scope) list.push({ pos: E.scopePos, label: d > 4 ? 'Il cannocchiale — avvicinati' : 'Guarda nel cannocchiale', act: d > 4 ? () => moveTo(E.scopeView, E.scopeLook, null, 1 + d * 0.25) : focusScope });
-      else if (d < 7) list.push({ pos: E.scopePos, label: 'Il cannocchiale', act: () => toast('La lente è chiusa da un coperchio di legno. Forse non è ancora il momento.', 3000) });
+      if (state.scope) list.push({ pos: E.scopePos, label: d > 4 ? L('Il cannocchiale — avvicinati', 'The telescope — get closer') : L('Guarda nel cannocchiale', 'Look through the telescope'), act: d > 4 ? () => moveTo(E.scopeView, E.scopeLook, null, 1 + d * 0.25) : focusScope });
+      else if (d < 7) list.push({ pos: E.scopePos, label: L('Il cannocchiale', 'The telescope'), act: () => toast(L('La lente è chiusa da un coperchio di legno. Forse non è ancora il momento.', 'The lens is closed with a wooden cap. Perhaps it isn’t time yet.'), 3000) });
       if (state.bino) {
         const b = here.distanceTo(E.binoPos);
-        list.push({ pos: E.binoPos, label: b > 4 ? 'Il binocolo — avvicinati' : 'Guarda nel binocolo', act: b > 4 ? () => moveTo(E.binoView, E.binoLook, null, 1 + b * 0.22) : focusBino });
+        list.push({ pos: E.binoPos, label: b > 4 ? L('Il binocolo — avvicinati', 'The binoculars — get closer') : L('Guarda nel binocolo', 'Look through the binoculars'), act: b > 4 ? () => moveTo(E.binoView, E.binoLook, null, 1 + b * 0.22) : focusBino });
       }
     }
     if (state.unlocked) {
       const far = here.distanceTo(E.sideDoorPos) > 7;
-      list.push({ pos: E.sideDoorPos, door: true, label: far ? 'L’altro ingresso — avvicinati' : 'Entra dall’altro ingresso', act: far ? () => moveTo(E.sideNear.pos, E.sideNear.look, null, 3) : enterDining });
+      list.push({ pos: E.sideDoorPos, door: true, label: far ? L('L’altro ingresso — avvicinati', 'The other entrance — get closer') : L('Entra dall’altro ingresso', 'Go in through the other entrance'), act: far ? () => moveTo(E.sideNear.pos, E.sideNear.look, null, 3) : enterDining });
     }
   } else if (state.scene === 'corridor') {
     if (state.focus === 'candle') candleTapSpot(list, C);
     else if (!state.focus) {
-      C.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: 'Cammina fin qui', act: () => moveTo(w, null, null, 1.2 + Math.abs(w.z - here.z) * 0.14) }); });
-      list.push({ pos: C.candlePos, label: 'Il candelabro — avvicinati', act: () => focusCandle(C) });
-      list.push({ pos: C.musicPos, label: 'Un carillon — avvicinati', act: focusMusic });
-      list.push({ pos: C.endDoor, door: true, label: 'La stanza in fondo', act: enterStudy });
+      C.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: L('Cammina fin qui', 'Walk here'), act: () => moveTo(w, null, null, 1.2 + Math.abs(w.z - here.z) * 0.14) }); });
+      list.push({ pos: C.candlePos, label: L('Il candelabro — avvicinati', 'The candelabra — get closer'), act: () => focusCandle(C) });
+      list.push({ pos: C.musicPos, label: L('Un carillon — avvicinati', 'A music box — get closer'), act: focusMusic });
+      list.push({ pos: C.endDoor, door: true, label: L('La stanza in fondo', 'The room at the end'), act: enterStudy });
       if (here.distanceTo(C.lockPos) < 4) {
-        if (!state.wardrobe) list.push({ pos: C.lockPos, label: 'Il lucchetto dell’armadio', act: focusLock });
-        else list.push({ pos: C.wardrobeInside, label: 'La lettera nell’armadio', act: openLetter });
+        if (!state.wardrobe) list.push({ pos: C.lockPos, label: L('Il lucchetto dell’armadio', 'The wardrobe padlock'), act: focusLock });
+        else list.push({ pos: C.wardrobeInside, label: L('La lettera nell’armadio', 'The letter in the wardrobe'), act: openLetter });
       }
-      list.push({ pos: C.exitDoor, door: true, label: 'Esci nel giardino', act: goOutside });
+      list.push({ pos: C.exitDoor, door: true, label: L('Esci nel giardino', 'Go out into the garden'), act: goOutside });
     }
   } else if (state.scene === 'dining') {
     const G = S.dining;
     if (!state.focus) {
-      G.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: 'Cammina fin qui', act: () => moveTo(w, null, null, 1.2 + w.distanceTo(here) * 0.18) }); });
-      list.push({ pos: G.gramophonePos, label: state.gramophone ? 'Il grammofono — tocca per fermarlo' : 'Il grammofono — tocca per farlo suonare', act: toggleGramophone });
-      if (here.z < -8.4) list.push({ pos: G.manuscriptPos, label: 'Il manoscritto — guarda con la lente', act: focusLens });
-      list.push({ pos: G.exitDoor, door: true, label: 'Esci in giardino', act: diningToOutside });
+      G.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: L('Cammina fin qui', 'Walk here'), act: () => moveTo(w, null, null, 1.2 + w.distanceTo(here) * 0.18) }); });
+      list.push({ pos: G.gramophonePos, label: state.gramophone ? L('Il grammofono — tocca per fermarlo', 'The gramophone — tap to stop it') : L('Il grammofono — tocca per farlo suonare', 'The gramophone — tap to play it'), act: toggleGramophone });
+      if (here.z < -8.4) list.push({ pos: G.manuscriptPos, label: L('Il manoscritto — guarda con la lente', 'The manuscript — look with the magnifying glass'), act: focusLens });
+      list.push({ pos: G.exitDoor, door: true, label: L('Esci in giardino', 'Go out to the garden'), act: diningToOutside });
     }
   } else {
     if (state.focus === 'candle') candleTapSpot(list, D);
     else if (!state.focus) {
-      list.push({ pos: D.candlePos, label: 'Le candele sulla scrivania', act: () => focusCandle(D) });
-      list.push({ pos: D.paperPos, label: hasInk ? 'Il tuo messaggio — riscrivilo' : 'Un foglio bianco — scrivi', act: focusPaper });
-      list.push({ pos: D.backDoor, door: true, label: 'Torna nel corridoio', act: backToCorridor });
+      list.push({ pos: D.candlePos, label: L('Le candele sulla scrivania', 'The candles on the desk'), act: () => focusCandle(D) });
+      list.push({ pos: D.paperPos, label: hasInk ? L('Il tuo messaggio — riscrivilo', 'Your message — write it again') : L('Un foglio bianco — scrivi', 'A blank sheet — write'), act: focusPaper });
+      list.push({ pos: D.backDoor, door: true, label: L('Torna nel corridoio', 'Back to the corridor'), act: backToCorridor });
     }
   }
   return list;
@@ -467,8 +474,8 @@ function hotspots() {
 
 function candleTapSpot(list, sc) {
   const lit = sc.candles.litCount;
-  if (lit === 0) list.push({ pos: sc.candlePos, label: 'Tocca per riaccendere', act: () => { sc.candles.relight(); audio.click('puff'); candlePanel(sc); } });
-  else if (!state.micOk) list.push({ pos: sc.candlePos, label: 'Tocca per spegnere', act: () => blow(sc) });
+  if (lit === 0) list.push({ pos: sc.candlePos, label: L('Tocca per riaccendere', 'Tap to relight'), act: () => { sc.candles.relight(); audio.click('puff'); candlePanel(sc); } });
+  else if (!state.micOk) list.push({ pos: sc.candlePos, label: L('Tocca per spegnere', 'Tap to put out'), act: () => blow(sc) });
 }
 
 // entrata/uscita dai primi piani: la voce si mette in pausa, perché il microfono
@@ -485,15 +492,15 @@ function enterFocus(kind) {
 // ---------- candele + microfono ----------
 function candlePanel(sc) {
   const lit = sc.candles.litCount;
-  if (lit === 0) showPanel('Buio. Resta solo un filo di fumo. Tocca le candele per riaccenderle.', { mic: false });
-  else if (state.micOk) showPanel(lit === sc.candles.candles.length ? 'Soffia sul microfono del telefono per spegnere una candela.' : 'Ancora: soffia per spegnere la prossima.', { mic: true });
-  else showPanel('Microfono non disponibile: tocca le fiamme per spegnerle.', { mic: false });
+  if (lit === 0) showPanel(L('Buio. Resta solo un filo di fumo. Tocca le candele per riaccenderle.', 'Darkness. Only a thread of smoke remains. Tap the candles to relight them.'), { mic: false });
+  else if (state.micOk) showPanel(lit === sc.candles.candles.length ? L('Soffia sul microfono del telefono per spegnere una candela.', 'Blow on your phone’s microphone to put out a candle.') : L('Ancora: soffia per spegnere la prossima.', 'Again: blow to put out the next one.'), { mic: true });
+  else showPanel(L('Microfono non disponibile: tocca le fiamme per spegnerle.', 'Microphone unavailable: tap the flames to put them out.'), { mic: false });
 }
 async function focusCandle(sc) {
   enterFocus('candle');
   const micPromise = audio.startMic();
   moveTo(sc.candleView, sc.candlePos, null, 1.6);
-  showPanel('Mi avvicino alle candele…');
+  showPanel(L('Mi avvicino alle candele…', 'Getting closer to the candles…'));
   state.micOk = await micPromise;
   if (state.focus === 'candle') candlePanel(sc); else audio.stopMic();
 }
@@ -515,8 +522,8 @@ function focusMusic() {
     C.setPlaying(true);
   }, 1.8);
   showPanel(controls.gyro
-    ? 'Si sente appena. Porta il telefono all’orecchio, come in una telefonata, per ascoltarlo.'
-    : 'Si sente appena. Tieni premuto il pulsante e avvicina il telefono all’orecchio.', { listen: true });
+    ? L('Si sente appena. Porta il telefono all’orecchio, come in una telefonata, per ascoltarlo.', 'You can barely hear it. Hold the phone to your ear, as in a call, to listen.')
+    : L('Si sente appena. Tieni premuto il pulsante e avvicina il telefono all’orecchio.', 'You can barely hear it. Hold the button and bring the phone to your ear.'), { listen: true });
 }
 const btnListen = $('btn-listen');
 const hold = (v) => (e) => { e.preventDefault(); listenHold = v; };
@@ -534,7 +541,7 @@ function updateListening(dt) {
     audio.setListen(want);
     document.body.classList.toggle('listening', !!want);
     btnListen.classList.toggle('on', !!want);
-    btnListen.textContent = want ? 'In ascolto…' : 'Tieni premuto per ascoltare';
+    btnListen.textContent = want ? L('In ascolto…', 'Listening…') : L('Tieni premuto per ascoltare', 'Hold to listen');
     if (want && navigator.vibrate) navigator.vibrate([12, 40, 12]);
   }
 }
@@ -579,14 +586,14 @@ $('btn-close').addEventListener('click', () => { $('write').hidden = true; leave
 $('btn-leave').addEventListener('click', () => {
   const D = S.study;
   $('write').hidden = true;
-  if (!hasInk) { toast('Il foglio è rimasto bianco.'); leaveFocus(); return; }
+  if (!hasInk) { toast(L('Il foglio è rimasto bianco.', 'The sheet is still blank.')); leaveFocus(); return; }
   D.setMessage(inkCanvas);
   store.set('villa-messaggio', inkCanvas.toDataURL('image/png'));
   leaveFocus();
-  toast('Hai lasciato il tuo messaggio sulla scrivania.');
-  D.typeReply('Non è qui\nquello che\ncerchi.\nProva l’altro\ningresso.', () => audio.click('key'), unlockSideDoor);
+  toast(L('Hai lasciato il tuo messaggio sulla scrivania.', 'You left your message on the desk.'));
+  D.typeReply(L('Non è qui\nquello che\ncerchi.\nProva l’altro\ningresso.', 'What you seek\nis not here.\nTry the other\nentrance.'), () => audio.click('key'), unlockSideDoor);
   state.typed = true;
-  setTimeout(() => setHint('La macchina da scrivere… ha battuto da sola?'), 2600);
+  setTimeout(() => setHint(L('La macchina da scrivere… ha battuto da sola?', 'The typewriter… did it type by itself?')), 2600);
 });
 try {
   const saved = store.get('villa-messaggio');
@@ -603,8 +610,8 @@ function unlockSideDoor() {
     store.set('villa-porta', '1');
     S.exterior.setSideDoor(true);
   }
-  setHint('«Prova l’altro ingresso»… Fuori, sul lato destro della villa, una porta si è aperta.');
-  toast('Da qualche parte, fuori, una porta si è aperta.', 4000);
+  setHint(L('«Prova l’altro ingresso»… Fuori, sul lato destro della villa, una porta si è aperta.', '“Try the other entrance”… Outside, on the right side of the villa, a door has opened.'));
+  toast(L('Da qualche parte, fuori, una porta si è aperta.', 'Somewhere outside, a door has opened.'), 4000);
 }
 
 // ---------- grammofono, lente, finale ----------
@@ -634,8 +641,8 @@ function playEnding() {
   store.set('villa-cannocchiale', '1');
   S.exterior.setObservatory(true);
   setTimeout(() => {
-    toast('Il grammofono si è fermato. Fuori, sul belvedere, si sono accese due lanterne.', 7000);
-    setHint('«Guarda oltre te stesso»: esci, torna dove sei arrivato e voltati. Cerca il cannocchiale.');
+    toast(L('Il grammofono si è fermato. Fuori, sul belvedere, si sono accese due lanterne.', 'The gramophone has stopped. Outside, on the terrace, two lanterns have lit up.'), 7000);
+    setHint(L('«Guarda oltre te stesso»: esci, torna dove sei arrivato e voltati. Cerca il cannocchiale.', '“Look beyond yourself”: go out, return to where you arrived and turn around. Find the telescope.'));
   }, 1500);
 }
 
@@ -676,13 +683,13 @@ function focusLock() {
   enterFocus('lock');
   moveTo(C.lockView, C.lockPos, () => {
     if (state.focus !== 'lock') return;
-    $('lock-msg').textContent = codeDone() ? 'Tre rotelle d’ottone. Tre cifre… forse le hai già viste da qualche parte.' : 'Tre rotelle d’ottone. Servono tre cifre.';
+    $('lock-msg').textContent = codeDone() ? L('Tre rotelle d’ottone. Tre cifre… forse le hai già viste da qualche parte.', 'Three brass wheels. Three digits… perhaps you have already seen them somewhere.') : L('Tre rotelle d’ottone. Servono tre cifre.', 'Three brass wheels. Three digits are needed.');
     $('lock').hidden = false;
   }, 1.2);
 }
 $('lock-open').addEventListener('click', () => {
   if (wheelVals.join('') === CODE.join('')) {
-    $('lock-msg').textContent = 'Clic. Il lucchetto si apre.';
+    $('lock-msg').textContent = L('Clic. Il lucchetto si apre.', 'Click. The padlock opens.');
     if (navigator.vibrate) navigator.vibrate([20, 50, 40]);
     audio.click('puff');
     state.wardrobe = true;
@@ -696,8 +703,8 @@ $('lock-open').addEventListener('click', () => {
     $('lock').classList.remove('wrong'); void $('lock').offsetWidth; $('lock').classList.add('wrong');
     if (navigator.vibrate) navigator.vibrate(60);
     $('lock-msg').textContent = codeDone()
-      ? 'Il lucchetto non cede. Ricorda l’ordine: da Nord, come girano le lancette.'
-      : 'Il lucchetto non cede. Le cifre giuste sono altrove, forse oltre il giardino.';
+      ? L('Il lucchetto non cede. Ricorda l’ordine: da Nord, come girano le lancette.', 'The padlock won’t give. Remember the order: from North, the way clock hands turn.')
+      : L('Il lucchetto non cede. Le cifre giuste sono altrove, forse oltre il giardino.', 'The padlock won’t give. The right digits are elsewhere, perhaps beyond the garden.');
   }
 });
 $('lock-close').addEventListener('click', () => leaveFocus());
@@ -721,7 +728,7 @@ function focusBino() {
 scope.onReveal = () => {
   store.set('villa-fine', '1');
   audio.distantMusicBox(40);
-  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = 'Torna alla villa'; $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 9000);
+  setTimeout(() => { if (scope.isOpen) { $('scope-close').textContent = L('Torna alla villa', 'Back to the villa'); $('scope-end').hidden = false; $('scope-menu').hidden = false; } }, 9000);
 };
 $('scope-close').addEventListener('click', () => leaveFocus());
 
@@ -734,10 +741,10 @@ function leaveFocus(instant = false) {
   $('write').hidden = true;
   if (was === 'candle') audio.stopMic();
   if (was === 'lens') { magnifier.close(); if (state.ending) playEnding(); }
-  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = 'Chiudi'; }
+  if (was === 'scope') { scope.close(); $('scope-end').hidden = true; $('scope-menu').hidden = true; $('scope-close').textContent = L('Chiudi', 'Close'); }
   if (was === 'land') {
     land.close();
-    if (codeDone()) setHint('Tre cifre: ' + CODE.join(' · ') + '. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.');
+    if (codeDone()) setHint(L('Tre cifre: ', 'Three digits: ') + CODE.join(' · ') + L('. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.', '. A padlock, in the first corridor, is waiting for exactly three digits.'));
   }
   if (was === 'lock') $('lock').hidden = true;
   if (was === 'letter') {
@@ -746,14 +753,14 @@ function leaveFocus(instant = false) {
       state.bino = true;
       store.set('villa-binocolo', '1');
       S.exterior.setBinocular(true);
-      setTimeout(() => toast('«Guarda con due occhi»… In giardino, sul muretto che guarda il tramonto, c’è un binocolo.', 6500), 800);
-      setHint('Esci in giardino: sul muretto a sinistra della villa ti aspetta un binocolo.');
+      setTimeout(() => toast(L('«Guarda con due occhi»… In giardino, sul muretto che guarda il tramonto, c’è un binocolo.', '“Look with two eyes”… In the garden, on the low wall facing the sunset, there are binoculars.'), 6500), 800);
+      setHint(L('Esci in giardino: sul muretto a sinistra della villa ti aspetta un binocolo.', 'Go out to the garden: binoculars are waiting on the low wall to the left of the villa.'));
     }
   }
   if (was === 'music') {
     audio.stopMusicBox(); audio.setListen(0); S.corridor.setPlaying(false);
     state.listen = 0; listenHold = false; document.body.classList.remove('listening');
-    btnListen.classList.remove('on'); btnListen.textContent = 'Tieni premuto per ascoltare';
+    btnListen.classList.remove('on'); btnListen.textContent = L('Tieni premuto per ascoltare', 'Hold to listen');
   }
   voice.resume();
   showVoiceState();
@@ -816,7 +823,7 @@ function syncGuide() {
   [...dotsEl.children].forEach((d, k) => d.classList.toggle('on', k === slideIdx));
   $('tut-prev').disabled = slideIdx === 0;
   const last = slideIdx === slideCount - 1;
-  $('tut-next').textContent = last ? (state.started ? 'Torna al gioco' : state.inMenu ? 'Torna al menu' : 'Attiva i sensori') : 'Avanti';
+  $('tut-next').textContent = last ? (state.started ? L('Torna al gioco', 'Back to the game') : state.inMenu ? L('Torna al menu', 'Back to the menu') : L('Attiva i sensori', 'Turn on the sensors')) : L('Avanti', 'Next');
 }
 let scrollT;
 slidesEl.addEventListener('scroll', () => {
@@ -850,14 +857,14 @@ function showPerms() {
 // Un passo per tap: iOS accetta le richieste di permesso solo dentro un gesto dell'utente.
 const isAndroid = /Android/i.test(navigator.userAgent);
 const STEPS = [
-  { k: 'motion', btn: 'Consenti il movimento', run: async () => { const p = controls.enableGyro(); audio.init(); state.gyro = await p; return state.gyro ? 'ok' : 'no'; } },
-  { k: 'mic', btn: 'Consenti il microfono', run: async () => { audio.init(); state.micOk = await audio.askMicPermission(); return state.micOk ? 'ok' : 'no'; } },
-  { k: 'voice', btn: 'Attiva i comandi vocali', skip: () => !voice.supported || !state.micOk, run: async () => {
+  { k: 'motion', btn: L('Consenti il movimento', 'Allow motion'), run: async () => { const p = controls.enableGyro(); audio.init(); state.gyro = await p; return state.gyro ? 'ok' : 'no'; } },
+  { k: 'mic', btn: L('Consenti il microfono', 'Allow the microphone'), run: async () => { audio.init(); state.micOk = await audio.askMicPermission(); return state.micOk ? 'ok' : 'no'; } },
+  { k: 'voice', btn: L('Attiva i comandi vocali', 'Turn on voice commands'), skip: () => !voice.supported || !state.micOk, run: async () => {
     const ok = await voice.enable();
-    if (!ok) setNote('voice', IS_IOS ? 'su iPhone attiva la Dettatura: Impostazioni → Generali → Tastiera' : 'non attivi: puoi giocare col tocco');
+    if (!ok) setNote('voice', IS_IOS ? L('su iPhone attiva la Dettatura: Impostazioni → Generali → Tastiera', 'on iPhone turn on Dictation: Settings → General → Keyboard') : L('non attivi: puoi giocare col tocco', 'off: you can play by touch'));
     return ok ? 'ok' : 'no';
   } },
-  { k: 'camera', btn: 'Consenti la fotocamera', skip: () => !navigator.mediaDevices?.getUserMedia, run: async () => {
+  { k: 'camera', btn: L('Consenti la fotocamera', 'Allow the camera'), skip: () => !navigator.mediaDevices?.getUserMedia, run: async () => {
     const ok = await askCamera();
     if (ok && isAndroid && ledTorch.supportedGuess) state.ledOk = await ledTorch.probe(); // su Android la torcia vera usa la fotocamera
     return ok ? 'ok' : 'no';
@@ -871,7 +878,7 @@ async function askCamera() {
   } catch { return false; }
 }
 function setNote(k, text) { const sp = document.querySelector(`#perms [data-k="${k}"] span`); if (sp) sp.textContent = text; }
-const LABELS = { ok: 'attivo', no: 'non attivo', skip: 'saltato', na: 'non disponibile', virtual: 'solo virtuale', wait: '…' };
+const LABELS = IS_EN ? { ok: 'on', no: 'off', skip: 'skipped', na: 'unavailable', virtual: 'virtual only', wait: '…' } : { ok: 'attivo', no: 'non attivo', skip: 'saltato', na: 'non disponibile', virtual: 'solo virtuale', wait: '…' };
 let stepIdx = -1;
 function setRow(k, status) {
   const row = document.querySelector(`#perms [data-k="${k}"]`);
@@ -883,11 +890,11 @@ function nextStep() {
   while (stepIdx < STEPS.length && STEPS[stepIdx].skip?.()) {
     const k = STEPS[stepIdx].k;
     setRow(k, 'na');
-    if (k === 'voice' && !voice.supported) setNote('voice', IOS_OTHER_BROWSER ? 'su iPhone funzionano solo in Safari' : 'non disponibili in questo browser');
+    if (k === 'voice' && !voice.supported) setNote('voice', IOS_OTHER_BROWSER ? L('su iPhone funzionano solo in Safari', 'on iPhone they only work in Safari') : L('non disponibili in questo browser', 'not available in this browser'));
     stepIdx++;
   }
   const btn = $('btn-start'), skip = $('btn-skip');
-  if (stepIdx >= STEPS.length) { btn.textContent = 'Entra nella sera'; skip.hidden = true; }
+  if (stepIdx >= STEPS.length) { btn.textContent = L('Entra nella sera', 'Step into the evening'); skip.hidden = true; }
   else { btn.textContent = STEPS[stepIdx].btn; skip.hidden = false; }
   btn.disabled = false;
 }
@@ -921,15 +928,15 @@ async function begin() {
       // senza giroscopio la rotazione orizzontale viene dalla bussola, che in casa sbanda:
       // si parte con la sola inclinazione, più stabile
       setMotionMode('tilt', true);
-      toast('Questo telefono non ha un giroscopio: muovilo su e giù per guardare, e trascina il dito (o di’ «destra» / «sinistra») per girarti. Il tasto «Movimento» cambia modalità.', 9000);
+      toast(L('Questo telefono non ha un giroscopio: muovilo su e giù per guardare, e trascina il dito (o di’ «destra» / «sinistra») per girarti. Il tasto «Movimento» cambia modalità.', 'This phone has no gyroscope: move it up and down to look, and drag your finger (or say “right” / “left”) to turn. The “Motion” button changes mode.'), 9000);
     } else setMotionMode('full', true);
   }
   state.started = true;
   controls.face(S.exterior.far.look);
   showTitle('exterior');
   showVoiceState();
-  setHint(lookWord() + ' per guardarti intorno. ' + (voice.enabled ? 'Di’ «cammina» o «corri» per avvicinarti alla villa.' : 'Tocca il cerchio luminoso sul portone.'));
-  if (!state.gyro && 'ontouchstart' in window) toast('Movimento non attivo: trascina con il dito per guardarti intorno.', 4500);
+  setHint(lookWord() + L(' per guardarti intorno. ', ' to look around. ') + (voice.enabled ? L('Di’ «cammina» o «corri» per avvicinarti alla villa.', 'Say “walk” or “run” to approach the villa.') : L('Tocca il cerchio luminoso sul portone.', 'Tap the glowing circle on the front door.')));
+  if (!state.gyro && 'ontouchstart' in window) toast(L('Movimento non attivo: trascina con il dito per guardarti intorno.', 'Motion is off: drag with your finger to look around.'), 4500);
   try { await navigator.wakeLock?.request('screen'); } catch { /* non essenziale */ }
 }
 // musica del menu: il carillon del finale. I browser fanno partire l'audio solo
@@ -983,7 +990,7 @@ let newGameT;
 function resetNewGame() {
   clearTimeout(newGameT);
   $('btn-newgame').classList.remove('confirm');
-  $('btn-newgame').textContent = 'Nuova partita: ricomincia da capo';
+  $('btn-newgame').textContent = L('Nuova partita: ricomincia da capo', 'New game: start over');
 }
 $('btn-menu').addEventListener('click', showMenu);
 $('scope-menu').addEventListener('click', () => { leaveFocus(true); showMenu(); });
@@ -993,7 +1000,7 @@ $('btn-newgame').addEventListener('click', () => {
   // conferma con un secondo tocco: si perdono porte aperte, codici e messaggio
   if (!$('btn-newgame').classList.contains('confirm')) {
     $('btn-newgame').classList.add('confirm');
-    $('btn-newgame').textContent = 'Tocca di nuovo: i progressi verranno cancellati';
+    $('btn-newgame').textContent = L('Tocca di nuovo: i progressi verranno cancellati', 'Tap again: your progress will be erased');
     newGameT = setTimeout(resetNewGame, 4000);
     return;
   }

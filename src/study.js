@@ -1,4 +1,5 @@
 // Scena 3 — Lo studio in fondo al corridoio
+import { IS_EN } from './i18n.js';
 import * as THREE from 'three';
 import * as T from './textures.js';
 import { assets, box, cyl, glowSprite, CandleSet, candelabra, painting, sconce, worldPoints } from './props.js';
@@ -108,7 +109,7 @@ export function buildStudy() {
 
   // scritta nascosta: si legge bene solo con la torcia
   const msg = wall(2.6, 1.3, new THREE.MeshStandardMaterial({
-    map: T.textTex(['Chi lascia parole', 'non se ne va', 'mai del tutto.'], { w: 512, h: 256, color: '#e8d8b0', font: 'italic 40px Georgia, serif', lineH: 58 }),
+    map: T.textTex(IS_EN ? ['Those who leave words', 'never truly', 'go away.'] : ['Chi lascia parole', 'non se ne va', 'mai del tutto.'], { w: 512, h: 256, color: '#e8d8b0', font: 'italic 40px Georgia, serif', lineH: 58 }),
     transparent: true, opacity: 0.5, roughness: 1, depthWrite: false,
   }), HW - 0.02, 1.9, -2.6, -Math.PI / 2);
 
