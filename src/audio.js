@@ -482,10 +482,18 @@ export class AudioEngine {
   async startMic() {
     if (this.micOn) return true;
     if (!navigator.mediaDevices?.getUserMedia || !this.ctx) return false;
+    // su alcuni Android la richiesta resta appesa se il microfono è occupato: non aspettare più di 5 s
+    const req = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      .catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
+    let timedOut = false;
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    } catch { return false; }
-    await this.ctx.resume();
+      this.stream = await Promise.race([req, new Promise((_, no) => setTimeout(() => { timedOut = true; no(new Error('timeout')); }, 5000))]);
+    } catch {
+      if (timedOut) req.then((s) => s.getTracks().forEach((tr) => tr.stop())).catch(() => {});
+      return false;
+    }
+    if (!this.stream.getAudioTracks().length) { this.stream.getTracks().forEach((tr) => tr.stop()); return false; }
+    this.ctx.resume().catch(() => {}); // fuori da un tocco su Android può non risolversi mai: non aspettarla
     this.micSrc = this.ctx.createMediaStreamSource(this.stream);
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 512;
@@ -496,6 +504,9 @@ export class AudioEngine {
     this._floor = 0.02;
     this._above = 0;
     this._cool = 0;
+    this._alive = 0; // tempo trascorso e segnale massimo: serve a capire se il microfono è muto
+    this._peak = 0;
+    this.micDead = false;
     return true;
   }
 
@@ -526,6 +537,10 @@ export class AudioEngine {
     let sum = 0;
     for (let i = 0; i < this.micData.length; i++) sum += this.micData[i] * this.micData[i];
     const rms = Math.sqrt(sum / this.micData.length);
+    // microfono aperto ma muto (occupato da un'altra app o dal riconoscimento vocale)
+    this._alive += dt; this._peak = Math.max(this._peak, rms);
+    const track = this.stream.getAudioTracks()[0];
+    if ((this._alive > 2.5 && this._peak < 1e-6) || (track && track.readyState === 'ended')) { this.micDead = true; this.stopMic(); return false; }
     this.micLevel += (rms - this.micLevel) * 0.4;
     if (rms < this._floor * 2) this._floor += (rms - this._floor) * 0.02;
     const threshold = Math.max(0.07, this._floor * 3.5 + 0.035);

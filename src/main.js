@@ -24,8 +24,15 @@ document.querySelectorAll('#lang-switch button').forEach((b) => {
   b.addEventListener('click', () => setLang(b.dataset.lang));
 });
 const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-let pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+// sugli schermi ad alta densità l'antialiasing costa molto e si nota poco
+const DPR = window.devicePixelRatio || 1;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: DPR < 2, powerPreference: 'high-performance' });
+// risoluzione: al massimo 2× e mai più di ~1,3 milioni di pixel (schermi grandi, pieghevoli aperti);
+// «quality» scende da sola se il telefono fatica
+const PIXEL_BUDGET = 1.3e6;
+let quality = 1;
+const targetRatio = () => Math.max(0.6, Math.min(DPR, 2, Math.sqrt((PIXEL_BUDGET * quality) / Math.max(1, window.innerWidth * window.innerHeight))));
+let pixelRatio = targetRatio();
 renderer.setPixelRatio(pixelRatio);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -513,7 +520,8 @@ function hotspots() {
 function candleTapSpot(list, sc) {
   const lit = sc.candles.litCount;
   if (lit === 0) list.push({ pos: sc.candlePos, label: L('Tocca per riaccendere', 'Tap to relight'), act: () => { sc.candles.relight(); audio.click('puff'); candlePanel(sc); } });
-  else if (!state.micOk) list.push({ pos: sc.candlePos, label: L('Tocca per spegnere', 'Tap to put out'), act: () => blow(sc) });
+  // il tocco funziona sempre, anche col microfono: se il soffio non viene sentito non si resta bloccati
+  else list.push({ pos: sc.candlePos, label: state.micOk ? L('Soffia, oppure tocca qui', 'Blow, or tap here') : L('Tocca per spegnere', 'Tap to put out'), act: () => blow(sc) });
 }
 
 // entrata/uscita dai primi piani: la voce si mette in pausa, perché il microfono
@@ -531,15 +539,17 @@ function enterFocus(kind) {
 function candlePanel(sc) {
   const lit = sc.candles.litCount;
   if (lit === 0) showPanel(L('Buio. Resta solo un filo di fumo. Tocca le candele per riaccenderle.', 'Darkness. Only a thread of smoke remains. Tap the candles to relight them.'), { mic: false });
-  else if (state.micOk) showPanel(lit === sc.candles.candles.length ? L('Soffia sul microfono del telefono per spegnere una candela.', 'Blow on your phone’s microphone to put out a candle.') : L('Ancora: soffia per spegnere la prossima.', 'Again: blow to put out the next one.'), { mic: true });
+  else if (state.micOk) showPanel(lit === sc.candles.candles.length ? L('Soffia sul microfono del telefono per spegnere una candela (oppure tocca la fiamma).', 'Blow on your phone’s microphone to put out a candle (or tap the flame).') : L('Ancora: soffia per spegnere la prossima.', 'Again: blow to put out the next one.'), { mic: true });
   else showPanel(L('Microfono non disponibile: tocca le fiamme per spegnerle.', 'Microphone unavailable: tap the flames to put them out.'), { mic: false });
 }
 async function focusCandle(sc) {
   enterFocus('candle');
-  const micPromise = audio.startMic();
   moveTo(sc.candleView, sc.candlePos, null, 1.6);
   showPanel(L('Mi avvicino alle candele…', 'Getting closer to the candles…'));
-  state.micOk = await micPromise;
+  // prima si libera il microfono dal riconoscimento vocale, poi lo si apre per il soffio
+  // (su Android i due insieme possono bloccarsi)
+  await voice.pause();
+  state.micOk = state.focus === 'candle' && await audio.startMic();
   if (state.focus === 'candle') candlePanel(sc); else audio.stopMic();
 }
 function blow(sc) {
@@ -1098,6 +1108,8 @@ document.addEventListener('visibilitychange', () => {
 // ---------- ciclo di rendering ----------
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
+  pixelRatio = targetRatio();
+  renderer.setPixelRatio(pixelRatio);
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.fov = w < h ? 78 : 62;
@@ -1114,7 +1126,7 @@ controls.face(S.exterior.far.look);
 applyTorch();
 
 const clock = new THREE.Clock();
-let slow = 0, frames = 0;
+let slow = 0, frames = 0, frameN = 0, elapsed = 0;
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1), t = clock.elapsedTime;
 
@@ -1135,6 +1147,11 @@ renderer.setAnimationLoop(() => {
   controls.update(dt);
 
   let wind = 0;
+  if (state.focus === 'candle' && audio.micDead && state.micOk) {
+    // il microfono si è aperto ma non sente niente: si passa al tocco
+    state.micOk = false; audio.micDead = false;
+    candlePanel(cur);
+  }
   if (state.focus === 'candle' && audio.micOn) {
     if (audio.pollBlow(dt)) blow(cur);
     wind = Math.min(1, audio.blowAmount * 0.8);
@@ -1151,10 +1168,16 @@ renderer.setAnimationLoop(() => {
   if (!['lens', 'scope', 'land', 'novel', 'tome'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
-  if (state.started && ++frames > 30) {
-    slow += dt > 0.034 ? 1 : -0.5;
-    if (slow < 0) slow = 0;
-    if (slow > 45 && pixelRatio > 1) { pixelRatio = Math.max(1, pixelRatio - 0.5); renderer.setPixelRatio(pixelRatio); resize(); slow = 0; }
+  // misura la media su un secondo e mezzo: se si scende sotto ~40 fps si abbassa la risoluzione
+  // (anche più volte, ad esempio quando il telefono si scalda), fino a un minimo ancora leggibile
+  // (i singoli scatti, come il cambio di stanza, non contano: serve che la maggior parte dei fotogrammi sia lenta)
+  if (state.started && !state.busy && !document.hidden && ++frames > 30) {
+    elapsed += dt; frameN++;
+    if (dt > 0.025) slow++;
+    if (elapsed > 1.5) {
+      if (slow / frameN > 0.6 && quality > 0.3) { quality *= 0.75; resize(); }
+      elapsed = 0; frameN = 0; slow = 0;
+    }
   }
 });
 
@@ -1187,4 +1210,4 @@ if (new URLSearchParams(location.search).has('diag')) {
 }
 
 // accesso per test manuali da console
-window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, leaveFocus, observe, land, setCode };
+window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, focusCandle, leaveFocus, observe, land, setCode };

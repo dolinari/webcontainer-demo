@@ -85,6 +85,7 @@ export class VoiceCommands {
     };
     r.onend = () => {
       this.running = false;
+      if (this._onEnd) { const f = this._onEnd; this._onEnd = null; f(); }
       this._fired.clear();
       // Chrome chiude la sessione dopo qualche secondo di silenzio: riapri subito
       if (this.enabled && !this.paused && !document.hidden && !this.needsTap) {
@@ -148,17 +149,27 @@ export class VoiceCommands {
     this._emit('off');
   }
 
+  /** Ferma l'ascolto; la promessa si risolve quando il microfono è stato davvero rilasciato. */
   pause() {
-    if (this.paused) return;
+    if (this.paused) return this._released || Promise.resolve();
     this.paused = true;
     clearTimeout(this._restart);
+    const wasRunning = this.running;
+    this._released = new Promise((resolve) => {
+      if (!wasRunning) { resolve(); return; }
+      this._onEnd = resolve;
+      setTimeout(resolve, 900); // se «onend» non arriva, non restare in attesa per sempre
+    });
     try { this.rec?.abort(); } catch { /* già fermo */ }
+    return this._released;
   }
 
   resume() {
     if (!this.paused) return;
     this.paused = false;
-    if (this.enabled) this._start();
+    // su Android il microfono appena chiuso non è subito libero: un attimo di pausa
+    clearTimeout(this._restart);
+    if (this.enabled) this._restart = setTimeout(() => { if (!this.paused) this._start(); }, 450);
   }
 
   _fire(cmd, word) {

@@ -1,5 +1,6 @@
 // Oggetti riutilizzabili: candele, candelabri, mobili, busti, quadri.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as T from './textures.js';
 
 let shared;
@@ -230,4 +231,31 @@ export function sconce() {
 export function worldPoints(group, pts) {
   group.updateMatrixWorld(true);
   return pts.map((p) => p.clone().applyMatrix4(group.matrixWorld));
+}
+
+/**
+ * Unisce le mesh statiche figlie dirette della scena che condividono lo stesso materiale:
+ * stesso aspetto, molte meno chiamate di disegno (importante sui telefoni).
+ * Le mesh in «keep» (animate o modificate dopo) restano separate.
+ */
+export function mergeStatic(scene, keep = []) {
+  const skip = new Set(keep);
+  const byMat = new Map();
+  scene.updateMatrixWorld(true);
+  for (const o of [...scene.children]) {
+    if (!o.isMesh || skip.has(o) || Array.isArray(o.material) || o.material.transparent || !o.visible) continue;
+    const g = o.geometry;
+    const key = o.material.uuid + '|' + Object.keys(g.attributes).sort().join(',') + '|' + (g.index ? 'i' : 'n');
+    (byMat.get(key) || byMat.set(key, []).get(key)).push(o);
+  }
+  for (const list of byMat.values()) {
+    if (list.length < 2) continue;
+    const geos = list.map((m) => m.geometry.clone().applyMatrix4(m.matrixWorld));
+    const merged = mergeGeometries(geos, false);
+    geos.forEach((g) => g.dispose());
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, list[0].material);
+    for (const m of list) scene.remove(m);
+    scene.add(mesh);
+  }
 }

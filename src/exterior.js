@@ -1,7 +1,7 @@
 // Scena 1 — Esterno della villa al tramonto
 import * as THREE from 'three';
 import * as T from './textures.js';
-import { assets, box, cyl, lathe, glowSprite } from './props.js';
+import { assets, box, cyl, lathe, glowSprite, mergeStatic } from './props.js';
 
 export function buildExterior() {
   const A = assets();
@@ -378,6 +378,9 @@ export function buildExterior() {
     obsLight.intensity = 12 * lf;
     binoGlow.material.opacity = binoOn ? 0.5 + 0.2 * Math.sin(t * 2.5) : 0;
   };
+
+  // meno chiamate di disegno: la scena esterna era la più pesante (porta laterale e anta restano separate)
+  mergeStatic(scene, [wingDoor, wingLeaf, sky, ground]);
 
   return {
     scene, update,
