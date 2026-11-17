@@ -45,6 +45,7 @@ const MELODY = [
 export class AudioEngine {
   constructor() {
     this.ctx = null;
+    this.surface = 'leaves'; // si parte fuori: foglie secche
     this.muted = false;
     this.playing = false;
     this.micLevel = 0;
@@ -372,14 +373,8 @@ export class AudioEngine {
     const ctx = this.ctx, t = ctx.currentTime;
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); const g = ctx.createGain();
-    if (kind === 'step' || kind === 'run') {
-      // il corpo del passo sta sulle medie frequenze (l'altoparlante del telefono non fa i bassi)
-      const run = kind === 'run';
-      f.type = 'bandpass'; f.frequency.value = (run ? 900 : 650) + Math.random() * 150; f.Q.value = 1.1;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(run ? 3.2 : 2.6, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + (run ? 0.1 : 0.14));
-      s.playbackRate.value = run ? 2 : 1.5;
-      this._scuff(t, run);
-    } else if (kind === 'key') {
+    if (kind === 'step' || kind === 'run') { this.footstep(kind === 'run'); return; }
+    if (kind === 'key') {
       f.type = 'bandpass'; f.frequency.value = 2200 + Math.random() * 800; f.Q.value = 2;
       g.gain.setValueAtTime(1.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
       s.playbackRate.value = 6;
@@ -393,15 +388,71 @@ export class AudioEngine {
     s.start(t, Math.random() * 2); s.stop(t + 0.5);
   }
 
-  /** lo strofinio della suola, sopra il colpo del passo */
-  _scuff(t, run) {
+  /**
+   * Un passo vero: tacco e punta, alternando piede sinistro e destro, con piccole
+   * variazioni ogni volta. Il materiale dipende da dove si cammina (this.surface):
+   * 'leaves' fuori (foglie secche e ghiaia), 'floor' dentro (pavimento).
+   */
+  footstep(run = false) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + 0.005;
+    this._foot = this._foot ? 0 : 1;
+    const side = this._foot ? 1 : 0.9; // i due piedi non suonano identici
+    const v = 0.85 + Math.random() * 0.3;
+    if (this.surface === 'leaves') {
+      this._thud(t, 300 * side, (run ? 2.6 : 1.9) * v, 0.11, 1000);
+      this._crunch(t, run, v);
+    } else {
+      const f = (run ? 520 : 440) * side * (0.94 + Math.random() * 0.12);
+      this._thud(t, f, (run ? 4.6 : 3.8) * v, run ? 0.09 : 0.11, 1800); // tacco
+      this._thud(t + (run ? 0.04 : 0.075), f * 1.5, (run ? 1.8 : 1.4) * v, 0.05, 2600); // punta
+      this._scuff(t + 0.03, run, v);
+    }
+  }
+
+  /** il colpo sordo del piede: rumore filtrato con un attacco morbido */
+  _thud(t, freq, gain, len, top) {
     const ctx = this.ctx;
-    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 4;
-    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2400;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 0.8 + Math.random() * 0.3;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 1.3;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = top;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t + 0.01); g.gain.exponentialRampToValueAtTime(run ? 0.35 : 0.22, t + 0.03); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(this.master);
+    s.start(t, Math.random() * 2); s.stop(t + len + 0.03);
+  }
+
+  /** lo strofinio leggero della suola sul pavimento */
+  _scuff(t, run, v = 1) {
+    const ctx = this.ctx;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 1.5;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3200; f.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((run ? 0.22 : 0.13) * v, t + 0.03); g.gain.exponentialRampToValueAtTime(0.001, t + (run ? 0.1 : 0.16));
     s.connect(f); f.connect(g); g.connect(this.master);
-    s.start(t, Math.random() * 2); s.stop(t + 0.15);
+    s.start(t, Math.random() * 2); s.stop(t + 0.2);
+  }
+
+  /** foglie secche che si spezzano sotto la scarpa: tanti piccoli crepitii più un fruscio */
+  _crunch(t, run, v = 1) {
+    const ctx = this.ctx;
+    const span = run ? 0.13 : 0.2;
+    const n = 9 + ((Math.random() * 7) | 0);
+    for (let i = 0; i < n; i++) {
+      const t0 = t + Math.pow(Math.random(), 1.6) * span; // più fitti all'inizio dell'appoggio
+      const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 1 + Math.random();
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800 + Math.random() * 3200; f.Q.value = 1.2;
+      const g = ctx.createGain(); const len = 0.004 + Math.random() * 0.012;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime((0.9 + Math.random() * 1.5) * v, t0 + 0.002); g.gain.exponentialRampToValueAtTime(0.001, t0 + len);
+      s.connect(f); f.connect(g); g.connect(this.master);
+      s.start(t0, Math.random() * 2); s.stop(t0 + len + 0.01);
+    }
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 1.2;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1400;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((run ? 0.7 : 0.5) * v, t + 0.04); g.gain.exponentialRampToValueAtTime(0.001, t + span + 0.08);
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(t, Math.random() * 2); s.stop(t + span + 0.1);
   }
 
   /** uno scricchiolio lontano del legno */

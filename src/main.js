@@ -139,6 +139,10 @@ const walkWord = () => (voice.enabled ? L('Di’ «cammina» o «corri» per muo
 function moveTo(pos, look, done, dur = 1.5) {
   walk = null;
   move = { from: camera.position.clone(), to: pos.clone(), t: 0, dur, done };
+  // passi a ritmo naturale (circa due al secondo), non legati alla velocità dello spostamento
+  const dist = Math.hypot(pos.x - move.from.x, pos.z - move.from.z);
+  move.steps = dist < 0.4 ? 0 : Math.max(1, Math.min(Math.round(dist / 0.7), Math.floor(dur / 0.45)));
+  move.stepped = 0;
   if (look) controls.aimAt(look, dur + 0.3);
 }
 const ease = (x) => x * x * (3 - 2 * x);
@@ -154,6 +158,7 @@ function swapScene(name, pos, look) {
   camera.position.copy(pos);
   controls.face(look);
   audio.setAmbience(name === 'exterior' ? 'ext' : name === 'dining' ? 'dining' : 'int');
+  audio.surface = name === 'exterior' ? 'leaves' : 'floor'; // foglie fuori, pavimento dentro
   if (name === 'dining' && state.gramophone) { audio.startGramophone(); S.dining.setPlaying(true); }
   if (name !== 'dining') { audio.stopGramophone(); S.dining.setPlaying(false); }
   applyTorch();
@@ -1116,12 +1121,12 @@ renderer.setAnimationLoop(() => {
   if (move) {
     move.t += dt / move.dur;
     const k = ease(Math.min(1, move.t));
-    const before = camera.position.clone();
     camera.position.lerpVectors(move.from, move.to, k);
-    // i passi si sentono anche quando ci si sposta toccando un cerchio
-    if (state.started && !state.busy) {
-      move.walked = (move.walked || 0) + Math.hypot(camera.position.x - before.x, camera.position.z - before.z);
-      if (move.walked > 0.7) { move.walked -= 0.7; audio.click('step'); }
+    // i passi si sentono anche quando ci si sposta toccando un cerchio: stessi passi di «cammina»,
+    // distribuiti nel tempo dello spostamento
+    if (move.stepped < move.steps && move.t >= (move.stepped + 0.3) / move.steps && state.started && !state.busy) {
+      move.stepped++;
+      audio.click('step');
     }
     camera.position.y += Math.sin(k * Math.PI * 6) * 0.012 * Math.sin(k * Math.PI); // passo leggero
     if (move.t >= 1) { const d = move.done; move = null; d?.(); }
@@ -1182,4 +1187,4 @@ if (new URLSearchParams(location.search).has('diag')) {
 }
 
 // accesso per test manuali da console
-window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, leaveFocus, observe, land, setCode };
+window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, leaveFocus, observe, land, setCode };
