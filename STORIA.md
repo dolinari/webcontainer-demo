@@ -11,8 +11,15 @@ Nel gioco ogni testo resta in italiano e in inglese (vedi `CLAUDE.md`).
 
 ## L'ambientazione
 
-- Un piccolo paese di campagna e di montagna in **Austria, non lontano da Vienna**: una provincia, una comunità raccolta.
-- **Il culto delle lanterne** è il filo rosso di tutto: un'usanza folcloristica e spirituale della comunità. Una volta l'anno, al tramonto più lento, si sale dal ruscello al vecchio altare con una lanterna per chi è lontano. Se la lanterna resta accesa fino all'alba, chi è lontano ritrova la strada; se si spegne, la valle trattiene il suo nome.
+- **Lichtensee** («il lago delle luci»): un paese **immaginario**, mai dichiarato austriaco nel gioco. Nella nostra testa sta nel cuore delle Alpi, a qualche ora di treno dalla capitale (Vienna).
+- **Estetica ispirata a Hallstatt** (Salzkammergut): case di legno e intonaco aggrappate al pendio tra un lago alpino e pareti di roccia a picco, vicoli stretti, un campanile a punta sulla riva, barche di legno, nebbia sull'acqua, una vecchia miniera di sale sopra il paese. Dettagli possibili presi da altri borghi alpini: facciate affrescate, balconi di legno.
+- **Nel gioco la capitale non si nomina mai**: è «la capitale», «la città». Niente nomi di luoghi reali, niente bandiere né lingue dichiarate.
+- **Il culto delle lanterne** è ispirato a tradizioni vere della regione, reinventate. **Niente Krampus né Perchten**: l'atmosfera è di luce, cappucci, silenzio e mistero, non di paura.
+  - **La Notte delle Lanterne**, in autunno (ispirata alla lanternata di San Martino, 11 novembre): i bambini portano lanterne fatte a mano e cantano filastrocche; gli adulti del culto, incappucciati, salgono in silenzio dal lago al vecchio altare.
+  - **La Lanterna Grande sul lago** (ispirata all'Avvento sul Wolfgangsee, dove il paese si illumina solo di lanterne e torce e una lanterna gigante galleggia sull'acqua): quella notte il paese spegne ogni luce elettrica e al centro del lago galleggia una lanterna enorme. Le lanterne dei lontani vengono lasciate sull'acqua.
+  - **La catena di luci sulle creste** (ispirata ai fuochi del solstizio, Sonnwendfeuer): lanterne accese una dopo l'altra lungo il crinale, visibili da tutto il fondovalle.
+  - **La casa dei nomi** (ispirazione lontana: l'ossario di Hallstatt con i nomi dipinti): una piccola cappella dove si scrivono a mano i nomi di chi è partito. Da evocare, mai macabra.
+- Il filo rosso del culto: un'usanza folcloristica e spirituale della comunità. Una volta l'anno, al tramonto più lento, si sale dal ruscello al vecchio altare con una lanterna per chi è lontano. Se la lanterna resta accesa fino all'alba, chi è lontano ritrova la strada; se si spegne, la valle trattiene il suo nome.
 - I membri del culto si considerano **fratelli e sorelle**. E. e Livia si conoscono proprio dentro questa ritualità. E. ha anche un ruolo nel culto, da definire (forse custode, come nel libro della biblioteca).
 
 ## La storia (in ordine cronologico)

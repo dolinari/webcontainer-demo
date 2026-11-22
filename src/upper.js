@@ -266,7 +266,7 @@ export function buildUpper() {
   plane(AZ0 - AZ1, H, aplaster, AX0, H / 2, (AZ0 + AZ1) / 2, Math.PI / 2);
   plane(AZ0 - AZ1, H, aplaster, AX1, H / 2, (AZ0 + AZ1) / 2, -Math.PI / 2);
   // la grande vetrata sulla valle: la stessa vista del dipinto della biblioteca
-  const view = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 3.4), new THREE.MeshBasicMaterial({ map: T.toTex(valleyPaintingCanvas(2048, 916)), fog: false }));
+  const view = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 3.4), new THREE.MeshBasicMaterial({ map: T.toTex(valleyPaintingCanvas(2048, 916, { rite: false })), fog: false }));
   view.position.set(0, 2.05, AZ1 - 0.02); scene.add(view);
   plane(AX1 - AX0, 0.35, aplaster, 0, 0.175, AZ1, 0);
   plane(AX1 - AX0, 0.25, aplaster, 0, H - 0.125, AZ1, 0);
@@ -292,7 +292,7 @@ export function buildUpper() {
   const unfinished = new THREE.MeshStandardMaterial({ map: T.toTex(sketchCanvas(0)), roughness: 0.8 });
   easel(-1.6, -12.2, 0.35, unfinished, false);
   easel(2.3, -11.4, -0.5, new THREE.MeshStandardMaterial({ color: 0xe0d6c0 }), true);
-  // la scrivania con le lettere da Vienna
+  // la scrivania con le lettere dalla capitale
   scene.add(box(1.6, 0.06, 0.8, A.wood, -2.9, 0.78, -9.8));
   for (const [x, z] of [[-3.6, -9.5], [-2.2, -9.5], [-3.6, -10.1], [-2.2, -10.1]]) scene.add(cyl(0.03, 0.025, 0.76, A.wood, x, 0.38, z, 6));
   const letterM = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.9, emissive: 0x2a1c0c, emissiveIntensity: 0.3 });
