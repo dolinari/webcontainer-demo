@@ -97,7 +97,11 @@ const state = {
   library: store.get('villa-biblioteca') === '1',   // la biblioteca è aperta (dopo Livia)
   novelRead: store.get('villa-romanzo') === '1',    // il romanzo è stato sfogliato fino all'indovinello
   shelfSolved: store.get('villa-scaffale') === '1', // lo scaffale è stato aperto
+  upstairs: store.get('villa-scale') === '1',        // il cordone davanti alle scale è stato tolto
 };
+// partite di prima: chi aveva già aperto lo scaffale trova le scale aperte
+if (state.shelfSolved && !state.upstairs) { state.upstairs = true; store.set('villa-scale', '1'); }
+S.corridor.setStairs(state.upstairs);
 if (state.unlocked) S.exterior.setSideDoor(true);
 // chi aveva già letto il manoscritto con una versione precedente trova il cannocchiale pronto
 if (state.read && !state.scope) { state.scope = true; store.set('villa-cannocchiale', '1'); }
@@ -219,7 +223,9 @@ function backToCorridor() {
   goScene('corridor', V(0, 1.6, -12.6), V(0, 1.5, 0), () => setHint(L('Il corridoio. La porta d’ingresso è in fondo.', 'The corridor. The front door is at the far end.')));
 }
 // le scale: dal corridoio al piano di sopra e ritorno
+const STAIRS_CLOSED = L('Una scala sale al piano di sopra, ma un cordone rosso, come nei musei, ne sbarra l’accesso. Per ora non si può salire: sembra chiuso.', 'A staircase leads to the upper floor, but a red rope, like in a museum, bars the way. You can’t go up for now: it seems closed.');
 function goUpstairs() {
+  if (!state.upstairs) { walk = null; toast(STAIRS_CLOSED, 4200); return; }
   moveTo(S.corridor.stairView, S.corridor.stairPos, null, 1.0);
   goScene('upper', S.upper.arrival, S.upper.arrivalLook, () => { upperArea = 'hall'; setHint(L('Il piano di sopra. Un salone silenzioso, le finestre accese dal tramonto.', 'The upper floor. A silent hall, its windows lit by the sunset.')); });
 }
@@ -263,7 +269,7 @@ const WORLD = {
     },
     door(p) {
       if (p.z < -13.9 && Math.abs(p.x) < 0.75) return enterStudy;
-      if (p.x < -1.15 && p.z < -9.35 && p.z > -10.65) return goUpstairs;
+      if (p.x < -1.15 && p.z < -9.35 && p.z > -10.65) return goUpstairs; // goUpstairs controlla il cordone
       if (p.z > 2.4 && Math.abs(p.x) < 0.8) return goOutside;
       return null;
     },
@@ -465,7 +471,7 @@ function observe() {
   let title, text;
   if (!hit) { title = L('Niente di particolare', 'Nothing in particular'); text = L('Guarda verso un oggetto e avvicinati, poi di’ di nuovo «osserva».', 'Look towards an object and get closer, then say “observe” again.'); }
   else if (hit.far) { title = hit.item.name; text = L('È troppo lontano per vederlo bene. Avvicinati.', 'It’s too far away to see well. Get closer.'); }
-  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino, library: state.library, novelRead: state.novelRead, shelfSolved: state.shelfSolved }); }
+  else { title = hit.item.name; text = describe(hit.item, { torch: state.torch, hasInk, typed: state.typed, unlocked: state.unlocked, read: state.read, gramophone: state.gramophone, scope: state.scope, wardrobe: state.wardrobe, code: codeDone(), bino: state.bino, library: state.library, novelRead: state.novelRead, shelfSolved: state.shelfSolved, upstairs: state.upstairs }); }
   obsEl.querySelector('b').textContent = title;
   obsEl.querySelector('p').textContent = text;
   obsEl.hidden = false;
@@ -526,7 +532,7 @@ function hotspots() {
       list.push({ pos: C.candlePos, label: L('Il candelabro — avvicinati', 'The candelabra — get closer'), act: () => focusCandle(C) });
       list.push({ pos: C.musicPos, label: L('Un carillon — avvicinati', 'A music box — get closer'), act: focusMusic });
       list.push({ pos: C.endDoor, door: true, label: L('La stanza in fondo', 'The room at the end'), act: enterStudy });
-      if (here.z < -5) list.push({ pos: C.stairPos, door: true, label: L('Le scale — sali al piano di sopra', 'The stairs — go up to the upper floor'), act: goUpstairs });
+      if (here.z < -5) list.push({ pos: C.stairPos, door: true, label: state.upstairs ? L('Le scale — sali al piano di sopra', 'The stairs — go up to the upper floor') : L('Le scale — chiuse da un cordone', 'The stairs — closed off by a rope'), act: goUpstairs });
       if (state.library && here.distanceTo(C.libraryDoor) < 7) list.push({ pos: C.libraryDoor, door: true, label: L('La biblioteca — entra', 'The library — go in'), act: () => moveTo(C.libraryEntry, C.libraryLook, null, 1.6) });
       if (here.distanceTo(C.lockPos) < 4) {
         if (!state.wardrobe) list.push({ pos: C.lockPos, label: L('Il lucchetto dell’armadio', 'The wardrobe padlock'), act: focusLock });
@@ -863,6 +869,13 @@ shelf.onSolved = () => {
   S.corridor.openShelf();
   controls.aimAt(S.corridor.tomePos, 3);
   audio.click('puff');
+  // mentre lo scaffale si apre, un rumore lontano dal corridoio: il cordone delle scale è caduto
+  if (!state.upstairs) {
+    state.upstairs = true; store.set('villa-scale', '1');
+    S.corridor.setStairs(true);
+    setTimeout(() => audio.distantClatter(), 2600);
+    state.stairsNews = true;
+  }
   setTimeout(() => { if (state.focus === 'shelfOpening') { state.focus = 'tome'; tome.open(); } }, 4200);
 };
 $('shelf-close').addEventListener('click', () => leaveFocus());
@@ -906,7 +919,14 @@ function leaveFocus(instant = false) {
   if (was === 'codex') codex.close();
   if (was === 'painting') $('painting-view').hidden = true;
   if (was === 'shelf') shelf.close();
-  if (was === 'tome') tome.close();
+  if (was === 'tome') {
+    tome.close();
+    if (state.stairsNews) {
+      state.stairsNews = false;
+      setHint(L('Poco fa, un rumore dal corridoio, come di qualcosa che cade… Forse adesso si può salire al piano di sopra. Vai a controllare.', 'A moment ago, a noise from the corridor, like something falling… Perhaps now you can go up to the upper floor. Go and see.'));
+      toast(L('Qualcosa si è aperto, nella villa.', 'Something has opened in the villa.'), 3600);
+    }
+  }
   if (was === 'land') {
     land.close();
     if (codeDone()) setHint(L('Tre cifre: ', 'Three digits: ') + CODE.join(' · ') + L('. Un lucchetto, nel primo corridoio, aspetta proprio tre cifre.', '. A padlock, in the first corridor, is waiting for exactly three digits.'));

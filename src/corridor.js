@@ -54,6 +54,32 @@ export function buildCorridor() {
   const stairWin = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.1), new THREE.MeshBasicMaterial({ map: T.windowTex(true, true), color: 0xffd0a0, fog: false }));
   stairWin.position.set(RX1 + 0.01, 4.4, (SZ0 + SZ1) / 2); stairWin.rotation.y = Math.PI / 2; scene.add(stairWin);
   const stairGlow = glowSprite(0xff9a4a, 2.2, 0.4); stairGlow.position.set(RX1 + 0.4, 4.3, (SZ0 + SZ1) / 2); scene.add(stairGlow);
+  // il cordone rosso, come nei musei: le scale restano chiuse finché la biblioteca non ha svelato il suo segreto
+  const posts = [];
+  for (const z of [SZ0 - 0.12, SZ1 + 0.12]) {
+    const post = new THREE.Group();
+    post.add(cyl(0.11, 0.13, 0.03, A.gold, 0, 0.015, 0, 16));
+    post.add(cyl(0.022, 0.026, 0.92, A.gold, 0, 0.47, 0, 10));
+    post.add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), A.gold).translateY(0.95));
+    post.position.set(-HW + 0.22, 0, z); scene.add(post); posts.push(post);
+  }
+  const ropeCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-HW + 0.22, 0.9, SZ0 - 0.16), new THREE.Vector3(-HW + 0.22, 0.72, (SZ0 + SZ1) / 2), new THREE.Vector3(-HW + 0.22, 0.9, SZ1 + 0.16)]);
+  const rope = new THREE.Mesh(new THREE.TubeGeometry(ropeCurve, 24, 0.022, 8), new THREE.MeshStandardMaterial({ color: 0x8a0c10, roughness: 0.85 }));
+  scene.add(rope);
+  // il cordone caduto: a terra, ai piedi del primo paletto
+  const fallenCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-HW + 0.2, 0.9, SZ0 + 0.35), new THREE.Vector3(-HW + 0.24, 0.03, SZ0 + 0.42), new THREE.Vector3(-HW + 0.45, 0.025, SZ0 + 0.1), new THREE.Vector3(-HW + 0.3, 0.025, SZ0 - 0.35)]);
+  const fallen = new THREE.Mesh(new THREE.TubeGeometry(fallenCurve, 24, 0.022, 8), rope.material);
+  scene.add(fallen);
+  /** aperto: il cordone si sgancia e cade, i paletti finiscono contro il muro */
+  const setStairs = (open) => {
+    rope.visible = !open;
+    fallen.visible = open;
+    posts[0].position.set(open ? -HW + 0.2 : -HW + 0.22, 0, open ? SZ0 + 0.35 : SZ0 - 0.12);
+    posts[1].position.set(open ? -HW + 0.2 : -HW + 0.22, 0, open ? SZ1 - 0.35 : SZ1 + 0.12);
+  };
+
   const stairLow = new THREE.PointLight(0xffa860, 2.5, 5, 2); stairLow.position.set(-HW - 0.5, 2.25, (SZ0 + SZ1) / 2); scene.add(stairLow); // la parte bassa della rampa non resta al buio
   const stairLight = new THREE.PointLight(0xffa860, 7, 9, 2); stairLight.position.set(RX1 + 1.2, 4.2, (SZ0 + SZ1) / 2); scene.add(stairLight);
   const LZ0 = -2.3, LZ1 = -4.7; // varco verso la biblioteca
@@ -413,6 +439,7 @@ export function buildCorridor() {
     musicView: new THREE.Vector3(0.55, 1.4, -9.9),
     endDoor: new THREE.Vector3(0, 1.35, Z1),
     setWardrobe,
+    setStairs,
     setLibrary: (open, instant = false) => { libTarget = open ? 1 : 0; if (instant) libAngle = libTarget; },
     setShelf,
     openShelf: (instant = false) => { shelfTarget = 1; if (instant) shelfOpen = 1; },

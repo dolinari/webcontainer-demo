@@ -414,6 +414,21 @@ export class AudioEngine {
     }
   }
 
+  /** qualcosa che cade lontano, in un'altra stanza: un tonfo e un tintinnio d'ottone */
+  distantClatter() {
+    if (!this.ctx) return;
+    const ctx = this.ctx, t = ctx.currentTime + 0.02;
+    this._thud(t, 240, 2.2, 0.28, 900);
+    this._thud(t + 0.16, 320, 1.2, 0.18, 1100);
+    for (const [dt, f] of [[0.02, 1480], [0.19, 1720], [0.33, 1310]]) {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + dt); g.gain.exponentialRampToValueAtTime(0.09, t + dt + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.7);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; // lontano: niente acuti
+      o.connect(g); g.connect(lp); lp.connect(this.master); o.start(t + dt); o.stop(t + dt + 0.75);
+    }
+  }
+
   /** il colpo sordo del piede: rumore filtrato con un attacco morbido */
   _thud(t, freq, gain, len, top) {
     const ctx = this.ctx;

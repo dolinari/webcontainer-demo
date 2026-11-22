@@ -58,6 +58,10 @@ export const OBSERVABLES = {
       text: L('Un piccolo busto di terracotta: un giovane dai capelli ricci. È girato verso la porta, come se aspettasse qualcuno.', 'A small terracotta bust: a young man with curly hair. It faces the door, as if waiting for someone.') },
     { name: L('La credenza', 'The sideboard'), pos: V(-1.5, 0.6, -1.5), range: 3.5, size: 0.8,
       text: L('Una credenza in noce scuro, intagliata a mano. I cassetti sono chiusi a chiave.', 'A hand-carved dark walnut sideboard. The drawers are locked.') },
+    { name: L('Le scale', 'The stairs'), pos: V(-2.4, 1.6, -10), range: 6, size: 0.9,
+      text: (c) => (c.upstairs
+        ? L('Una scala di legno sale al piano di sopra, verso una finestra accesa. Il cordone rosso è a terra, i paletti spostati contro il muro: adesso si può salire.', 'A wooden staircase climbs to the upper floor, towards a lit window. The red rope lies on the floor, the posts pushed against the wall: now you can go up.')
+        : L('Una scala sale al piano di sopra, verso una finestra accesa. Davanti, un cordone rosso tra due paletti d’ottone, come nei musei. Per ora non si può salire: sembra chiuso.', 'A staircase climbs to the upper floor, towards a lit window. In front of it, a red rope between two brass posts, like in a museum. You can’t go up for now: it seems closed.')) },
     { name: L('Il trofeo di cervo', 'The deer trophy'), pos: V(-1.72, 2.7, -7.95), range: 6, size: 0.45,
       text: L('Un cranio di cervo con i palchi, appeso al muro. È lì da così tanto che la polvere l’ha reso grigio.', 'A deer skull with antlers, hanging on the wall. It has been there so long the dust has turned it grey.') },
     { name: L('L’armadio', 'The wardrobe'), pos: V(-1.47, 1.3, -5.4), range: 4.5, size: 0.8,
