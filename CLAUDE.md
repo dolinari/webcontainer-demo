@@ -11,6 +11,10 @@ L'esperienza è bilingue. **Qualsiasi testo nuovo o modificato va scritto in ita
 - Immagini con testo (guida in `public/tutorial/` e `public/tutorial/en/`): rigenerarle in entrambe le lingue.
 - In inglese le virgolette sono “ ”, in italiano « ».
 
+## La storia
+
+La trama nascosta (E., Livia, il culto delle lanterne, il paese vicino a Vienna) è in `STORIA.md`. Va fatta emergere poco a poco attraverso stanze, oggetti, enigmi e descrizioni di «osserva»: non va mai spiegata tutta insieme. La fine di E. va trattata con delicatezza (vedi le regole in `STORIA.md`).
+
 ## Altre note
 
 - La partita in corso sta in `sessionStorage` (chiavi `villa-*`). I salvataggi (automatico + slot 1–3) stanno in `localStorage` (`salvataggi-villa`, vedi `src/saves.js`) e restano anche chiudendo il link; caricare uno slot ricopia le chiavi nella sessione e ricarica la pagina. La lingua scelta sta in `localStorage` (`lingua-villa`).
@@ -18,3 +22,4 @@ L'esperienza è bilingue. **Qualsiasi testo nuovo o modificato va scritto in ita
 - Audio d'ambiente: fuori vento e foglie; dentro il vento è a zero e la casa si riconosce da scricchiolii e candele (`setAmbience` in `src/audio.js`). Il tic-tac si sente solo nella sala da pranzo, a tempo con l'orologio a pendolo e più forte avvicinandosi: niente suoni di oggetti che nella stanza non ci sono. Il tono della stanza è volutamente cupo: sull'altoparlante del telefono non deve sembrare vento.
 - Crediti: «La Villa al Tramonto è un'experience interattiva creata da Dario Molinari. © 2026 · Tutti i diritti riservati.» / “The Villa at Sunset is an interactive experience created by Dario Molinari. © 2026 · All rights reserved.” Nella schermata Crediti: ideazione, storia e game design — Dario Molinari; programmazione — programmato con Claude, di Anthropic; musica e suoni — composti per il gioco con Claude.
 - Pubblicazione: ogni push sul branch di lavoro compila il sito e aggiorna `gh-pages` (GitHub Pages).
+- Mappa: esterno → corridoio (biblioteca a destra, scale a sinistra prima della stanza in fondo) → studio; sala da pranzo e studiolo dall'altro ingresso; piano di sopra (`src/upper.js`): salone, camera da letto, atelier con la vetrata sulla valle, una porta chiusa con un nastro rosso (per un capitolo futuro).

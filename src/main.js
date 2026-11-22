@@ -9,6 +9,7 @@ import { AudioEngine, PhysicalTorch } from './audio.js';
 import { VoiceCommands, IS_IOS, IOS_OTHER_BROWSER } from './voice.js';
 import { findObserved, describe } from './observe.js';
 import { buildDining } from './dining.js';
+import { buildUpper, UPPER_AREA_TITLES } from './upper.js';
 import { Magnifier } from './magnifier.js';
 import { Scope } from './scope.js';
 import { Novel, Shelf, Tome, START_ORDER } from './library.js';
@@ -52,8 +53,8 @@ torch.position.set(0.12, -0.12, 0);
 torch.target.position.set(0, -0.02, -1);
 camera.add(torch, torch.target);
 
-const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining() };
-const TITLES = { exterior: L('La villa al tramonto', 'The villa at sunset'), corridor: L('Il corridoio', 'The corridor'), study: L('Lo studio', 'The study'), dining: L('La sala da pranzo', 'The dining room') };
+const S = { exterior: buildExterior(), corridor: buildCorridor(), study: buildStudy(), dining: buildDining(), upper: buildUpper() };
+const TITLES = { exterior: L('La villa al tramonto', 'The villa at sunset'), corridor: L('Il corridoio', 'The corridor'), study: L('Lo studio', 'The study'), dining: L('La sala da pranzo', 'The dining room'), upper: L('Il piano di sopra', 'The upper floor') };
 const magnifier = new Magnifier();
 const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
 const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
@@ -142,6 +143,14 @@ function showPanel(text, { mic = false, listen = false } = {}) {
   document.body.classList.add('focus');
 }
 function hidePanel() { panel.hidden = true; document.body.classList.remove('focus'); }
+/** come showTitle, ma con un testo libero (le stanze del piano di sopra) */
+function showTitleText(text) {
+  const el = $('scene-title');
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(showTitleText.t);
+  showTitleText.t = setTimeout(() => el.classList.remove('on'), 3600);
+}
 function showTitle(name) {
   const el = $('scene-title');
   el.textContent = TITLES[name];
@@ -209,6 +218,14 @@ function enterStudy() {
 function backToCorridor() {
   goScene('corridor', V(0, 1.6, -12.6), V(0, 1.5, 0), () => setHint(L('Il corridoio. La porta d’ingresso è in fondo.', 'The corridor. The front door is at the far end.')));
 }
+// le scale: dal corridoio al piano di sopra e ritorno
+function goUpstairs() {
+  moveTo(S.corridor.stairView, S.corridor.stairPos, null, 1.0);
+  goScene('upper', S.upper.arrival, S.upper.arrivalLook, () => { upperArea = 'hall'; setHint(L('Il piano di sopra. Un salone silenzioso, le finestre accese dal tramonto.', 'The upper floor. A silent hall, its windows lit by the sunset.')); });
+}
+function goDownstairs() {
+  goScene('corridor', V(-0.7, 1.6, -10), V(0, 1.5, -14), () => setHint(L('Di nuovo nel corridoio. In fondo, la stanza della macchina da scrivere.', 'Back in the corridor. At the end, the room with the typewriter.')));
+}
 function goOutside() {
   goScene('exterior', S.exterior.near.pos, V(-4, 3, 30), () => setHint(L('L’aria della sera. La porta è alle tue spalle.', 'The evening air. The door is behind you.')));
 }
@@ -246,6 +263,7 @@ const WORLD = {
     },
     door(p) {
       if (p.z < -13.9 && Math.abs(p.x) < 0.75) return enterStudy;
+      if (p.x < -1.15 && p.z < -9.35 && p.z > -10.65) return goUpstairs;
       if (p.z > 2.4 && Math.abs(p.x) < 0.8) return goOutside;
       return null;
     },
@@ -254,6 +272,11 @@ const WORLD = {
     // area irregolare (sala + passaggio + studiolo, senza la tavola): niente clamp, si controlla se il punto è calpestabile
     valid: (p) => S.dining.walkable(p),
     door(p) { return p.z > 2.5 && Math.abs(p.x) < 0.8 ? diningToOutside : null; },
+  },
+  upper: {
+    // tre stanze collegate dalle porte: si controlla se il punto è calpestabile
+    valid: (p) => S.upper.walkable(p),
+    door(p) { return p.x < -1.4 && p.x > -3.9 && p.z > 0.1 && p.z < 2 ? goDownstairs : null; },
   },
   study: {
     clamp(p) { p.x = THREE.MathUtils.clamp(p.x, -2.5, 2.5); p.z = THREE.MathUtils.clamp(p.z, Math.abs(p.x) < 1.4 ? -2.85 : -6.3, 0.85); },
@@ -503,12 +526,25 @@ function hotspots() {
       list.push({ pos: C.candlePos, label: L('Il candelabro — avvicinati', 'The candelabra — get closer'), act: () => focusCandle(C) });
       list.push({ pos: C.musicPos, label: L('Un carillon — avvicinati', 'A music box — get closer'), act: focusMusic });
       list.push({ pos: C.endDoor, door: true, label: L('La stanza in fondo', 'The room at the end'), act: enterStudy });
+      if (here.z < -5) list.push({ pos: C.stairPos, door: true, label: L('Le scale — sali al piano di sopra', 'The stairs — go up to the upper floor'), act: goUpstairs });
       if (state.library && here.distanceTo(C.libraryDoor) < 7) list.push({ pos: C.libraryDoor, door: true, label: L('La biblioteca — entra', 'The library — go in'), act: () => moveTo(C.libraryEntry, C.libraryLook, null, 1.6) });
       if (here.distanceTo(C.lockPos) < 4) {
         if (!state.wardrobe) list.push({ pos: C.lockPos, label: L('Il lucchetto dell’armadio', 'The wardrobe padlock'), act: focusLock });
         else list.push({ pos: C.wardrobeInside, label: L('La lettera nell’armadio', 'The letter in the wardrobe'), act: openLetter });
       }
       list.push({ pos: C.exitDoor, door: true, label: L('Esci nel giardino', 'Go out into the garden'), act: goOutside });
+    }
+  } else if (state.scene === 'upper') {
+    const U = S.upper;
+    if (!state.focus) {
+      U.waypoints.forEach((w) => { if (Math.hypot(w.x - here.x, w.z - here.z) > 1.6) list.push({ pos: floorOf(w), label: L('Cammina fin qui', 'Walk here'), act: () => moveTo(w, null, null, 1.2 + w.distanceTo(here) * 0.18) }); });
+      const area = U.areaAt(here);
+      if (area !== 'bedroom') list.push({ pos: U.bedroomDoor, door: true, label: L('La camera da letto', 'The bedroom'), act: () => moveTo(U.bedroomView, V(-8, 1.4, -5.2), null, 1.2 + U.bedroomView.distanceTo(here) * 0.16) });
+      if (area !== 'atelier') list.push({ pos: U.atelierDoor, door: true, label: L('L’atelier, con la vista sulla valle', 'The studio, with the view of the valley'), act: () => moveTo(U.atelierView, V(0, 2, -15), null, 1.2 + U.atelierView.distanceTo(here) * 0.16) });
+      if (area === 'hall') {
+        list.push({ pos: U.lockedDoorPos, door: true, label: L('Una porta chiusa', 'A closed door'), act: () => toast(L('Chiusa a chiave. Sulla maniglia c’è un nastro rosso sbiadito.', 'Locked. A faded red ribbon is tied to the handle.'), 3200) });
+        list.push({ pos: U.stairPos, door: true, label: L('Scendi le scale', 'Go down the stairs'), act: goDownstairs });
+      }
     }
   } else if (state.scene === 'dining') {
     const G = S.dining;
@@ -1179,7 +1215,7 @@ controls.face(S.exterior.far.look);
 applyTorch();
 
 const clock = new THREE.Clock();
-let slow = 0, frames = 0, frameN = 0, elapsed = 0, pendSide = true;
+let slow = 0, frames = 0, frameN = 0, elapsed = 0, pendSide = true, upperArea = 'hall';
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1), t = clock.elapsedTime;
 
@@ -1227,6 +1263,10 @@ renderer.setAnimationLoop(() => {
       pendSide = side;
       audio.clockTick(side, THREE.MathUtils.clamp(1.15 - camera.position.distanceTo(G.clockPos) / 7, 0, 1));
     }
+  }
+  if (state.scene === 'upper' && !state.busy) {
+    const a = S.upper.areaAt(camera.position);
+    if (a !== upperArea) { upperArea = a; showTitleText(UPPER_AREA_TITLES[a]); }
   }
   updateMarkers(t);
   if (!['lens', 'scope', 'land', 'novel', 'tome', 'codex', 'painting'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
@@ -1284,6 +1324,7 @@ let autoT;
 /** Nome del luogo per l'etichetta di uno slot (la biblioteca sta nella scena del corridoio). */
 function placeName(scene, pos) {
   if (scene === 'corridor' && pos && pos[0] > 1.9) return L('La biblioteca', 'The library');
+  if (scene === 'upper' && pos) return UPPER_AREA_TITLES[S.upper.areaAt({ x: pos[0], z: pos[2] })];
   return TITLES[scene] || TITLES.exterior;
 }
 /** Fotografia della partita: tutte le chiavi «villa-*» della sessione più posizione e sguardo. */

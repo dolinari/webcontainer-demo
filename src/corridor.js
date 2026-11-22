@@ -30,7 +30,32 @@ export function buildCorridor() {
   rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.012, -6.2); scene.add(rug);
 
   // pareti
-  wall(LEN, WH, plaster, -HW, WH / 2, ZC, Math.PI / 2);
+  // parete sinistra, con il varco delle scale per il piano di sopra (z -9.15…-10.85)
+  const SZ0 = -9.15, SZ1 = -10.85, SH = 2.7;
+  wall(Z0 - SZ0, WH, plaster, -HW, WH / 2, (Z0 + SZ0) / 2, Math.PI / 2);
+  wall(SZ1 - Z1, WH, plasterS, -HW, WH / 2, (SZ1 + Z1) / 2, Math.PI / 2);
+  wall(SZ0 - SZ1, WH - SH, plasterS, -HW, SH + (WH - SH) / 2, (SZ0 + SZ1) / 2, Math.PI / 2);
+  for (const z of [SZ0, SZ1]) scene.add(box(0.14, SH, 0.14, A.wood, -HW - 0.02, SH / 2, z));
+  scene.add(box(0.14, 0.12, SZ0 - SZ1 + 0.28, A.wood, -HW - 0.02, SH + 0.06, (SZ0 + SZ1) / 2));
+  // la rampa: sedici gradini che salgono verso una finestra accesa
+  const stepM = new THREE.MeshStandardMaterial({ map: T.woodTex([1, 0.3]), roughness: 0.6 });
+  for (let i = 0; i < 16; i++) {
+    const top = 0.19 * (i + 1);
+    scene.add(box(0.26, top, SZ0 - SZ1, stepM, -HW - 0.13 - 0.25 * i, top / 2, (SZ0 + SZ1) / 2));
+  }
+  const RX1 = -HW - 4.3, stairWall = new THREE.MeshStandardMaterial({ map: T.plasterTex([2, 2], 1), roughness: 0.95 });
+  wall(-HW - RX1, 6.6, stairWall, (-HW + RX1) / 2, 3.3, SZ0, Math.PI);
+  wall(-HW - RX1, 6.6, stairWall, (-HW + RX1) / 2, 3.3, SZ1, 0);
+  wall(SZ0 - SZ1, 6.6, stairWall, RX1, 3.3, (SZ0 + SZ1) / 2, Math.PI / 2);
+  // soffitto inclinato sopra la rampa (una lastra sottile, visibile da sotto)
+  const slope = box(Math.hypot(-HW - RX1, 3.3), 0.06, SZ0 - SZ1 + 0.02, stairWall, (-HW + RX1) / 2, SH + 0.15 + 1.65, (SZ0 + SZ1) / 2);
+  slope.rotation.z = -Math.atan2(3.3, -HW - RX1); scene.add(slope);
+  for (const z of [SZ0 - 0.06, SZ1 + 0.06]) { const hr = cyl(0.025, 0.025, 4.6, A.wood, (-HW + RX1) / 2, 1.0 + 1.55, z, 6); hr.rotation.z = Math.PI / 2 - Math.atan2(3.04, 4.0); scene.add(hr); }
+  const stairWin = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.1), new THREE.MeshBasicMaterial({ map: T.windowTex(true, true), color: 0xffd0a0, fog: false }));
+  stairWin.position.set(RX1 + 0.01, 4.4, (SZ0 + SZ1) / 2); stairWin.rotation.y = Math.PI / 2; scene.add(stairWin);
+  const stairGlow = glowSprite(0xff9a4a, 2.2, 0.4); stairGlow.position.set(RX1 + 0.4, 4.3, (SZ0 + SZ1) / 2); scene.add(stairGlow);
+  const stairLow = new THREE.PointLight(0xffa860, 2.5, 5, 2); stairLow.position.set(-HW - 0.5, 2.25, (SZ0 + SZ1) / 2); scene.add(stairLow); // la parte bassa della rampa non resta al buio
+  const stairLight = new THREE.PointLight(0xffa860, 7, 9, 2); stairLight.position.set(RX1 + 1.2, 4.2, (SZ0 + SZ1) / 2); scene.add(stairLight);
   const LZ0 = -2.3, LZ1 = -4.7; // varco verso la biblioteca
   wall(Z0 - LZ0, WH, plasterS, HW, WH / 2, (Z0 + LZ0) / 2, -Math.PI / 2);
   wall(LZ1 - Z1, WH, plaster, HW, WH / 2, (LZ1 + Z1) / 2, -Math.PI / 2);
@@ -132,7 +157,7 @@ export function buildCorridor() {
     }
   }
   trophy.add(box(0.2, 0.3, 0.03, A.wood, 0, -0.08, -0.05));
-  trophy.position.set(-HW + 0.08, 2.7, -9.9); trophy.rotation.y = Math.PI / 2; scene.add(trophy); // tra due costoloni: prima le corna entravano nell'arco
+  trophy.position.set(-HW + 0.08, 2.7, -7.95); trophy.rotation.y = Math.PI / 2; scene.add(trophy); // tra due costoloni: prima le corna entravano nell'arco
 
   // armadio
   // carcassa con l'interno scuro, due ante apribili e un lucchetto a combinazione
@@ -395,6 +420,8 @@ export function buildCorridor() {
     libraryLook: new THREE.Vector3(4, 1.4, -6.4),
     libraryExit: new THREE.Vector3(0, 1.6, -3.5),
     libraryDoor: new THREE.Vector3(HW + 0.1, 1.4, (LZ0 + LZ1) / 2),
+    stairPos: new THREE.Vector3(-HW - 0.2, 1.3, (SZ0 + SZ1) / 2),
+    stairView: new THREE.Vector3(-0.8, 1.6, (SZ0 + SZ1) / 2),
     paintingPos: new THREE.Vector3((LX1 + HW) / 2 + 0.1, 2.0, LZa - 0.1),
     paintingView: new THREE.Vector3((LX1 + HW) / 2, 1.6, LZa - 2.9),
     lecternPos: new THREE.Vector3(LX1 - 1.3, 1.2, LZa - 0.9),

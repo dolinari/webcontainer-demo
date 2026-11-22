@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { L } from './i18n.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+// le stanze del piano di sopra (x0, x1, z0, z1)
+const HALL = [-4, 4, -8, 2], BED = [-9, -4.3, -8, -2.4], ATELIER = [-4, 4, -15.5, -8.3];
 
 export const OBSERVABLES = {
   exterior: [
@@ -56,7 +58,7 @@ export const OBSERVABLES = {
       text: L('Un piccolo busto di terracotta: un giovane dai capelli ricci. È girato verso la porta, come se aspettasse qualcuno.', 'A small terracotta bust: a young man with curly hair. It faces the door, as if waiting for someone.') },
     { name: L('La credenza', 'The sideboard'), pos: V(-1.5, 0.6, -1.5), range: 3.5, size: 0.8,
       text: L('Una credenza in noce scuro, intagliata a mano. I cassetti sono chiusi a chiave.', 'A hand-carved dark walnut sideboard. The drawers are locked.') },
-    { name: L('Il trofeo di cervo', 'The deer trophy'), pos: V(-1.72, 2.7, -9.9), range: 6, size: 0.45,
+    { name: L('Il trofeo di cervo', 'The deer trophy'), pos: V(-1.72, 2.7, -7.95), range: 6, size: 0.45,
       text: L('Un cranio di cervo con i palchi, appeso al muro. È lì da così tanto che la polvere l’ha reso grigio.', 'A deer skull with antlers, hanging on the wall. It has been there so long the dust has turned it grey.') },
     { name: L('L’armadio', 'The wardrobe'), pos: V(-1.47, 1.3, -5.4), range: 4.5, size: 0.8,
       text: (c) => (c.wardrobe
@@ -143,6 +145,39 @@ export const OBSERVABLES = {
     { name: L('La libreria', 'The bookcase'), pos: V(-1.97, 1.3, -11), range: 4, size: 1.2,
       text: L('Atlanti, diari di viaggio, carte arrotolate. Sul dorso di un quaderno rosso c’è scritto soltanto «1887».', 'Atlases, travel diaries, rolled-up maps. On the spine of a red notebook there is only “1887”.') },
   ],
+  // il piano di sopra: «area» limita ogni voce alla sua stanza (salone, camera, atelier), perché le pareti non nascondono le descrizioni
+  upper: [
+    { name: L('Il salone', 'The great hall'), pos: V(0, 2.4, -3.5), range: 9, size: 3, area: HALL,
+      text: L('Il salone dei ricevimenti. Le poltrone sono rivolte verso il centro, come se aspettassero ancora gli ospiti. Sotto la polvere, sul parquet, si indovinano i segni di molti passi di danza.', 'The reception hall. The armchairs face the middle, as if still waiting for guests. Under the dust, on the parquet, you can make out the marks of many dance steps.') },
+    { name: L('Il pianoforte', 'The piano'), pos: V(2.4, 0.9, -4.6), range: 5, size: 0.9, area: HALL,
+      text: L('Un pianoforte a coda, chiuso. Sul leggio c’è uno spartito a quattro mani: una parte è fitta di annotazioni a matita, l’altra è intatta, come se nessuno l’avesse mai suonata.', 'A grand piano, closed. On the stand, a piece for four hands: one part is full of pencil notes, the other untouched, as if no one had ever played it.') },
+    { name: L('Le finestre', 'The windows'), pos: V(4, 2.3, -3.4), range: 9, size: 2.2, area: HALL,
+      text: L('Tre finestre alte, accese dal tramonto. Da quassù si vede tutta la valle: il ruscello, il borgo con il campanile, l’altare sulla collina.', 'Three tall windows, lit by the sunset. From up here the whole valley shows: the stream, the village with its bell tower, the altar on the hill.') },
+    { name: L('La lanterna', 'The lantern'), pos: V(-3.75, 1.05, -0.8), range: 4, size: 0.25, area: HALL,
+      text: L('Una lanterna d’ottone su una consolle, spenta da molto tempo. Sul vetro qualcuno ha inciso una sola lettera, piccola: L.', 'A brass lantern on a console table, out for a long time. On the glass someone has scratched a single small letter: L.') },
+    { name: L('I ritratti', 'The portraits'), pos: V(-4, 2.3, -3.2), range: 7, size: 2.4, area: HALL,
+      text: L('Ritratti di famiglia, scuriti dal tempo. Uno manca: resta un chiodo e un rettangolo più chiaro sulla carta da parati, dove per anni non è arrivata la luce.', 'Family portraits, darkened by time. One is missing: a nail is left, and a paler rectangle on the wallpaper where the light never reached for years.') },
+    { name: L('La porta chiusa', 'The closed door'), pos: V(2.6, 1.2, 1.9), range: 5, size: 0.7, area: HALL,
+      text: L('Una porta chiusa a chiave. Alla maniglia è legato un nastro rosso, sbiadito. Il genere di nastro che si lega a un regalo.', 'A locked door. A faded red ribbon is tied to the handle: the kind of ribbon you tie around a present.') },
+    { name: L('Il letto', 'The bed'), pos: V(-6.4, 0.6, -6.9), range: 5, size: 1, area: BED,
+      text: L('Un letto rifatto con cura, senza una piega. Uno dei due cuscini non ha mai preso la forma di una testa.', 'A carefully made bed, without a crease. One of the two pillows has never taken the shape of a head.') },
+    { name: L('La fotografia sul comodino', 'The photograph on the nightstand'), pos: V(-7.4, 0.72, -7.58), range: 3, size: 0.15, area: BED,
+      text: L('Una cornice d’argento: la ragazza della fotografia nell’armadio, ma più giovane, forse diciassette anni. Tiene in mano una lanterna e guarda qualcuno fuori dall’inquadratura.', 'A silver frame: the girl from the photograph in the wardrobe, but younger, perhaps seventeen. She holds a lantern and looks at someone outside the picture.') },
+    { name: L('La finestra della camera', 'The bedroom window'), pos: V(-9, 2, -5.2), range: 6, size: 1.2, area: BED,
+      text: L('La finestra dà sulla strada che scende dal paese verso la ferrovia. All’incrocio, un vecchio cartello consumato: «Wien 74 km».', 'The window looks over the road that runs down from the village to the railway. At the crossroads, an old worn sign: “Wien 74 km”.') },
+    { name: L('Il cappotto', 'The coat'), pos: V(-8.2, 0.9, -3.4), range: 4, size: 0.5, area: BED,
+      text: L('Un cappotto di lana sullo schienale, come se qualcuno dovesse uscire da un momento all’altro. In tasca, un biglietto del treno per Vienna, mai obliterato.', 'A wool coat over the back of the chair, as if someone were about to go out. In the pocket, a train ticket to Vienna, never stamped.') },
+    { name: L('La vetrata', 'The great window'), pos: V(0, 2.1, -15.5), range: 9, size: 3.6, area: ATELIER,
+      text: L('La valle al tramonto, la stessa del grande dipinto della biblioteca: stesso punto, stessa ora, stessa luce. È da qui che è stato dipinto.', 'The valley at sunset, the same as in the great painting in the library: same spot, same hour, same light. This is where it was painted from.') },
+    { name: L('La tela incompiuta', 'The unfinished canvas'), pos: V(-1.6, 1.25, -12.1), range: 4, size: 0.5, area: ATELIER,
+      text: L('Una tela appena abbozzata: una ragazza di spalle, i capelli raccolti. Poi più niente. Il pennello è ancora appoggiato al cavalletto, la pittura secca da anni.', 'A canvas barely sketched: a girl seen from behind, her hair pinned up. Then nothing more. The brush still rests on the easel, the paint dry for years.') },
+    { name: L('Il quadro coperto', 'The covered painting'), pos: V(2.3, 1.2, -11.3), range: 4, size: 0.55, area: ATELIER,
+      text: L('Un quadro coperto da un telo, fermato con delle puntine. Chi l’ha coperto non voleva che qualcuno lo guardasse. Forse nemmeno lui.', 'A painting covered by a cloth, pinned down. Whoever covered it didn’t want anyone to look at it. Perhaps not even himself.') },
+    { name: L('Le lettere', 'The letters'), pos: V(-3.1, 0.86, -9.75), range: 3.5, size: 0.25, area: ATELIER,
+      text: L('Un fascio di lettere legate con un nastro rosso. Francobolli austriaci, il timbro dice Wien. La calligrafia è sempre la stessa, rotonda e gentile. Il nastro non è mai stato sciolto.', 'A bundle of letters tied with a red ribbon. Austrian stamps, the postmark says Wien. Always the same handwriting, round and kind. The ribbon has never been untied.') },
+    { name: L('Gli schizzi', 'The sketches'), pos: V(-4, 1.9, -12.4), range: 5, size: 1.4, area: ATELIER,
+      text: L('Schizzi a matita appuntati al muro: mani, lanterne, una finestra al tramonto. E sempre la stessa ragazza, sempre di spalle, come se lui non avesse mai avuto il coraggio di disegnarle il viso.', 'Pencil sketches pinned to the wall: hands, lanterns, a window at sunset. And always the same girl, always from behind, as if he never had the courage to draw her face.') },
+  ],
   study: [
     { name: L('La macchina da scrivere', 'The typewriter'), pos: V(0.42, 0.95, -3.75), range: 4, size: 0.25,
       text: L('Una vecchia macchina da scrivere nera, con i tasti tondi color avorio. C’è un foglio infilato nel rullo.', 'An old black typewriter with round ivory keys. There is a sheet of paper in the roller.'),
@@ -182,7 +217,9 @@ export function findObserved(scene, camera) {
   const list = OBSERVABLES[scene] || [];
   f.set(0, 0, -1).applyQuaternion(camera.quaternion);
   let best = null, bestScore = Infinity;
+  const c = camera.position;
   for (const it of list) {
+    if (it.area && !(c.x >= it.area[0] && c.x <= it.area[1] && c.z >= it.area[2] && c.z <= it.area[3])) continue; // un'altra stanza
     d.copy(it.pos).sub(camera.position);
     const dist = d.length();
     const angle = f.angleTo(d.normalize());
