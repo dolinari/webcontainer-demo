@@ -79,10 +79,12 @@ export class AudioEngine {
     // tono della stanza (interno): un brusio grave più un'"aria" a media frequenza,
     // perché l'altoparlante del telefono non riproduce i bassi e da solo il brusio non si sentirebbe
     this.roomGain = ctx.createGain(); this.roomGain.gain.value = 0;
-    const rf = ctx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 420;
-    this._noise().connect(rf); rf.connect(this.roomGain);
-    const air = ctx.createBiquadFilter(); air.type = 'bandpass'; air.frequency.value = 900; air.Q.value = 0.7;
-    const airG = ctx.createGain(); airG.gain.value = 0.35;
+    const rf = ctx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 180; // cupo: in cuffia si sente la stanza, sull'altoparlante non soffia
+    const rf2 = ctx.createBiquadFilter(); rf2.type = 'lowpass'; rf2.frequency.value = 180; // doppio filtro: niente fruscio residuo
+    this._noise().connect(rf); rf.connect(rf2); rf2.connect(this.roomGain);
+    // un filo d'aria appena percepibile: più forte sembrerebbe di nuovo il vento di fuori
+    const air = ctx.createBiquadFilter(); air.type = 'bandpass'; air.frequency.value = 700; air.Q.value = 1.4;
+    const airG = ctx.createGain(); airG.gain.value = 0.015;
     this._noise().connect(air); air.connect(airG); airG.connect(this.roomGain);
     this.roomGain.connect(this.master);
     this.boost = 1; // compensazione quando il microfono è acceso (il telefono abbassa l'audio)
@@ -155,9 +157,11 @@ export class AudioEngine {
   setAmbience(kind) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    this.windGain.gain.setTargetAtTime(kind === 'ext' ? 0.5 : 0.05, t, 0.8);
-    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.4 : 0.75, t, 0.8);
+    // fuori: vento e foglie. Dentro: il vento sparisce del tutto, resta la casa (orologio, legno, candele)
+    this.windGain.gain.setTargetAtTime(kind === 'ext' ? 0.5 : 0, t, 0.5);
+    this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.4 : 0.75, t, 0.5);
     this.interior = kind !== 'ext';
+    if (kind === 'int') this._startClock(); else this._stopClock();
     // scricchiolii lontani del legno, ogni tanto, negli interni
     clearTimeout(this._creakT);
     const creak = () => { if (this.interior && !this.muted) this._creak(); this._creakT = setTimeout(creak, 9000 + Math.random() * 14000); };
@@ -316,7 +320,9 @@ export class AudioEngine {
     this.startMusicBox();
     this.boxGain.gain.cancelScheduledValues(this.ctx.currentTime);
     this.boxGain.gain.setTargetAtTime(0.13, this.ctx.currentTime, 0.8);
-    this.windGain.gain.setTargetAtTime(0.12, this.ctx.currentTime, 1);
+    this.windGain.gain.setTargetAtTime(0.22, this.ctx.currentTime, 1); // il vento della sera, sotto il carillon
+    this.roomGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+    this._stopClock();
   }
 
   stopMenuMusic() {
@@ -343,7 +349,7 @@ export class AudioEngine {
     this.radioGain.gain.setTargetAtTime(0.5 * k, t + (k ? 0.12 : 0), 0.1);
     this.staticGain.gain.setTargetAtTime(0.03 * k, t + (k ? 0.12 : 0), 0.1);
     this.roomGain.gain.setTargetAtTime(0.75 * (1 - 0.6 * k), t, 0.2);
-    this.windGain.gain.setTargetAtTime(0.05 * (1 - k), t, 0.2);
+    this.windGain.gain.setTargetAtTime(this.interior ? 0 : 0.05 * (1 - k), t, 0.2); // il carillon è dentro: niente vento
   }
 
   /** scatto di apertura/chiusura del canale, come un walkie-talkie */
@@ -455,6 +461,33 @@ export class AudioEngine {
     s.start(t, Math.random() * 2); s.stop(t + span + 0.1);
   }
 
+  /** il pendolo di un vecchio orologio, lontano, negli interni: tic e tac alternati */
+  _startClock() {
+    if (this._clockT || !this.ctx) return;
+    let tock = false;
+    const beat = () => {
+      if (!this.muted && !this.menuMusic) this._tick(tock);
+      tock = !tock;
+      this._clockT = setTimeout(beat, 1000);
+    };
+    this._clockT = setTimeout(beat, 600);
+  }
+  _stopClock() { clearTimeout(this._clockT); this._clockT = null; }
+  _tick(tock) {
+    const ctx = this.ctx, t = ctx.currentTime + 0.01;
+    const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 3;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = tock ? 1900 : 2500; f.Q.value = 6;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(3.2, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    s.connect(f); f.connect(g); g.connect(this.master);
+    s.start(t, Math.random() * 2); s.stop(t + 0.08);
+    // la cassa di legno che risuona appena
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = tock ? 880 : 1040;
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.07, t + 0.004); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t + 0.2);
+  }
+
   /** uno scricchiolio lontano del legno */
   _creak() {
     const ctx = this.ctx, t = ctx.currentTime;
@@ -510,11 +543,16 @@ export class AudioEngine {
     return true;
   }
 
-  /** Chiede il permesso del microfono e lo richiude subito (resta concesso per la sessione). */
+  /**
+   * Chiede il permesso del microfono e lo richiude subito (resta concesso per la sessione).
+   * Senza cancellazione dell'eco: con l'eco attiva molti telefoni passano in «modalità chiamata»
+   * e cambiano di colpo il volume dell'altoparlante.
+   */
   async askMicPermission() {
     if (!navigator.mediaDevices?.getUserMedia) return false;
     try {
-      const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+        .catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
       st.getTracks().forEach((t) => t.stop());
       return true;
     } catch { return false; }

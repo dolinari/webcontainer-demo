@@ -15,7 +15,6 @@ import { Novel, Shelf, Tome, START_ORDER } from './library.js';
 import { Landscape, CODE, setCode, randomCode } from './landscape.js';
 import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
-import { TitleTheme } from './theme.js';
 import { SLOT_IDS, readSaves, writeSave, describeSave, hasAnySave, formatDate, slotName } from './saves.js';
 
 const $ = (id) => document.getElementById(id);
@@ -1015,7 +1014,6 @@ $('btn-skip').addEventListener('click', () => {
 async function begin() {
   audio.init();
   audio.stopMenuMusic();
-  theme.stop(2.5);
   audio.setAmbience('ext');
   $('start').classList.add('out');
   $('hud').hidden = false;
@@ -1053,8 +1051,7 @@ async function begin() {
 const menuTouch = () => {
   if (state.started || state.inMenu) return;
   audio.init();
-  audio.setAmbience('ext');
-  theme.start();
+  audio.startMenuMusic(); // il carillon del menu, con un filo di vento
 };
 $('start').addEventListener('pointerdown', menuTouch);
 $('tutorial').addEventListener('pointerdown', menuTouch);
@@ -1241,7 +1238,6 @@ if (new URLSearchParams(location.search).has('diag')) {
 window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, focusCandle, leaveFocus, observe, land, setCode };
 
 // ---------- salvataggi ----------
-const theme = new TitleTheme(audio); // la musica della schermata del titolo
 let onTitle = false;
 const titleLook = new THREE.Vector3();
 let autoT;
@@ -1328,7 +1324,7 @@ function slotTap(id, snap, b) {
 }
 function loadSave(snap) {
   if (!snap) return;
-  theme.stop(0.6); audio.stopMenuMusic();
+  audio.stopMenuMusic();
   store.clear();
   try {
     for (const [k, v] of Object.entries(snap.keys || {})) sessionStorage.setItem(k, v);
@@ -1351,17 +1347,16 @@ function showTitleScreen(menu = false) {
   $('title-menu').hidden = !menu;
   $('t-load').disabled = !hasAnySave();
   camera.position.copy(S.exterior.far.pos);
-  if (audio.ctx) { audio.setAmbience('ext'); theme.start(); }
+  if (audio.ctx) audio.startMenuMusic();
 }
 // il primo tocco serve anche a sbloccare l'audio: vento e tema partono qui
 $('title-press').addEventListener('click', () => {
   audio.init();
-  audio.setAmbience('ext');
-  theme.start();
+  audio.startMenuMusic();
   $('title-press').hidden = true;
   $('title-menu').hidden = false;
 });
-$('title').addEventListener('pointerdown', () => { if (!$('title-menu').hidden) { audio.init(); if (!theme.on) { audio.setAmbience('ext'); theme.start(); } } });
+$('title').addEventListener('pointerdown', () => { if (!$('title-menu').hidden) { audio.init(); audio.startMenuMusic(); } });
 /** C'è già una partita nella scheda (per esempio dopo un ricaricamento)? Allora la nuova partita riparte pulita. */
 const sessionHasProgress = () => { try { return Object.keys(sessionStorage).some((k) => k.startsWith('villa-') && k !== 'villa-codice' && k !== 'villa-ordine'); } catch { return false; } };
 function newGame() {
