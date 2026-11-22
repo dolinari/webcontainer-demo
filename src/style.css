@@ -203,29 +203,29 @@ button.ghost:disabled { visibility: hidden; }
 #start { padding-top: calc(env(safe-area-inset-top) + 64px); } /* spazio per il selettore della lingua */
 
 /* ---- biblioteca: romanzo, scaffale, libro antico ---- */
-#novel, #shelf, #tome { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 18px); background: rgba(6, 3, 2, 0.92); }
+#novel, #shelf, #tome, #codex, #painting-view { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 18px); background: rgba(6, 3, 2, 0.92); }
 .ov-label { margin: 0; font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--amber); }
 .ov-hint { margin: 0; font-size: 13px; color: var(--dim); font-family: system-ui, sans-serif; }
-#novel .row, #tome .row { display: flex; align-items: center; gap: 14px; }
-#novel-num { font-family: system-ui, sans-serif; font-size: 13px; color: var(--dim); min-width: 44px; text-align: center; }
-#novel-prev, #novel-next { width: 52px; font-size: 24px; padding: 4px 0; }
-#novel-prev:disabled, #novel-next:disabled { opacity: 0.25; }
+#novel .row, #tome .row, #codex .row { display: flex; align-items: center; gap: 14px; }
+#novel-num, #codex-num { font-family: system-ui, sans-serif; font-size: 13px; color: var(--dim); min-width: 44px; text-align: center; }
+#novel-prev, #novel-next, #codex-prev, #codex-next { width: 52px; font-size: 24px; padding: 4px 0; }
+#novel-prev:disabled, #novel-next:disabled, #codex-prev:disabled, #codex-next:disabled { opacity: 0.25; }
 .book { width: min(100%, 360px); flex: 0 1 auto; max-height: 64vh; perspective: 900px; }
-#novel-page { min-height: min(58vh, 480px); max-height: 64vh; overflow-y: auto; padding: 26px 24px 22px; border-radius: 3px 10px 10px 3px; color: #2a1a10; background: linear-gradient(90deg, #c8b48a, #ecdfbf 7%, #efe3c6 60%, #ddcca4); box-shadow: inset 8px 0 14px rgba(80, 50, 20, 0.35), 0 18px 50px #000; touch-action: pan-y; transition: transform 0.22s ease, opacity 0.22s ease; transform-origin: left center; font-family: Georgia, serif; }
-#novel-page.out-left { transform: perspective(900px) rotateY(-75deg); opacity: 0; }
-#novel-page.out-right { transform: perspective(900px) rotateY(40deg); opacity: 0; }
-#novel-page.in-right { transform: perspective(900px) rotateY(25deg); opacity: 0; transition: none; }
-#novel-page.in-left { transform: perspective(900px) rotateY(-25deg); opacity: 0; transition: none; }
-#novel-page p { margin: 0 0 14px; font-size: 16.5px; line-height: 1.55; text-align: justify; hyphens: auto; }
-#novel-page h4 { margin: 4px 0 16px; text-align: center; font-weight: normal; font-variant: small-caps; letter-spacing: 0.08em; font-size: 19px; }
-#novel-page .tp { text-align: center; padding-top: 18px; }
-#novel-page .tp small { font-style: italic; color: #6a4a2a; }
-#novel-page .tp h3 { margin: 14px 0 10px; font-weight: normal; font-size: 30px; line-height: 1.15; }
-#novel-page .tp .au { font-style: italic; text-align: center; }
-#novel-page .tp .yr { letter-spacing: 0.3em; text-align: center; color: #6a4a2a; }
-#novel-page .hand, #novel-page .pencil { font-family: 'Segoe Script', 'Bradley Hand', 'Snell Roundhand', cursive; font-style: italic; text-align: left; }
-#novel-page .hand { margin-top: 34px; color: #4a2410; font-size: 17px; transform: rotate(-3deg); }
-#novel-page .pencil { margin-top: 22px; padding: 10px 12px; color: #5a5650; font-size: 15px; line-height: 1.5; border-left: 2px solid rgba(90, 86, 80, 0.4); transform: rotate(-1.5deg); }
+#novel-page, #codex-page { min-height: min(58vh, 480px); max-height: 64vh; overflow-y: auto; padding: 26px 24px 22px; border-radius: 3px 10px 10px 3px; color: #2a1a10; background: linear-gradient(90deg, #c8b48a, #ecdfbf 7%, #efe3c6 60%, #ddcca4); box-shadow: inset 8px 0 14px rgba(80, 50, 20, 0.35), 0 18px 50px #000; touch-action: pan-y; transition: transform 0.22s ease, opacity 0.22s ease; transform-origin: left center; font-family: Georgia, serif; }
+#novel-page.out-left, #codex-page.out-left { transform: perspective(900px) rotateY(-75deg); opacity: 0; }
+#novel-page.out-right, #codex-page.out-right { transform: perspective(900px) rotateY(40deg); opacity: 0; }
+#novel-page.in-right, #codex-page.in-right { transform: perspective(900px) rotateY(25deg); opacity: 0; transition: none; }
+#novel-page.in-left, #codex-page.in-left { transform: perspective(900px) rotateY(-25deg); opacity: 0; transition: none; }
+#novel-page p, #codex-page p { margin: 0 0 14px; font-size: 16.5px; line-height: 1.55; text-align: justify; hyphens: auto; }
+#novel-page h4, #codex-page h4 { margin: 4px 0 16px; text-align: center; font-weight: normal; font-variant: small-caps; letter-spacing: 0.08em; font-size: 19px; }
+#novel-page .tp, #codex-page .tp { text-align: center; padding-top: 18px; }
+#novel-page .tp small, #codex-page .tp small { font-style: italic; color: #6a4a2a; }
+#novel-page .tp h3, #codex-page .tp h3 { margin: 14px 0 10px; font-weight: normal; font-size: 30px; line-height: 1.15; }
+#novel-page .tp .au, #codex-page .tp .au { font-style: italic; text-align: center; }
+#novel-page .tp .yr, #codex-page .tp .yr { letter-spacing: 0.3em; text-align: center; color: #6a4a2a; }
+#novel-page .hand, #novel-page .pencil, #codex-page .hand, #codex-page .pencil { font-family: 'Segoe Script', 'Bradley Hand', 'Snell Roundhand', cursive; font-style: italic; text-align: left; }
+#novel-page .hand, #codex-page .hand { margin-top: 34px; color: #4a2410; font-size: 17px; transform: rotate(-3deg); }
+#novel-page .pencil, #codex-page .pencil { margin-top: 22px; padding: 10px 12px; color: #5a5650; font-size: 15px; line-height: 1.5; border-left: 2px solid rgba(90, 86, 80, 0.4); transform: rotate(-1.5deg); }
 #shelf-msg { margin: 0; text-align: center; font-style: italic; max-width: 340px; text-wrap: balance; }
 .shelf-wood { width: min(100%, 380px); padding: 16px 10px 12px; border-radius: 8px; background: linear-gradient(#3a2414, #24160c); box-shadow: inset 0 -10px 0 #4a2e18, 0 16px 40px #000; }
 #shelf-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: 190px; align-items: end; touch-action: none; }
@@ -282,3 +282,20 @@ button.ghost:disabled { visibility: hidden; }
 .menu-row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
 .menu-row button { flex: 1; max-width: 190px; }
 #perm-box .loaded { margin: -4px 0 14px; font-style: italic; color: var(--amber); }
+
+/* il libro sul leggio: tavole, fotografia, didascalie */
+#codex-page .cplate { margin: 4px auto 14px; }
+#codex-page .cplate img { display: block; width: 100%; border-radius: 2px; box-shadow: 0 2px 8px rgba(60, 30, 10, 0.35); }
+#codex-page .cplate.sign img { width: 46%; margin: 0 auto; box-shadow: none; mix-blend-mode: multiply; }
+#codex-page .cplate.photo img { transform: rotate(-1.2deg); }
+#codex-page .caption { font-style: italic; text-align: center; font-size: 14px; color: #5a3a1a; }
+#codex-page .tp .cplate { margin-top: 14px; }
+
+/* il grande dipinto */
+#painting-view { justify-content: flex-start; overflow-y: auto; }
+#painting-scroll { width: 100%; max-width: 900px; overflow-x: auto; overflow-y: hidden; border: 6px solid #b8903a; box-shadow: 0 0 0 2px #6a4a1a, 0 18px 50px #000; touch-action: pan-x; -webkit-overflow-scrolling: touch; flex: none; }
+#painting-img { display: block; height: min(46vh, 420px); width: auto; max-width: none; }
+#painting-view h3 { margin: 6px 0 0; font-weight: normal; font-size: 22px; text-align: center; }
+#painting-meta { margin: 0; font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; color: var(--amber); text-align: center; }
+#painting-text { margin: 0; max-width: 520px; font-size: 15.5px; line-height: 1.5; color: var(--ink); text-align: center; font-style: italic; }
+#codex-page img { pointer-events: none; -webkit-user-drag: none; }

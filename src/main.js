@@ -12,6 +12,7 @@ import { buildDining } from './dining.js';
 import { Magnifier } from './magnifier.js';
 import { Scope } from './scope.js';
 import { Novel, Shelf, Tome, START_ORDER } from './library.js';
+import { codexPages, valleyPaintingCanvas, PAINTING } from './valley.js';
 import { Landscape, CODE, setCode, randomCode } from './landscape.js';
 import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
@@ -57,6 +58,7 @@ const magnifier = new Magnifier();
 const scope = new Scope(controls, camera);   // il binocolo, con la fotocamera
 const land = new Landscape(controls, camera); // il cannocchiale, con il paesaggio dipinto
 const novel = new Novel(), shelf = new Shelf(), tome = new Tome(); // la biblioteca
+const codex = new Novel('codex', codexPages); // il libro sul leggio: la cronaca delle lanterne
 // le versioni precedenti salvavano i progressi per sempre: si cancellano all'apertura
 try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
 // come si è arrivati qui: 'load' (caricata una partita), 'new' (nuova partita dal menu), altrimenti dal titolo
@@ -488,6 +490,8 @@ function hotspots() {
     // dentro la biblioteca: solo i suoi punti (gli altri si vedrebbero attraverso il muro)
     if (!state.focus) {
       list.push({ pos: C.novelPos, label: L('Un libro dal dorso dorato', 'A book with a gilded spine'), act: focusNovel });
+      list.push({ pos: C.paintingPos, label: L('Il grande dipinto della valle', 'The great painting of the valley'), act: focusPainting });
+      list.push({ pos: C.lecternPos, label: L('Il libro sul leggio', 'The book on the lectern'), act: focusCodex });
       if (!state.shelfSolved) list.push({ pos: C.shelfPos, label: L('Lo scaffale con la targhetta d’ottone', 'The shelf with the brass plate'), act: focusShelf });
       else list.push({ pos: C.tomePos, label: L('Il libro antico', 'The ancient book'), act: openTome });
       list.push({ pos: C.libraryDoor, door: true, label: L('Torna nel corridoio', 'Back to the corridor'), act: () => moveTo(C.libraryExit, V(0, 1.5, -10), null, 1.6) });
@@ -782,6 +786,33 @@ function focusNovel() {
 }
 novel.onLastPage = () => { if (!state.novelRead) { state.novelRead = true; store.set('villa-romanzo', '1'); } };
 $('novel-close').addEventListener('click', () => leaveFocus());
+// il libro sul leggio
+function focusCodex() {
+  const C = S.corridor;
+  enterFocus('codex');
+  moveTo(C.lecternView, C.lecternPos, () => { if (state.focus === 'codex') codex.open(); }, 1.2);
+}
+$('codex-close').addEventListener('click', () => leaveFocus());
+// il grande dipinto: si guarda da vicino scorrendolo col dito
+let paintingReady = false;
+function focusPainting() {
+  const C = S.corridor;
+  enterFocus('painting');
+  moveTo(C.paintingView, C.paintingPos, () => {
+    if (state.focus !== 'painting') return;
+    if (!paintingReady) {
+      paintingReady = true;
+      $('painting-img').src = valleyPaintingCanvas().toDataURL('image/jpeg', 0.88);
+      $('painting-title').textContent = PAINTING.title;
+      $('painting-meta').textContent = PAINTING.meta;
+      $('painting-text').textContent = PAINTING.text;
+    }
+    $('painting-view').hidden = false;
+    const sc = $('painting-scroll');
+    requestAnimationFrame(() => { sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; });
+  }, 1.4);
+}
+$('painting-close').addEventListener('click', () => leaveFocus());
 function focusShelf() {
   const C = S.corridor;
   enterFocus('shelf');
@@ -836,6 +867,8 @@ function leaveFocus(instant = false) {
     if (state.library && !state.shelfSolved) setHint(L('«Cercami tra le pagine del libro che amavamo»… Nel primo corridoio qualcosa si è aperto: forse una stanza in cui prima non potevi entrare.', '“Look for me among the pages of the book we loved”… Something has opened in the first corridor: perhaps a room you couldn’t enter before.'));
   }
   if (was === 'novel') novel.close();
+  if (was === 'codex') codex.close();
+  if (was === 'painting') $('painting-view').hidden = true;
   if (was === 'shelf') shelf.close();
   if (was === 'tome') tome.close();
   if (was === 'land') {
@@ -1196,7 +1229,7 @@ renderer.setAnimationLoop(() => {
     }
   }
   updateMarkers(t);
-  if (!['lens', 'scope', 'land', 'novel', 'tome'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
+  if (!['lens', 'scope', 'land', 'novel', 'tome', 'codex', 'painting'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta
 
   // se il telefono fatica, riduci la risoluzione
   // misura la media su un secondo e mezzo: se si scende sotto ~40 fps si abbassa la risoluzione
@@ -1241,7 +1274,7 @@ if (new URLSearchParams(location.search).has('diag')) {
 }
 
 // accesso per test manuali da console
-window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, focusCandle, leaveFocus, observe, land, setCode };
+window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, focusCandle, leaveFocus, observe, land, setCode, hotspots };
 
 // ---------- salvataggi ----------
 let onTitle = false;

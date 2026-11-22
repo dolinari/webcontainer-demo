@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import * as T from './textures.js';
 import { IS_EN } from './i18n.js';
+import { valleyPaintingCanvas, codexSpreadCanvas, PAINTING } from './valley.js';
 import { assets, box, cyl, lathe, glowSprite, CandleSet, candelabra, bust, painting, armchair, stool, foliageCross, urn, sconce, worldPoints } from './props.js';
 
 export function buildCorridor() {
@@ -55,7 +56,12 @@ export function buildCorridor() {
   for (let z = 0.6; z > Z1; z -= 3.9) {
     const rib = new THREE.Mesh(new THREE.TorusGeometry(HW - 0.03, 0.1, 6, 18, Math.PI), trim);
     rib.position.set(0, WH, z); scene.add(rib);
-    for (const s of [-1, 1]) { scene.add(box(0.14, WH, 0.24, trim, s * (HW - 0.06), WH / 2, z)); scene.add(box(0.22, 0.14, 0.34, trim, s * (HW - 0.08), WH, z)); }
+    for (const s of [-1, 1]) {
+      // sul lato della biblioteca il costolone poggia su una mensola sopra la porta: il pilastro la coprirebbe
+      const overLibrary = s > 0 && z < LZ0 + 0.3 && z > LZ1 - 0.3;
+      if (!overLibrary) scene.add(box(0.14, WH, 0.24, trim, s * (HW - 0.06), WH / 2, z));
+      scene.add(box(0.22, 0.14, 0.34, trim, s * (HW - 0.08), WH, z));
+    }
   }
 
   // parete d'ingresso (dietro) con portone aperto sul tramonto
@@ -126,7 +132,7 @@ export function buildCorridor() {
     }
   }
   trophy.add(box(0.2, 0.3, 0.03, A.wood, 0, -0.08, -0.05));
-  trophy.position.set(-HW + 0.08, 2.85, -3.6); trophy.rotation.y = Math.PI / 2; scene.add(trophy);
+  trophy.position.set(-HW + 0.08, 2.7, -9.9); trophy.rotation.y = Math.PI / 2; scene.add(trophy); // tra due costoloni: prima le corna entravano nell'arco
 
   // armadio
   // carcassa con l'interno scuro, due ante apribili e un lucchetto a combinazione
@@ -200,7 +206,7 @@ export function buildCorridor() {
   wall(LZ1 - LZb, 3.2, plasterS, LX0 - 0.39, 1.6, (LZ1 + LZb) / 2, Math.PI / 2);
   const ac = armchair(); ac.position.set(LX0 + 1.9, 0, -4.3); ac.rotation.y = -Math.PI / 2 + 0.5; scene.add(ac);
   // lampada a stelo
-  const lampX = LX0 + 1.2, lampZ = -2.9;
+  const lampX = LX0 + 2.75, lampZ = -4.95; // accanto alla poltrona: non copre il dipinto
   scene.add(lathe([[0, 0], [0.16, 0], [0.14, 0.04], [0.03, 0.08], [0.05, 0.3], [0.02, 0.5], [0.02, 1.25], [0, 1.25]], A.gold));
   scene.children[scene.children.length - 1].position.set(lampX, 0, lampZ);
   const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.36, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xe8a050, side: THREE.DoubleSide }));
@@ -214,11 +220,26 @@ export function buildCorridor() {
   lect.add(cyl(0.05, 0.07, 1.05, A.wood, 0, 0.52, 0, 8));
   lect.add(cyl(0.22, 0.26, 0.05, A.wood, 0, 0.025, 0, 10));
   const top = box(0.5, 0.04, 0.38, A.wood, 0, 1.08, 0); top.rotation.x = -0.45; lect.add(top);
-  // l'atlante aperto è appoggiato sul piano inclinato (ne segue la rotazione)
-  const atlas = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.32), new THREE.MeshStandardMaterial({ map: T.mapTex(), roughness: 0.8 }));
-  atlas.position.set(0, 0.026, 0); atlas.rotation.x = -Math.PI / 2; top.add(atlas);
-  lect.position.set(LX1 - 1.3, 0, LZa - 0.9); lect.rotation.y = Math.PI * 0.85;
+  // il libro aperto, la cronaca delle lanterne, appoggiato sul piano inclinato (ne segue la rotazione)
+  top.add(box(0.47, 0.025, 0.33, new THREE.MeshStandardMaterial({ color: 0x3a1a0c, roughness: 0.6 }), 0, 0.032, 0));
+  const codex = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.32), new THREE.MeshStandardMaterial({ map: T.toTex(codexSpreadCanvas()), roughness: 0.85, emissive: 0x2a1a0c, emissiveIntensity: 0.35 }));
+  codex.position.set(0, 0.047, 0); codex.rotation.set(-Math.PI / 2, 0, Math.PI); top.add(codex); // il testo si legge dal lato basso del leggio
+  // girato verso chi entra dalla porta: chi legge sta dal lato basso del piano
+  lect.position.set(LX1 - 1.3, 0, LZa - 0.9); lect.rotation.y = 0.61;
   scene.add(lect);
+  // il grande dipinto della valle al tramonto, su tutta la parete di destra per chi entra
+  const valley = painting(T.toTex(valleyPaintingCanvas()), 3.5, 1.75);
+  valley.position.set((LX1 + HW) / 2 + 0.1, 2.12, LZa - 0.04); valley.rotation.y = Math.PI;
+  scene.add(valley);
+  const [plaqueC, pg] = T.mk(512, 64);
+  pg.fillStyle = '#b8903a'; pg.fillRect(0, 0, 512, 64);
+  pg.strokeStyle = '#6a4a1a'; pg.lineWidth = 4; pg.strokeRect(4, 4, 504, 56);
+  pg.fillStyle = '#2a1808'; pg.font = 'italic 24px Georgia, serif'; pg.textAlign = 'center'; pg.textBaseline = 'middle';
+  pg.fillText(PAINTING.title, 256, 33);
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.0625), new THREE.MeshStandardMaterial({ map: T.toTex(plaqueC), roughness: 0.4, metalness: 0.4 }));
+  plaque.position.set((LX1 + HW) / 2 + 0.1, 1.1, LZa - 0.02); plaque.rotation.y = Math.PI; scene.add(plaque);
+  const valleyLight = new THREE.PointLight(0xffb070, 3, 5, 2); valleyLight.position.set((LX1 + HW) / 2, 2.9, LZa - 1.2); scene.add(valleyLight);
+
   // il romanzo: sporge dallo scaffale della parete destra, con il dorso leggibile
   const spineCanvas = (title, author, w, h, color) => {
     const [c, g] = T.mk(w, h);
@@ -374,6 +395,10 @@ export function buildCorridor() {
     libraryLook: new THREE.Vector3(4, 1.4, -6.4),
     libraryExit: new THREE.Vector3(0, 1.6, -3.5),
     libraryDoor: new THREE.Vector3(HW + 0.1, 1.4, (LZ0 + LZ1) / 2),
+    paintingPos: new THREE.Vector3((LX1 + HW) / 2 + 0.1, 2.0, LZa - 0.1),
+    paintingView: new THREE.Vector3((LX1 + HW) / 2, 1.6, LZa - 2.9),
+    lecternPos: new THREE.Vector3(LX1 - 1.3, 1.2, LZa - 0.9),
+    lecternView: new THREE.Vector3(LX1 - 1.3 - 0.52, 1.55, LZa - 0.9 - 0.75),
     novelPos: new THREE.Vector3(LX1 - 0.2, 1.45, -2.4),
     novelView: new THREE.Vector3(LX1 - 1.3, 1.55, -2.4),
     shelfPos: new THREE.Vector3(SX - 0.4, 1.35, SZ + 0.35),

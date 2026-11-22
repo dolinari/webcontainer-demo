@@ -56,7 +56,7 @@ export const OBSERVABLES = {
       text: L('Un piccolo busto di terracotta: un giovane dai capelli ricci. È girato verso la porta, come se aspettasse qualcuno.', 'A small terracotta bust: a young man with curly hair. It faces the door, as if waiting for someone.') },
     { name: L('La credenza', 'The sideboard'), pos: V(-1.5, 0.6, -1.5), range: 3.5, size: 0.8,
       text: L('Una credenza in noce scuro, intagliata a mano. I cassetti sono chiusi a chiave.', 'A hand-carved dark walnut sideboard. The drawers are locked.') },
-    { name: L('Il trofeo di cervo', 'The deer trophy'), pos: V(-1.72, 2.85, -3.6), range: 6, size: 0.45,
+    { name: L('Il trofeo di cervo', 'The deer trophy'), pos: V(-1.72, 2.7, -9.9), range: 6, size: 0.45,
       text: L('Un cranio di cervo con i palchi, appeso al muro. È lì da così tanto che la polvere l’ha reso grigio.', 'A deer skull with antlers, hanging on the wall. It has been there so long the dust has turned it grey.') },
     { name: L('L’armadio', 'The wardrobe'), pos: V(-1.47, 1.3, -5.4), range: 4.5, size: 0.8,
       text: (c) => (c.wardrobe
@@ -72,7 +72,7 @@ export const OBSERVABLES = {
       text: L('Un lampadario di ferro con otto candele accese. Oscilla appena, anche se non c’è vento.', 'An iron chandelier with eight lit candles. It sways slightly, even though there’s no wind.') },
     { name: L('La biblioteca', 'The library'), pos: V(3.6, 1.4, -3.5), range: 6, size: 1.5,
       text: (c) => (c.library
-        ? L('La doppia porta adesso è aperta. Dentro: scaffali fino al soffitto, una poltrona di velluto rosso, un leggio con un atlante aperto. Qui c’è il libro che amavano entrambi.', 'The double door is open now. Inside: shelves up to the ceiling, a red velvet armchair, a lectern with an open atlas. The book they both loved is somewhere here.')
+        ? L('La doppia porta adesso è aperta. Dentro: scaffali fino al soffitto, una poltrona di velluto rosso, un leggio con un vecchio libro aperto e un dipinto enorme della valle. Qui c’è il libro che amavano entrambi.', 'The double door is open now. Inside: shelves up to the ceiling, a red velvet armchair, a lectern with an old open book, and a huge painting of the valley. The book they both loved is somewhere here.')
         : L('Una biblioteca, dietro una doppia porta chiusa. Dalle fessure filtra la luce di una lampada. È sbarrata: da qui, per ora, non si entra.', 'A library, behind a closed double door. Lamplight seeps through the cracks. It is barred: for now, there’s no way in.')) },
     { name: L('Un libro dal dorso dorato', 'A book with a gilded spine'), pos: V(5.82, 1.45, -2.4), range: 3.5, size: 0.15,
       text: (c) => (c.novelRead
@@ -83,7 +83,9 @@ export const OBSERVABLES = {
         ? L('Lo scaffale si è aperto in due. Nella nicchia, su un piccolo leggio, c’è un grande libro antico.', 'The shelf has split in two. In the niche, on a small stand, lies a large ancient book.')
         : L('Otto libri con una lettera dorata sul dorso. Sotto i primi quattro, una targhetta d’ottone senza scritte. I libri si possono spostare.', 'Eight books with a gilded letter on the spine. Under the first four, a blank brass plate. The books can be moved.')) },
     { name: L('Il leggio', 'The lectern'), pos: V(4.7, 1.1, -1.5), range: 3.5, size: 0.3,
-      text: L('Un leggio di legno con un atlante aperto su una valle di montagna. Qualcuno ha cerchiato a matita un villaggio con il campanile.', 'A wooden lectern with an atlas open on a mountain valley. Someone has circled a village with a bell tower in pencil.') },
+      text: L('Un leggio di legno, girato verso la porta come se aspettasse qualcuno. Sopra c’è un libro antico aperto: un’incisione con delle figure incappucciate che portano lanterne verso un altare.', 'A wooden lectern, turned towards the door as if waiting for someone. On it lies an old open book: an engraving of hooded figures carrying lanterns towards an altar.') },
+    { name: L('Il grande dipinto', 'The great painting'), pos: V(4.0, 2.1, -0.65), range: 7, size: 1.6,
+      text: L('Un dipinto enorme, quasi tutta la parete: la vallata al tramonto, il ruscello che brilla, il borgo, l’altare sulla collina. Lungo la strada, una fila di piccole luci. La villa c’è, ma bisogna cercarla.', 'A huge painting, almost the whole wall: the valley at sunset, the gleaming stream, the village, the altar on the hill. Along the road, a line of small lights. The villa is there, but you have to look for it.') },
     { name: L('La poltrona', 'The armchair'), pos: V(4.1, 0.7, -4.3), range: 4, size: 0.5,
       text: L('Una poltrona di velluto rosso, consumata sui braccioli. Accanto, la lampada a stelo è accesa, come se qualcuno stesse per tornare a leggere.', 'A red velvet armchair, worn on the arms. Beside it the floor lamp is lit, as if someone were about to come back and read.') },
     { name: L('Il busto scuro', 'The dark bust'), pos: V(1.5, 1.6, -6.3), range: 4.5, size: 0.35,

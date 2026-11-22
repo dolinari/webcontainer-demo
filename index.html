@@ -136,6 +136,28 @@
     <button id="novel-close" class="primary" data-en="Close the book">Chiudi il libro</button>
   </div>
 
+  <div id="codex" hidden>
+    <p class="ov-label" data-en="The book on the lectern">Il libro sul leggio</p>
+    <div class="book"><div id="codex-page" class="book-page"></div></div>
+    <p class="ov-hint" data-en="Swipe the page to turn it">Trascina la pagina per sfogliarla</p>
+    <div class="row">
+      <button id="codex-prev" class="ghost" aria-label="Pagina precedente" data-en-aria="Previous page">‹</button>
+      <span id="codex-num" class="page-num"></span>
+      <button id="codex-next" class="ghost" aria-label="Pagina successiva" data-en-aria="Next page">›</button>
+    </div>
+    <button id="codex-close" class="primary" data-en="Close the book">Chiudi il libro</button>
+  </div>
+
+  <div id="painting-view" hidden>
+    <p class="ov-label" data-en="The great painting">Il grande dipinto</p>
+    <div id="painting-scroll"><img id="painting-img" alt="Il grande dipinto della valle al tramonto" data-en-alt="The great painting of the valley at sunset" /></div>
+    <p class="ov-hint" data-en="Slide your finger to see the whole valley">Scorri col dito per vedere tutta la valle</p>
+    <h3 id="painting-title"></h3>
+    <p id="painting-meta"></p>
+    <p id="painting-text"></p>
+    <button id="painting-close" class="primary" data-en="Close">Chiudi</button>
+  </div>
+
   <div id="shelf" hidden>
     <p class="ov-label" data-en="The shelf">Lo scaffale</p>
     <p id="shelf-msg"></p>

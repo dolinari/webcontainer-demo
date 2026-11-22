@@ -25,15 +25,22 @@ const PAGES = [
    <p class="pencil">${L('Quattro lettere e mille ricordi.<br />Chi parte la porta nel cuore,<br />chi torna la ritrova al tramonto.<br />Rimettila in ordine,<br />sotto la targhetta d’ottone.', 'Four letters and a thousand memories.<br />Those who leave carry it in their hearts,<br />those who return find it again at sunset.<br />Put it back in order,<br />under the brass plate.')}</p>`,
 ];
 
+/**
+ * Un libro da sfogliare col dito. «prefix» indica gli elementi della pagina (novel, codex…);
+ * «pages» può essere una funzione, chiamata alla prima apertura (per le pagine con immagini disegnate).
+ */
 export class Novel {
-  constructor() {
-    this.el = document.getElementById('novel');
-    this.page = document.getElementById('novel-page');
-    this.num = document.getElementById('novel-num');
+  constructor(prefix = 'novel', pages = PAGES) {
+    const $ = (s) => document.getElementById(`${prefix}${s}`);
+    this.el = $('');
+    this.page = $('-page');
+    this.num = $('-num');
+    this.prev = $('-prev'); this.next = $('-next');
+    this.source = pages;
     this.i = 0;
     this.onLastPage = null;
-    document.getElementById('novel-prev').addEventListener('click', () => this.turn(-1));
-    document.getElementById('novel-next').addEventListener('click', () => this.turn(1));
+    this.prev.addEventListener('click', () => this.turn(-1));
+    this.next.addEventListener('click', () => this.turn(1));
     // sfogliare col dito: trascina verso sinistra per andare avanti, verso destra per tornare
     let x0 = null;
     this.page.addEventListener('pointerdown', (e) => { x0 = e.clientX; this.page.setPointerCapture(e.pointerId); });
@@ -52,11 +59,16 @@ export class Novel {
     this.page.addEventListener('pointercancel', up);
   }
 
+  get pages() {
+    if (typeof this.source === 'function') this.source = this.source();
+    return this.source;
+  }
+
   open() { this.i = 0; this.render(); this.el.hidden = false; }
   close() { this.el.hidden = true; }
 
   turn(d) {
-    const j = Math.max(0, Math.min(PAGES.length - 1, this.i + d));
+    const j = Math.max(0, Math.min(this.pages.length - 1, this.i + d));
     if (j === this.i) return;
     this.page.classList.add(d > 0 ? 'out-left' : 'out-right');
     setTimeout(() => {
@@ -69,11 +81,13 @@ export class Novel {
   }
 
   render() {
-    this.page.innerHTML = PAGES[this.i];
-    this.num.textContent = `${this.i + 1} / ${PAGES.length}`;
-    document.getElementById('novel-prev').disabled = this.i === 0;
-    document.getElementById('novel-next').disabled = this.i === PAGES.length - 1;
-    if (this.i === PAGES.length - 1) this.onLastPage?.();
+    const pages = this.pages;
+    this.page.innerHTML = pages[this.i];
+    this.page.scrollTop = 0;
+    this.num.textContent = `${this.i + 1} / ${pages.length}`;
+    this.prev.disabled = this.i === 0;
+    this.next.disabled = this.i === pages.length - 1;
+    if (this.i === pages.length - 1) this.onLastPage?.();
   }
 }
 
