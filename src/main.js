@@ -1146,7 +1146,7 @@ controls.face(S.exterior.far.look);
 applyTorch();
 
 const clock = new THREE.Clock();
-let slow = 0, frames = 0, frameN = 0, elapsed = 0;
+let slow = 0, frames = 0, frameN = 0, elapsed = 0, pendSide = true;
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1), t = clock.elapsedTime;
 
@@ -1188,6 +1188,12 @@ renderer.setAnimationLoop(() => {
     const G = S.dining;
     audio.setGramophoneLevel(THREE.MathUtils.clamp(1.15 - camera.position.distanceTo(G.gramophonePos) / 9, 0.15, 1));
     audio.tickFire(THREE.MathUtils.clamp(1 - camera.position.distanceTo(G.firePos) / 8, 0, 1));
+    // tic-tac solo qui, a tempo con il pendolo che si vede, più forte avvicinandosi
+    const side = G.pendulumPhase(t) >= 0;
+    if (side !== pendSide) {
+      pendSide = side;
+      audio.clockTick(side, THREE.MathUtils.clamp(1.15 - camera.position.distanceTo(G.clockPos) / 7, 0, 1));
+    }
   }
   updateMarkers(t);
   if (!['lens', 'scope', 'land', 'novel', 'tome'].includes(state.focus) || move) renderer.render(cur.scene, camera); // con la lente aperta la scena 3D è coperta

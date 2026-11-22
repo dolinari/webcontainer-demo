@@ -157,11 +157,10 @@ export class AudioEngine {
   setAmbience(kind) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    // fuori: vento e foglie. Dentro: il vento sparisce del tutto, resta la casa (orologio, legno, candele)
+    // fuori: vento e foglie. Dentro: il vento sparisce del tutto, resta la casa (legno, candele)
     this.windGain.gain.setTargetAtTime(kind === 'ext' ? 0.5 : 0, t, 0.5);
     this.roomGain.gain.setTargetAtTime(kind === 'ext' ? 0 : kind === 'dining' ? 0.4 : 0.75, t, 0.5);
     this.interior = kind !== 'ext';
-    if (kind === 'int') this._startClock(); else this._stopClock();
     // scricchiolii lontani del legno, ogni tanto, negli interni
     clearTimeout(this._creakT);
     const creak = () => { if (this.interior && !this.muted) this._creak(); this._creakT = setTimeout(creak, 9000 + Math.random() * 14000); };
@@ -322,7 +321,6 @@ export class AudioEngine {
     this.boxGain.gain.setTargetAtTime(0.13, this.ctx.currentTime, 0.8);
     this.windGain.gain.setTargetAtTime(0.22, this.ctx.currentTime, 1); // il vento della sera, sotto il carillon
     this.roomGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
-    this._stopClock();
   }
 
   stopMenuMusic() {
@@ -461,30 +459,23 @@ export class AudioEngine {
     s.start(t, Math.random() * 2); s.stop(t + span + 0.1);
   }
 
-  /** il pendolo di un vecchio orologio, lontano, negli interni: tic e tac alternati */
-  _startClock() {
-    if (this._clockT || !this.ctx) return;
-    let tock = false;
-    const beat = () => {
-      if (!this.muted && !this.menuMusic) this._tick(tock);
-      tock = !tock;
-      this._clockT = setTimeout(beat, 1000);
-    };
-    this._clockT = setTimeout(beat, 600);
+  /** un colpo del pendolo (solo nella sala da pranzo, dove c'è l'orologio): level 0–1 secondo la distanza */
+  clockTick(tock, level = 1) {
+    if (!this.ctx || this.muted || level <= 0.01) return;
+    this._tick(tock, level);
   }
-  _stopClock() { clearTimeout(this._clockT); this._clockT = null; }
-  _tick(tock) {
+  _tick(tock, level = 1) {
     const ctx = this.ctx, t = ctx.currentTime + 0.01;
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; s.playbackRate.value = 3;
     const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = tock ? 1900 : 2500; f.Q.value = 6;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(3.2, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(3.2 * level, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
     s.connect(f); f.connect(g); g.connect(this.master);
     s.start(t, Math.random() * 2); s.stop(t + 0.08);
     // la cassa di legno che risuona appena
     const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = tock ? 880 : 1040;
     const og = ctx.createGain();
-    og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.07, t + 0.004); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.07 * level, t + 0.004); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
     o.connect(og); og.connect(this.master); o.start(t); o.stop(t + 0.2);
   }
 

@@ -295,6 +295,8 @@ export function buildDining() {
     entryLook: new THREE.Vector3(0, 1.4, -6),
     gramophonePos: new THREE.Vector3(GX, 1.1, GZ),
     firePos: new THREE.Vector3(X0 + 0.4, 0.5, FZ),
+    clockPos: new THREE.Vector3(X1 - 0.5, 1.45, -7.8), // l'orologio a pendolo
+    pendulumPhase: (t) => Math.sin(t * 2.6), // stesso moto del pendolo disegnato
     manuscriptPos: new THREE.Vector3(0, DT + 0.01, DZ + 0.12),
     manuscriptView: new THREE.Vector3(0.05, 1.42, -11.35),
     studyDoor: new THREE.Vector3(0, 1.3, Z1),
