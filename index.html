@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0503" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>La Villa al Tramonto</title>
+  <meta name="author" content="Dario Molinari" />
+  <meta name="description" content="La Villa al Tramonto: un’experience interattiva da esplorare col telefono, creata da Dario Molinari. © 2026 Tutti i diritti riservati." data-en-content="The Villa at Sunset: an interactive experience to explore with your phone, created by Dario Molinari. © 2026 All rights reserved." />
+  <meta name="copyright" content="© 2026 Dario Molinari. Tutti i diritti riservati." data-en-content="© 2026 Dario Molinari. All rights reserved." />
+  <script type="module" crossorigin src="./assets/index-nft040UI.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BY1tAr2B.css">
+</head>
+<body data-en-title="The Villa at Sunset">
+  <canvas id="gl"></canvas>
+  <div id="vignette"></div>
+  <div id="fade"></div>
+
+  <div id="hud" hidden>
+    <div id="scene-title"></div>
+    <div id="hint"></div>
+    <div id="observe" hidden role="status"><b></b><p></p></div>
+    <button id="btn-menu" aria-label="Menu principale" data-en-aria="Main menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke-width="2"/></svg>Menu</button>
+    <div id="voice-chip" hidden><i></i><span data-en="Listening">Ti ascolto</span></div>
+    <div id="buttons">
+      <button id="btn-torch" aria-label="Torcia" data-en-aria="Torch" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24"><path d="M8 2h8v3l-2 3v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8L8 5z"/><path d="M11 11h2v3h-2z" class="cut"/></svg>
+        <span data-en="Torch">Torcia</span>
+      </button>
+      <button id="btn-voice" aria-label="Comandi vocali" data-en-aria="Voice commands" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg>
+        <span data-en="Voice">Voce</span>
+      </button>
+      <button id="btn-guide-hud" aria-label="Guida ai comandi" data-en-aria="Commands guide">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6" fill="none" stroke-width="2"/><circle cx="12" cy="17.2" r="1.2"/></svg>
+        <span data-en="Guide">Guida</span>
+      </button>
+      <button id="btn-motion" aria-label="Movimento del telefono" data-en-aria="Phone motion" aria-pressed="true" hidden>
+        <svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke-width="2"/><path d="M3 9c-1.2 2-1.2 4 0 6M21 9c1.2 2 1.2 4 0 6" fill="none" stroke-width="1.8" class="wave"/></svg>
+        <span data-en="Motion">Movimento</span>
+      </button>
+      <button id="btn-center" aria-label="Ricentra la vista" data-en-aria="Recenter the view" hidden>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke-width="2"/></svg>
+        <span data-en="Recenter">Ricentra</span>
+      </button>
+      <button id="btn-sound" aria-label="Audio" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8a5 5 0 0 1 0 8" fill="none" stroke-width="2" class="wave"/></svg>
+        <span>Audio</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="panel" hidden>
+    <p id="panel-text"></p>
+    <div id="meter" hidden><i></i></div>
+    <div id="panel-actions">
+      <button id="btn-listen" hidden data-en="Hold to listen">Tieni premuto per ascoltare</button>
+      <button id="btn-back" data-en="Back">Indietro</button>
+    </div>
+  </div>
+
+  <div id="write" hidden>
+    <p data-en="Write on the sheet with your finger">Scrivi con il dito sul foglio</p>
+    <canvas id="paper"></canvas>
+    <div class="row">
+      <button id="btn-clear" data-en="Clear">Cancella</button>
+      <button id="btn-leave" class="primary" data-en="Leave the message">Lascia il messaggio</button>
+      <button id="btn-close" data-en="Close">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="lens" hidden>
+    <canvas id="lens-canvas"></canvas>
+    <p id="lens-msg"></p>
+    <div class="row">
+      <button id="lens-center" data-en="Bottom lines">Righe in fondo</button>
+      <button id="lens-close" class="primary" data-en="Close">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="scope" hidden>
+    <video id="scope-video" playsinline muted autoplay></video>
+    <canvas id="scope-canvas"></canvas>
+    <p id="scope-msg"></p>
+    <button id="scope-skip" class="link" hidden data-en="I can’t move around">Non posso spostarmi</button>
+    <div id="scope-end" hidden>
+      <b data-en="Something has opened in the villa">Qualcosa si è aperto, nella villa</b>
+      <span data-en="Back in the first corridor, a door that was barred now stands ajar. Perhaps a room you couldn’t enter before… it may be worth a look.">Nel primo corridoio, una porta che era sbarrata ora è socchiusa. Forse una stanza dove prima non potevi entrare… conviene andare a controllare.</span>
+    </div>
+    <div class="row"><button id="scope-menu" hidden data-en="Main menu">Menu principale</button><button id="scope-close" class="primary" data-en="Close">Chiudi</button></div>
+  </div>
+
+  <div id="land" hidden>
+    <canvas id="land-canvas"></canvas>
+    <p id="land-msg"></p>
+    <div id="land-slots"></div>
+    <div class="row"><button id="land-close" class="primary" data-en="Close">Chiudi</button></div>
+  </div>
+
+  <div id="lock" hidden>
+    <div class="lock-card">
+      <p class="lock-over" data-en="The corridor wardrobe">L’armadio del corridoio</p>
+      <h2 data-en="The padlock">Il lucchetto</h2>
+      <p id="lock-msg" data-en="Three brass wheels. Three digits are needed.">Tre rotelle d’ottone. Servono tre cifre.</p>
+      <div class="wheels"><div class="wheel" data-i="0"><button class="up" aria-label="Rotella 1 su" data-en-aria="Wheel 1 up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 1 giù" data-en-aria="Wheel 1 down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div><div class="wheel" data-i="1"><button class="up" aria-label="Rotella 2 su" data-en-aria="Wheel 2 up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 2 giù" data-en-aria="Wheel 2 down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div><div class="wheel" data-i="2"><button class="up" aria-label="Rotella 3 su" data-en-aria="Wheel 3 up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke-width="2.4"/></svg></button><b>0</b><button class="down" aria-label="Rotella 3 giù" data-en-aria="Wheel 3 down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke-width="2.4"/></svg></button></div></div>
+      <div class="row">
+        <button id="lock-close" class="ghost" data-en="Close">Chiudi</button>
+        <button id="lock-open" class="primary" data-en="Open">Apri</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="letter" hidden>
+    <article class="letter-card">
+      <figure><canvas id="letter-photo" width="300" height="380"></canvas></figure>
+      <h2 data-en="To Livia">A Livia</h2>
+      <div class="poem" data-en="&lt;p&gt;I searched for you in the portraits,&lt;br /&gt;in the fire, in the scratched waltz,&lt;br /&gt;in the candles I leave burning&lt;br /&gt;for those who don’t come back.&lt;/p&gt;&lt;p&gt;I searched for you in the valley,&lt;br /&gt;between the stone and the water,&lt;br /&gt;but the valley gave me only numbers,&lt;br /&gt;and I wanted your name.&lt;/p&gt;&lt;p&gt;If you want to find me, look with two eyes,&lt;br /&gt;not with one alone:&lt;br /&gt;where the stone wall of the garden&lt;br /&gt;watches the dying sun,&lt;br /&gt;I left you mine.&lt;/p&gt;">
+        <p>Ti ho cercata nei ritratti,<br />nel fuoco, nel valzer graffiato,<br />nelle candele che lascio accese<br />per chi non torna.</p>
+        <p>Ti ho cercata nella valle,<br />tra la pietra e l’acqua,<br />ma la valle mi ha dato soltanto numeri,<br />e io volevo il tuo nome.</p>
+        <p>Se vuoi trovarmi, guarda con due occhi,<br />non con uno solo:<br />dove il muro di pietra del giardino<br />guarda il sole che muore,<br />ti ho lasciato i miei.</p>
+      </div>
+      <p class="sig">— E.</p>
+    </article>
+    <button id="letter-close" class="primary" data-en="Close the letter">Chiudi la lettera</button>
+  </div>
+
+  <div id="novel" hidden>
+    <p class="ov-label" data-en="The novel">Il romanzo</p>
+    <div class="book"><div id="novel-page"></div></div>
+    <p class="ov-hint" data-en="Swipe the page to turn it">Trascina la pagina per sfogliarla</p>
+    <div class="row">
+      <button id="novel-prev" class="ghost" aria-label="Pagina precedente" data-en-aria="Previous page">‹</button>
+      <span id="novel-num"></span>
+      <button id="novel-next" class="ghost" aria-label="Pagina successiva" data-en-aria="Next page">›</button>
+    </div>
+    <button id="novel-close" class="primary" data-en="Close the book">Chiudi il libro</button>
+  </div>
+
+  <div id="codex" hidden>
+    <p class="ov-label" data-en="The book on the lectern">Il libro sul leggio</p>
+    <div class="book"><div id="codex-page" class="book-page"></div></div>
+    <p class="ov-hint" data-en="Swipe the page to turn it">Trascina la pagina per sfogliarla</p>
+    <div class="row">
+      <button id="codex-prev" class="ghost" aria-label="Pagina precedente" data-en-aria="Previous page">‹</button>
+      <span id="codex-num" class="page-num"></span>
+      <button id="codex-next" class="ghost" aria-label="Pagina successiva" data-en-aria="Next page">›</button>
+    </div>
+    <button id="codex-close" class="primary" data-en="Close the book">Chiudi il libro</button>
+  </div>
+
+  <div id="painting-view" hidden>
+    <p class="ov-label" data-en="The great painting">Il grande dipinto</p>
+    <div id="painting-scroll"><img id="painting-img" alt="Il grande dipinto della valle al tramonto" data-en-alt="The great painting of the valley at sunset" /></div>
+    <p class="ov-hint" data-en="Slide your finger to see the whole valley">Scorri col dito per vedere tutta la valle</p>
+    <h3 id="painting-title"></h3>
+    <p id="painting-meta"></p>
+    <p id="painting-text"></p>
+    <button id="painting-close" class="primary" data-en="Close">Chiudi</button>
+  </div>
+
+  <div id="shelf" hidden>
+    <p class="ov-label" data-en="The shelf">Lo scaffale</p>
+    <p id="shelf-msg"></p>
+    <div class="shelf-wood">
+      <div id="shelf-row"></div>
+      <div class="plate" data-en="under the brass plate">sotto la targhetta d’ottone</div>
+    </div>
+    <button id="shelf-close" class="primary" data-en="Close">Chiudi</button>
+  </div>
+
+  <div id="tome" hidden>
+    <article class="tome-card">
+      <figure><img src="villa-1826.jpg" alt="La villa in una fotografia antica" data-en-alt="The villa in an old photograph" width="960" height="690" /><figcaption id="tome-caption"></figcaption></figure>
+      <h3 id="tome-title"></h3>
+      <p id="tome-text"></p>
+      <p id="tome-ink" class="ink"></p>
+    </article>
+    <p class="tome-end" data-en="In the distance, from the corridor, a muffled noise. As if something had fallen.">Lontano, dal corridoio, un rumore sordo. Come se qualcosa fosse caduto.</p>
+    <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+    <div class="row">
+      <button id="tome-menu" data-en="Main menu" hidden>Menu principale</button>
+      <button id="tome-close" class="primary" data-en="Close">Chiudi</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="start">
+    <div class="lang-switch" role="group" aria-label="Lingua / Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
+    <div class="card" id="intro">
+      <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
+      <h1 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h1>
+      <p class="lead" data-en="You arrive at a stone villa as the sun goes down. The door is open. Inside, someone has left the candles burning.">Arrivi davanti a una villa di pietra mentre il sole scende. La porta è aperta. Dentro, qualcuno ha lasciato le candele accese.</p>
+
+      <div id="menu-resume" hidden>
+        <button id="btn-resume" class="primary" data-en="Resume the game">Riprendi la partita</button>
+        <div class="menu-row">
+          <button id="btn-save" data-en="Save game">Salva partita</button>
+          <button id="btn-load" data-en="Load game">Carica partita</button>
+        </div>
+        <button id="btn-guide-menu" class="link" data-en="See the guide again">Rivedi la guida</button>
+        <button id="btn-newgame" class="link" data-en="New game: start over">Nuova partita: ricomincia da capo</button>
+      </div>
+
+      <h2 class="sec" data-en="How to play">Come si gioca</h2>
+      <div class="ways">
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" fill="none" stroke-width="2"/></svg></i>
+          <div>
+            <h3 data-en="Your voice">La voce</h3>
+            <p data-en="Speak to your phone to move and act.">Parla al telefono per muoverti e agire.</p>
+            <div class="chips" data-en="&lt;span class=&quot;chip&quot;&gt;“walk”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“run”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“forward”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“back”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“stop”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“right”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“left”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“enter”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“observe”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“torch”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“torch off”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“help”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“menu”&lt;/span&gt;"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span><span class="chip">«osserva»</span><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span><span class="chip">«aiuto»</span><span class="chip">«menu»</span></div>
+          </div>
+        </section>
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2" fill="none" stroke-width="2"/><path d="M3 9c-1.2 2-1.2 4 0 6M21 9c1.2 2 1.2 4 0 6" fill="none" stroke-width="1.8"/></svg></i>
+          <div>
+            <h3 data-en="The sensors">I sensori</h3>
+            <p data-en="&lt;b&gt;Move your phone&lt;/b&gt; to look around. &lt;b&gt;Blow&lt;/b&gt; on the microphone to put out the candles, and more. &lt;b&gt;Hold it to your ear&lt;/b&gt; to listen. In the binoculars the &lt;b&gt;camera&lt;/b&gt; lets you really look."><b>Muovi il telefono</b> per guardarti intorno. <b>Soffia</b> sul microfono per spegnere le candele, e non solo. <b>Portalo all’orecchio</b> per ascoltare. Nel binocolo la <b>fotocamera</b> ti fa guardare davvero.</p>
+          </div>
+        </section>
+        <section class="way">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2" fill="none" stroke-width="2"/><circle cx="12" cy="7" r="7" fill="none" stroke-width="1.2" opacity=".5"/><path d="M12 11v10" stroke-width="2"/></svg></i>
+          <div>
+            <h3 data-en="Touch">Il tocco</h3>
+            <p data-en="In a hurry? Tap the &lt;b&gt;glowing circles&lt;/b&gt;: they take you straight there. Use your finger to &lt;b&gt;write&lt;/b&gt; on paper, &lt;b&gt;leaf through&lt;/b&gt; books, &lt;b&gt;move&lt;/b&gt; objects and steer the &lt;b&gt;magnifying glass&lt;/b&gt;.">Vuoi fare in fretta? Tocca i <b>cerchi luminosi</b>: ti portano subito dove vuoi. Col dito <b>scrivi</b> sui fogli, <b>sfogli</b> i libri, <b>sposti</b> gli oggetti e muovi la <b>lente</b>.</p>
+          </div>
+        </section>
+        <section class="way riddle">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" fill="none" stroke-width="2"/><path d="M12 12h10M18 12v3M21 12v2" fill="none" stroke-width="2"/></svg></i>
+          <div>
+            <h3 data-en="The riddles">Gli enigmi</h3>
+            <p data-en="Look at something and say “observe”: almost everything has a story to tell, often a clue. You will find padlocks, codes hidden in the landscape, messages to decipher: every sensor can be the key.">Punta lo sguardo e di’ «osserva»: quasi ogni cosa ha qualcosa da raccontare, spesso un indizio. Troverai lucchetti, codici nascosti nel paesaggio, messaggi da decifrare: ogni sensore può essere la chiave.</p>
+          </div>
+        </section>
+      </div>
+
+      <div id="menu-first">
+        <button id="btn-guide" class="primary" data-en="See the guide">Guarda la guida</button>
+        <button id="btn-skip-guide" class="link" data-en="Skip the guide, turn on the sensors">Salta la guida, attiva i sensori</button>
+        <button id="btn-to-title" class="link" data-en="Back to the title screen">Torna alla schermata del titolo</button>
+      </div>
+      <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+    </div>
+
+    <div class="card" id="perm-box" hidden>
+      <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
+      <h2 class="title" data-en="Turn on the sensors">Attiva i sensori</h2>
+      <p id="perm-loaded" class="loaded" hidden></p>
+      <p class="lead" data-en="Tap the button and allow each request from your phone. You can skip a step, but some parts will work in a reduced way.">Tocca il pulsante e consenti ogni richiesta del telefono. Puoi saltare un passo, ma alcune parti funzioneranno in modo ridotto.</p>
+      <ol id="perms">
+        <li data-k="motion"><b data-en="Motion">Movimento</b> <span data-en="to look around and move the magnifying glass">per guardarti intorno e muovere la lente</span><em>…</em></li>
+        <li data-k="mic"><b data-en="Microphone">Microfono</b> <span data-en="for blowing and for your voice">per il soffio e la voce</span><em>…</em></li>
+        <li data-k="voice"><b data-en="Voice commands">Comandi vocali</b> <span data-en="“walk”, “observe”, “torch”…">«cammina», «osserva», «torcia»…</span><em>…</em></li>
+        <li data-k="camera"><b data-en="Camera">Fotocamera</b> <span data-en="to look through the binoculars">per guardare nel binocolo</span><em>…</em></li>
+      </ol>
+      <button id="btn-start" class="primary" data-en="Start">Inizia</button>
+      <button id="btn-skip" class="link" hidden data-en="Skip this step">Salta questo passo</button>
+      <p class="note" data-en="Microphone and camera are only used while you play: nothing is recorded or saved. Turn up the volume and switch off silent mode.">Microfono e fotocamera servono solo durante il gioco: nulla viene registrato né salvato. Alza il volume e togli la modalità silenziosa.</p>
+      <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+    </div>
+  </div>
+
+  <div id="tutorial" hidden>
+    <div class="tut-top">
+      <span class="tut-label" data-en="Guide">Guida</span>
+      <button id="tut-skip" class="link" data-en="Skip">Salta</button>
+    </div>
+    <div class="slides" id="slides">
+      <article class="slide">
+        <figure><img src="tutorial/1-cammina.jpg" data-en-src="tutorial/en/1-cammina.jpg" alt="Il corridoio della villa con i cerchi luminosi sul pavimento" data-en-alt="The villa corridor with glowing circles on the floor" width="780" height="880" /></figure>
+        <h2 data-en="Move with your voice">Muoviti con la voce</h2>
+        <p data-en="Say &lt;b&gt;“walk”&lt;/b&gt; to take two steps, &lt;b&gt;“run”&lt;/b&gt; for three faster strides: repeat it to keep going. You go where you are looking.">Di’ <b>«cammina»</b> per fare due passi, <b>«corri»</b> per tre falcate più veloci: ripetilo per continuare. Vai dove stai guardando.</p>
+        <div class="chips" data-en="&lt;span class=&quot;chip&quot;&gt;“walk”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“run”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“forward”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“back”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“stop”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“right”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“left”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“enter”&lt;/span&gt;"><span class="chip">«cammina»</span><span class="chip">«corri»</span><span class="chip">«avanti»</span><span class="chip">«indietro»</span><span class="chip">«fermati»</span><span class="chip">«destra»</span><span class="chip">«sinistra»</span><span class="chip">«entra»</span></div>
+        <p class="tip" data-en="Faster: tap a glowing circle and you get there at once.">Più in fretta: tocca un cerchio luminoso e ci arrivi subito.</p>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/2-osserva.jpg" data-en-src="tutorial/en/2-osserva.jpg" alt="La sala da pranzo con la descrizione del camino" data-en-alt="The dining room with the description of the fireplace" width="780" height="880" /></figure>
+        <h2 data-en="Look and observe">Guarda e osserva</h2>
+        <p data-en="&lt;b&gt;Move your phone&lt;/b&gt; to look around. Look at something and say &lt;b&gt;“observe”&lt;/b&gt;: it tells you what it is. Often it is a clue."><b>Muovi il telefono</b> per guardarti intorno. Punta lo sguardo su qualcosa e di’ <b>«osserva»</b>: ti racconta cos’è. Spesso è un indizio.</p>
+        <div class="chips" data-en="&lt;span class=&quot;chip&quot;&gt;“observe”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“help”&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;move your phone&lt;/span&gt;"><span class="chip">«osserva»</span><span class="chip">«aiuto»</span><span class="chip gesture">muovi il telefono</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/3-soffia.jpg" data-en-src="tutorial/en/3-soffia.jpg" alt="Il candelabro da vicino, con l’indicatore del soffio" data-en-alt="The candelabra up close, with the blow meter" width="780" height="880" /></figure>
+        <h2 data-en="Blow">Soffia</h2>
+        <p data-en="Get close to the candles and &lt;b&gt;blow on the microphone&lt;/b&gt;, at the bottom of your phone: each breath puts out a flame. At times, blowing will be useful for other things too.">Avvicinati alle candele e <b>soffia sul microfono</b>, in basso sul telefono: ogni soffio spegne una fiamma. In certi momenti il soffio servirà anche ad altro.</p>
+        <div class="chips" data-en="&lt;span class=&quot;chip gesture&quot;&gt;blow on the microphone&lt;/span&gt;"><span class="chip gesture">soffia sul microfono</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/4-torcia.jpg" data-en-src="tutorial/en/4-torcia.jpg" alt="La torcia illumina una scritta sul muro dello studio" data-en-alt="The torch lights up writing on the study wall" width="780" height="880" /></figure>
+        <h2 data-en="Turn on the torch">Accendi la torcia</h2>
+        <p data-en="In dark rooms say &lt;b&gt;“torch”&lt;/b&gt;: the beam follows your phone and reveals what can’t be seen in the dark. Say &lt;b&gt;“torch off”&lt;/b&gt; to turn it off.">Nelle stanze buie di’ <b>«torcia»</b>: il fascio segue il telefono e rivela ciò che al buio non si vede. Di’ <b>«spegni torcia»</b> per spegnerla.</p>
+        <div class="chips" data-en="&lt;span class=&quot;chip&quot;&gt;“torch”&lt;/span&gt;&lt;span class=&quot;chip&quot;&gt;“torch off”&lt;/span&gt;"><span class="chip">«torcia»</span><span class="chip">«spegni torcia»</span></div>
+      </article>
+      <article class="slide">
+        <figure><img src="tutorial/5-lente.jpg" data-en-src="tutorial/en/5-lente.jpg" alt="La lente d’ingrandimento sulle righe minuscole di un manoscritto" data-en-alt="The magnifying glass over the tiny lines of a manuscript" width="780" height="880" /></figure>
+        <h2 data-en="Hands, ear, eye">Le mani, l’orecchio, l’occhio</h2>
+        <p data-en="&lt;b&gt;Write&lt;/b&gt; on paper with your finger and &lt;b&gt;leaf through&lt;/b&gt; books. &lt;b&gt;Tilt your phone&lt;/b&gt; to move the magnifying glass. &lt;b&gt;Hold it to your ear&lt;/b&gt; to hear the music box. In the binoculars, the &lt;b&gt;camera&lt;/b&gt; lets you look beyond."><b>Scrivi</b> col dito sui fogli e <b>sfoglia</b> i libri. <b>Inclina il telefono</b> per muovere la lente. <b>Portalo all’orecchio</b> per ascoltare il carillon. Nel binocolo, la <b>fotocamera</b> ti fa guardare oltre.</p>
+        <div class="chips" data-en="&lt;span class=&quot;chip gesture&quot;&gt;write&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;tilt&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;to your ear&lt;/span&gt;&lt;span class=&quot;chip gesture&quot;&gt;camera&lt;/span&gt;"><span class="chip gesture">scrivi</span><span class="chip gesture">inclina</span><span class="chip gesture">all’orecchio</span><span class="chip gesture">fotocamera</span></div>
+      </article>
+    </div>
+    <div class="tut-nav">
+      <button id="tut-prev" class="ghost" aria-label="Scheda precedente" data-en-aria="Previous card" data-en="Back">Indietro</button>
+      <div class="dots" id="tut-dots"></div>
+      <button id="tut-next" class="primary" data-en="Next">Avanti</button>
+    </div>
+  </div>
+
+
+  <!-- schermata del titolo: la villa dal vivo, il vento, il tema musicale -->
+  <div id="title" hidden>
+    <div class="lang-switch" role="group" aria-label="Lingua / Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
+    <div class="title-head">
+      <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
+      <h1 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h1>
+      <p class="tagline" data-en="Where it is always autumn, and always sunset.">Dove è sempre autunno, ed è sempre il tramonto.</p>
+    </div>
+    <div class="title-foot">
+      <button id="title-press" class="press" data-en="Tap to enter">Tocca per entrare</button>
+      <nav id="title-menu" hidden>
+        <button id="t-new" class="primary" data-en="New game">Nuova partita</button>
+        <button id="t-load" data-en="Load game">Carica partita</button>
+        <button id="t-credits" data-en="Credits">Crediti</button>
+      </nav>
+      <p class="copy" data-en="© 2026 Dario Molinari · All rights reserved">© 2026 Dario Molinari · Tutti i diritti riservati</p>
+    </div>
+  </div>
+
+  <!-- crediti -->
+  <div id="credits" hidden>
+    <div class="card">
+      <p class="over" data-en="Credits">Crediti</p>
+      <h2 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h2>
+      <dl>
+        <dt data-en="Concept, story and game design">Ideazione, storia e game design</dt>
+        <dd>Dario Molinari</dd>
+        <dt data-en="Programming">Programmazione</dt>
+        <dd data-en="Programmed with Claude, by Anthropic">Programmato con Claude, di Anthropic</dd>
+        <dt data-en="Music and sound">Musica e suoni</dt>
+        <dd data-en="Composed for the game with Claude">Composti per il gioco con Claude</dd>
+      </dl>
+      <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+      <button id="credits-close" class="primary" data-en="Back">Indietro</button>
+    </div>
+  </div>
+
+  <!-- salvataggi: automatico + tre slot -->
+  <div id="saves" hidden>
+    <div class="card">
+      <p class="over" id="saves-over"></p>
+      <h2 id="saves-title"></h2>
+      <p id="saves-msg"></p>
+      <div id="slots"></div>
+      <button id="saves-close" data-en="Back">Indietro</button>
+    </div>
+  </div>
+</body>
+</html>
