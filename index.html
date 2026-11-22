@@ -164,7 +164,7 @@
   <div id="toast"></div>
 
   <div id="start">
-    <div id="lang-switch" role="group" aria-label="Lingua / Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
+    <div class="lang-switch" role="group" aria-label="Lingua / Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
     <div class="card" id="intro">
       <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
       <h1 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h1>
@@ -172,6 +172,10 @@
 
       <div id="menu-resume" hidden>
         <button id="btn-resume" class="primary" data-en="Resume the game">Riprendi la partita</button>
+        <div class="menu-row">
+          <button id="btn-save" data-en="Save game">Salva partita</button>
+          <button id="btn-load" data-en="Load game">Carica partita</button>
+        </div>
         <button id="btn-guide-menu" class="link" data-en="See the guide again">Rivedi la guida</button>
         <button id="btn-newgame" class="link" data-en="New game: start over">Nuova partita: ricomincia da capo</button>
       </div>
@@ -212,6 +216,7 @@
       <div id="menu-first">
         <button id="btn-guide" class="primary" data-en="See the guide">Guarda la guida</button>
         <button id="btn-skip-guide" class="link" data-en="Skip the guide, turn on the sensors">Salta la guida, attiva i sensori</button>
+        <button id="btn-to-title" class="link" data-en="Back to the title screen">Torna alla schermata del titolo</button>
       </div>
       <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
     </div>
@@ -219,6 +224,7 @@
     <div class="card" id="perm-box" hidden>
       <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
       <h2 class="title" data-en="Turn on the sensors">Attiva i sensori</h2>
+      <p id="perm-loaded" class="loaded" hidden></p>
       <p class="lead" data-en="Tap the button and allow each request from your phone. You can skip a step, but some parts will work in a reduced way.">Tocca il pulsante e consenti ogni richiesta del telefono. Puoi saltare un passo, ma alcune parti funzioneranno in modo ridotto.</p>
       <ol id="perms">
         <li data-k="motion"><b data-en="Motion">Movimento</b> <span data-en="to look around and move the magnifying glass">per guardarti intorno e muovere la lente</span><em>…</em></li>
@@ -279,5 +285,53 @@
   </div>
 
   <script type="module" src="./src/main.js"></script>
+
+  <!-- schermata del titolo: la villa dal vivo, il vento, il tema musicale -->
+  <div id="title" hidden>
+    <div class="lang-switch" role="group" aria-label="Lingua / Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
+    <div class="title-head">
+      <p class="over" data-en="A sensory exploration">Un’esplorazione sensoriale</p>
+      <h1 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h1>
+      <p class="tagline" data-en="Where it is always autumn, and always sunset.">Dove è sempre autunno, ed è sempre il tramonto.</p>
+    </div>
+    <div class="title-foot">
+      <button id="title-press" class="press" data-en="Tap to enter">Tocca per entrare</button>
+      <nav id="title-menu" hidden>
+        <button id="t-new" class="primary" data-en="New game">Nuova partita</button>
+        <button id="t-load" data-en="Load game">Carica partita</button>
+        <button id="t-credits" data-en="Credits">Crediti</button>
+      </nav>
+      <p class="copy" data-en="© 2026 Dario Molinari · All rights reserved">© 2026 Dario Molinari · Tutti i diritti riservati</p>
+    </div>
+  </div>
+
+  <!-- crediti -->
+  <div id="credits" hidden>
+    <div class="card">
+      <p class="over" data-en="Credits">Crediti</p>
+      <h2 data-en="The Villa&lt;br /&gt;at Sunset">La Villa<br />al Tramonto</h2>
+      <dl>
+        <dt data-en="Concept, story and game design">Ideazione, storia e game design</dt>
+        <dd>Dario Molinari</dd>
+        <dt data-en="Programming">Programmazione</dt>
+        <dd data-en="Programmed with Claude, by Anthropic">Programmato con Claude, di Anthropic</dd>
+        <dt data-en="Music and sound">Musica e suoni</dt>
+        <dd data-en="Composed for the game with Claude">Composti per il gioco con Claude</dd>
+      </dl>
+      <p class="credits" data-en="&lt;i&gt;The Villa at Sunset&lt;/i&gt; is an interactive experience created by Dario Molinari.&lt;br /&gt;© 2026 · All rights reserved."><i>La Villa al Tramonto</i> è un’experience interattiva creata da Dario Molinari.<br />© 2026 · Tutti i diritti riservati.</p>
+      <button id="credits-close" class="primary" data-en="Back">Indietro</button>
+    </div>
+  </div>
+
+  <!-- salvataggi: automatico + tre slot -->
+  <div id="saves" hidden>
+    <div class="card">
+      <p class="over" id="saves-over"></p>
+      <h2 id="saves-title"></h2>
+      <p id="saves-msg"></p>
+      <div id="slots"></div>
+      <button id="saves-close" data-en="Back">Indietro</button>
+    </div>
+  </div>
 </body>
 </html>

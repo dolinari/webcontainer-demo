@@ -15,13 +15,16 @@ import { Novel, Shelf, Tome, START_ORDER } from './library.js';
 import { Landscape, CODE, setCode, randomCode } from './landscape.js';
 import { womanPhotoCanvas } from './textures.js';
 import { ringTex, parchmentCanvas } from './textures.js';
+import { TitleTheme } from './theme.js';
+import { SLOT_IDS, readSaves, writeSave, describeSave, hasAnySave, formatDate, slotName } from './saves.js';
 
 const $ = (id) => document.getElementById(id);
 translatePage();
 // selettore della lingua nella schermata iniziale (cambiare lingua ricarica la pagina, i progressi restano)
-document.querySelectorAll('#lang-switch button').forEach((b) => {
+document.querySelectorAll('.lang-switch button').forEach((b) => {
   b.setAttribute('aria-pressed', String(b.dataset.lang === LANG));
-  b.addEventListener('click', () => setLang(b.dataset.lang));
+  // cambiare lingua ricarica la pagina: prima si fa un salvataggio automatico
+  b.addEventListener('click', () => { if (b.dataset.lang !== LANG) { autosave(); setLang(b.dataset.lang); } });
 });
 const canvas = $('gl');
 // sugli schermi ad alta densità l'antialiasing costa molto e si nota poco
@@ -57,11 +60,16 @@ const land = new Landscape(controls, camera); // il cannocchiale, con il paesagg
 const novel = new Novel(), shelf = new Shelf(), tome = new Tome(); // la biblioteca
 // le versioni precedenti salvavano i progressi per sempre: si cancellano all'apertura
 try { Object.keys(localStorage).filter((k) => k.startsWith('villa-')).forEach((k) => localStorage.removeItem(k)); } catch { /* archiviazione bloccata */ }
+// come si è arrivati qui: 'load' (caricata una partita), 'new' (nuova partita dal menu), altrimenti dal titolo
+let bootMode = null, resumeAt = null;
+try {
+  bootMode = sessionStorage.getItem('villa-boot'); sessionStorage.removeItem('villa-boot');
+  resumeAt = JSON.parse(sessionStorage.getItem('villa-pos')); sessionStorage.removeItem('villa-pos');
+} catch { /* archiviazione bloccata */ }
 const store = {
-  // i progressi valgono solo per questa scheda: riaprendo il link si riparte da zero,
-  // mentre un ricaricamento accidentale della stessa scheda non fa perdere la partita
+  // la partita in corso vive nella scheda (sessionStorage); i salvataggi negli slot restano sul telefono
   get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* archiviazione bloccata */ } if (state.started) autosaveSoon(); },
   clear() { try { Object.keys(sessionStorage).filter((k) => k.startsWith('villa-')).forEach((k) => sessionStorage.removeItem(k)); } catch { /* archiviazione bloccata */ } },
 };
 
@@ -170,6 +178,7 @@ function swapScene(name, pos, look) {
   if (name !== 'dining') { audio.stopGramophone(); S.dining.setPlaying(false); }
   applyTorch();
   showTitle(name);
+  if (state.started) autosaveSoon(); // checkpoint a ogni cambio di stanza
 }
 
 function goScene(name, pos, look, after) {
@@ -1006,6 +1015,7 @@ $('btn-skip').addEventListener('click', () => {
 async function begin() {
   audio.init();
   audio.stopMenuMusic();
+  theme.stop(2.5);
   audio.setAmbience('ext');
   $('start').classList.add('out');
   $('hud').hidden = false;
@@ -1019,20 +1029,32 @@ async function begin() {
       toast(L('Questo telefono non ha un giroscopio: muovilo su e giù per guardare, e trascina il dito (o di’ «destra» / «sinistra») per girarti. Il tasto «Movimento» cambia modalità.', 'This phone has no gyroscope: move it up and down to look, and drag your finger (or say “right” / “left”) to turn. The “Motion” button changes mode.'), 9000);
     } else setMotionMode('full', true);
   }
+  onTitle = false;
   state.started = true;
-  controls.face(S.exterior.far.look);
-  showTitle('exterior');
   showVoiceState();
-  setHint(lookWord() + L(' per guardarti intorno. ', ' to look around. ') + (voice.enabled ? L('Di’ «cammina» o «corri» per avvicinarti alla villa.', 'Say “walk” or “run” to approach the villa.') : L('Tocca il cerchio luminoso sul portone.', 'Tap the glowing circle on the front door.')));
+  if (resumeAt && S[resumeAt.scene]) {
+    // partita caricata: si riparte dal punto salvato
+    const [x, y, z] = resumeAt.pos, [lx, ly, lz] = resumeAt.look;
+    swapScene(resumeAt.scene, V(x, y, z), V(lx, ly, lz));
+    resumeAt = null;
+    setHint(L('Partita caricata. ', 'Game loaded. ') + lookWord() + L(' per guardarti intorno. ', ' to look around. ') + walkWord());
+  } else {
+    camera.position.copy(S.exterior.far.pos);
+    controls.face(S.exterior.far.look);
+    showTitle('exterior');
+    setHint(lookWord() + L(' per guardarti intorno. ', ' to look around. ') + (voice.enabled ? L('Di’ «cammina» o «corri» per avvicinarti alla villa.', 'Say “walk” or “run” to approach the villa.') : L('Tocca il cerchio luminoso sul portone.', 'Tap the glowing circle on the front door.')));
+  }
+  autosaveSoon();
   if (!state.gyro && 'ontouchstart' in window) toast(L('Movimento non attivo: trascina con il dito per guardarti intorno.', 'Motion is off: drag with your finger to look around.'), 4500);
   try { await navigator.wakeLock?.request('screen'); } catch { /* non essenziale */ }
 }
 // musica del menu: il carillon del finale. I browser fanno partire l'audio solo
 // dopo un tocco, quindi parte al primo tocco sulla schermata iniziale o sulla guida.
 const menuTouch = () => {
-  if (state.started) return;
+  if (state.started || state.inMenu) return;
   audio.init();
-  audio.startMenuMusic();
+  audio.setAmbience('ext');
+  theme.start();
 };
 $('start').addEventListener('pointerdown', menuTouch);
 $('tutorial').addEventListener('pointerdown', menuTouch);
@@ -1083,6 +1105,8 @@ function resetNewGame() {
 $('btn-menu').addEventListener('click', showMenu);
 $('scope-menu').addEventListener('click', () => { leaveFocus(true); showMenu(); });
 $('btn-resume').addEventListener('click', resume);
+$('btn-save').addEventListener('click', () => openSaves('save'));
+$('btn-load').addEventListener('click', () => openSaves('load'));
 $('btn-guide-menu').addEventListener('click', openGuide);
 $('btn-newgame').addEventListener('click', () => {
   // conferma con un secondo tocco: si perdono porte aperte, codici e messaggio
@@ -1092,12 +1116,11 @@ $('btn-newgame').addEventListener('click', () => {
     newGameT = setTimeout(resetNewGame, 4000);
     return;
   }
-  store.clear();
-  location.reload();
+  newGame();
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { ledTorch.off(); if (state.torch) { state.torch = false; applyTorch(); } }
+  if (document.hidden) { autosave(); ledTorch.off(); if (state.torch) { state.torch = false; applyTorch(); } }
   else if (state.started) {
     audio.ctx?.resume();
     navigator.wakeLock?.request('screen').catch(() => {});
@@ -1144,6 +1167,11 @@ renderer.setAnimationLoop(() => {
     if (move.t >= 1) { const d = move.done; move = null; d?.(); }
   }
   updateWalk(dt);
+  if (onTitle) {
+    // schermata del titolo: lo sguardo vaga piano sulla facciata e sul cielo del tramonto
+    const a = t * 0.07;
+    controls.face(titleLook.set(-2.5 + Math.sin(a) * 4.5, 4.6 + Math.sin(a * 0.73) * 0.9, 0));
+  }
   controls.update(dt);
 
   let wind = 0;
@@ -1211,3 +1239,162 @@ if (new URLSearchParams(location.search).has('diag')) {
 
 // accesso per test manuali da console
 window.__villa = { S, state, controls, camera, goScene, audio, voice, renderer, startWalk, moveTo, focusCandle, leaveFocus, observe, land, setCode };
+
+// ---------- salvataggi ----------
+const theme = new TitleTheme(audio); // la musica della schermata del titolo
+let onTitle = false;
+const titleLook = new THREE.Vector3();
+let autoT;
+
+/** Nome del luogo per l'etichetta di uno slot (la biblioteca sta nella scena del corridoio). */
+function placeName(scene, pos) {
+  if (scene === 'corridor' && pos && pos[0] > 1.9) return L('La biblioteca', 'The library');
+  return TITLES[scene] || TITLES.exterior;
+}
+/** Fotografia della partita: tutte le chiavi «villa-*» della sessione più posizione e sguardo. */
+function snapshot() {
+  const keys = {};
+  try { for (const k of Object.keys(sessionStorage)) if (k.startsWith('villa-')) keys[k] = sessionStorage.getItem(k); } catch { /* archiviazione bloccata */ }
+  const p = state.focus && state.home ? state.home : move ? move.to : camera.position;
+  const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  dir.y = Math.max(-0.3, Math.min(0.3, dir.y));
+  const look = p.clone().addScaledVector(dir.normalize(), 5);
+  const r = (v) => Math.round(v * 1000) / 1000;
+  return { v: 1, t: Date.now(), scene: state.scene, pos: [r(p.x), r(p.y), r(p.z)], look: [r(look.x), r(look.y), r(look.z)], keys };
+}
+/** Salvataggio automatico: a ogni tappa della storia, a ogni cambio di stanza, ogni tanto e quando si esce. */
+function autosave() {
+  if ((!state.started && !state.inMenu) || state.busy) return; // anche dal menu di pausa (es. cambio lingua)
+  writeSave('auto', snapshot());
+}
+function autosaveSoon() { clearTimeout(autoT); autoT = setTimeout(autosave, 800); }
+setInterval(() => { if (state.started && !document.hidden) autosave(); }, 45000);
+window.addEventListener('pagehide', autosave);
+
+let savesMode = 'load';
+function openSaves(mode) {
+  savesMode = mode;
+  $('saves-over').textContent = mode === 'save' ? L('Salva partita', 'Save game') : L('Carica partita', 'Load game');
+  $('saves-title').innerHTML = L('La Villa<br />al Tramonto', 'The Villa<br />at Sunset');
+  $('saves-msg').textContent = mode === 'save'
+    ? L('Scegli uno slot. Il salvataggio automatico si aggiorna da solo a ogni tappa.', 'Choose a slot. The autosave updates by itself at every step.')
+    : L('Scegli da dove riprendere.', 'Choose where to pick up from.');
+  renderSlots();
+  $('saves').hidden = false;
+}
+function renderSlots() {
+  const all = readSaves(), box = $('slots');
+  box.innerHTML = '';
+  for (const id of SLOT_IDS) {
+    if (savesMode === 'save' && id === 'auto') continue; // l'automatico si scrive da solo
+    const snap = all[id];
+    const b = document.createElement('button');
+    b.className = 'slot' + (snap ? '' : ' empty');
+    const name = document.createElement('b'), tag = document.createElement('em'), info = document.createElement('small');
+    if (snap) {
+      const d = describeSave(snap);
+      name.textContent = d.chapter;
+      info.textContent = `${slotName(id)} · ${placeName(snap.scene, snap.pos)} · ${formatDate(snap.t)}`;
+      tag.textContent = `${d.done}/${d.total}`;
+      tag.title = L('Tappe della storia raggiunte', 'Story steps reached');
+    } else {
+      name.textContent = L('Vuoto', 'Empty');
+      info.textContent = slotName(id);
+      tag.textContent = '—';
+    }
+    b.append(name, tag, info);
+    if (savesMode === 'load' && !snap) b.disabled = true;
+    b.addEventListener('click', () => slotTap(id, snap, b));
+    box.appendChild(b);
+  }
+}
+function slotTap(id, snap, b) {
+  const confirmFirst = savesMode === 'save' ? !!snap : state.inMenu; // sovrascrivere, o lasciare la partita in corso
+  if (confirmFirst && !b.classList.contains('confirm')) {
+    [...$('slots').children].forEach((x) => x.classList.remove('confirm'));
+    b.classList.add('confirm');
+    $('saves-msg').textContent = savesMode === 'save'
+      ? L('Tocca di nuovo per sovrascrivere: ', 'Tap again to overwrite: ') + slotName(id) + '.'
+      : L('Tocca di nuovo: la partita in corso verrà sostituita.', 'Tap again: the current game will be replaced.');
+    return;
+  }
+  if (savesMode === 'load') { loadSave(snap); return; }
+  const ok = writeSave(id, snapshot());
+  renderSlots();
+  $('saves-msg').textContent = ok
+    ? L('Partita salvata: ', 'Game saved: ') + slotName(id) + '.'
+    : L('Non è stato possibile salvare: la memoria del browser è piena o bloccata.', 'Couldn’t save: the browser storage is full or blocked.');
+  if (ok && navigator.vibrate) navigator.vibrate(20);
+}
+function loadSave(snap) {
+  if (!snap) return;
+  theme.stop(0.6); audio.stopMenuMusic();
+  store.clear();
+  try {
+    for (const [k, v] of Object.entries(snap.keys || {})) sessionStorage.setItem(k, v);
+    sessionStorage.setItem('villa-pos', JSON.stringify({ scene: snap.scene, pos: snap.pos, look: snap.look }));
+    sessionStorage.setItem('villa-boot', 'load');
+  } catch { /* archiviazione bloccata */ }
+  $('fade').classList.add('on');
+  setTimeout(() => location.reload(), 700);
+}
+$('saves-close').addEventListener('click', () => { $('saves').hidden = true; });
+
+// ---------- schermata del titolo ----------
+function showTitleScreen(menu = false) {
+  onTitle = true;
+  state.started = false;
+  $('start').hidden = true;
+  $('title').hidden = false;
+  $('title').classList.remove('out');
+  $('title-press').hidden = menu;
+  $('title-menu').hidden = !menu;
+  $('t-load').disabled = !hasAnySave();
+  camera.position.copy(S.exterior.far.pos);
+  if (audio.ctx) { audio.setAmbience('ext'); theme.start(); }
+}
+// il primo tocco serve anche a sbloccare l'audio: vento e tema partono qui
+$('title-press').addEventListener('click', () => {
+  audio.init();
+  audio.setAmbience('ext');
+  theme.start();
+  $('title-press').hidden = true;
+  $('title-menu').hidden = false;
+});
+$('title').addEventListener('pointerdown', () => { if (!$('title-menu').hidden) { audio.init(); if (!theme.on) { audio.setAmbience('ext'); theme.start(); } } });
+/** C'è già una partita nella scheda (per esempio dopo un ricaricamento)? Allora la nuova partita riparte pulita. */
+const sessionHasProgress = () => { try { return Object.keys(sessionStorage).some((k) => k.startsWith('villa-') && k !== 'villa-codice' && k !== 'villa-ordine'); } catch { return false; } };
+function newGame() {
+  store.clear();
+  try { sessionStorage.setItem('villa-boot', 'new'); } catch { /* archiviazione bloccata */ }
+  location.reload();
+}
+$('t-new').addEventListener('click', () => {
+  if (sessionHasProgress()) { newGame(); return; }
+  // il secondo menu: come si gioca, la guida, i sensori
+  onTitle = false;
+  $('title').classList.add('out');
+  setTimeout(() => { $('title').hidden = true; }, 900);
+  $('start').hidden = false;
+  $('intro').hidden = false;
+  $('perm-box').hidden = true;
+  $('menu-first').hidden = false;
+  $('menu-resume').hidden = true;
+  $('start').scrollTop = 0;
+});
+$('t-load').addEventListener('click', () => openSaves('load'));
+$('t-credits').addEventListener('click', () => { $('credits').hidden = false; $('credits').scrollTop = 0; });
+$('credits-close').addEventListener('click', () => { $('credits').hidden = true; });
+$('btn-to-title').addEventListener('click', () => showTitleScreen(true));
+
+// ---------- avvio ----------
+if (bootMode === 'load') {
+  // partita caricata: si riattivano i sensori (il telefono li richiede a ogni apertura) e si riparte
+  const keys = {};
+  try { for (const k of Object.keys(sessionStorage)) if (k.startsWith('villa-')) keys[k] = sessionStorage.getItem(k); } catch { /* archiviazione bloccata */ }
+  $('perm-loaded').textContent = L('Partita caricata: ', 'Game loaded: ') + describeSave({ keys }).chapter;
+  $('perm-loaded').hidden = false;
+  showPerms();
+} else if (bootMode === 'new') {
+  $('start').hidden = false; // nuova partita: direttamente al secondo menu
+} else showTitleScreen();

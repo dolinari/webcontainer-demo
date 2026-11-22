@@ -13,6 +13,7 @@ L'esperienza è bilingue. **Qualsiasi testo nuovo o modificato va scritto in ita
 
 ## Altre note
 
-- I progressi di gioco stanno in `sessionStorage` (chiavi `villa-*`): riaprendo il link si riparte da zero. La lingua scelta sta in `localStorage` (`lingua-villa`).
-- Crediti: «La Villa al Tramonto è un'experience interattiva creata da Dario Molinari. © 2026 · Tutti i diritti riservati.» / “The Villa at Sunset is an interactive experience created by Dario Molinari. © 2026 · All rights reserved.”
+- La partita in corso sta in `sessionStorage` (chiavi `villa-*`). I salvataggi (automatico + slot 1–3) stanno in `localStorage` (`salvataggi-villa`, vedi `src/saves.js`) e restano anche chiudendo il link; caricare uno slot ricopia le chiavi nella sessione e ricarica la pagina. La lingua scelta sta in `localStorage` (`lingua-villa`).
+- Avvio: schermata del titolo (vento + tema in `src/theme.js`) → Nuova partita / Carica partita / Crediti → secondo menu (come si gioca, guida, sensori).
+- Crediti: «La Villa al Tramonto è un'experience interattiva creata da Dario Molinari. © 2026 · Tutti i diritti riservati.» / “The Villa at Sunset is an interactive experience created by Dario Molinari. © 2026 · All rights reserved.” Nella schermata Crediti: ideazione, storia e game design — Dario Molinari; programmazione — programmato con Claude, di Anthropic; musica e suoni — composti per il gioco con Claude.
 - Pubblicazione: ogni push sul branch di lavoro compila il sito e aggiorna `gh-pages` (GitHub Pages).
