@@ -1392,4 +1392,21 @@ if (bootMode === 'load') {
   showPerms();
 } else if (bootMode === 'new') {
   $('start').hidden = false; // nuova partita: direttamente al secondo menu
-} else showTitleScreen();
+} else {
+  showTitleScreen();
+  // musica subito: dove il browser lo consente (computer, siti già visitati) parte da sola;
+  // sui telefoni l'audio resta bloccato finché non si tocca lo schermo, quindi parte al primo
+  // contatto in qualsiasi punto, anche solo sfiorando o scorrendo
+  audio.init();
+  audio.startMenuMusic();
+  const unlock = () => {
+    if (!audio.ctx) return;
+    audio.ctx.resume().catch(() => {});
+    if (audio.ctx.state === 'running') ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach((ev) => document.removeEventListener(ev, unlock, true));
+  };
+  ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, unlock, true));
+  // se l'audio è già partito da solo, niente «Tocca per entrare»: il menu compare subito
+  const autoplayOk = () => { if (audio.ctx?.state === 'running' && onTitle) { $('title-press').hidden = true; $('title-menu').hidden = false; } };
+  audio.ctx?.addEventListener?.('statechange', autoplayOk);
+  setTimeout(autoplayOk, 300);
+}
